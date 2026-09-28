@@ -378,8 +378,11 @@
 .box { text-align: center; }
 .box-modes { margin: 0 auto 8px; }
 .box-pick { max-width: 320px; margin: 8px auto 0; text-align: left; }
-.box-stage { position: relative; display: grid; place-items: center; height: 460px; overflow-x: clip; }
-.box-compact .box-stage { height: 420px; }
+/* Карточка и коробка в одной ячейке сетки: сцена растёт под высокую карточку и не наезжает на переключатель */
+.box-stage { position: relative; display: grid; place-items: center; min-height: 460px; overflow-x: clip; }
+.box-compact .box-stage { min-height: 420px; }
+.box-stage > .bx, .box-stage > .bx-card { grid-area: 1 / 1; }
+.box-stage.is-open { padding: 20px 0 36px; }
 .bx-glow { position: absolute; width: 360px; height: 360px; border-radius: 50%; opacity: 0.3; filter: blur(60px); background: conic-gradient(from 0deg, var(--q-alpha), var(--q-gamma), var(--q-beta), var(--q-delta), var(--q-alpha)); will-change: transform; }
 .bx { position: relative; width: 170px; height: 170px; padding: 0; border: 0; background: none; cursor: pointer; transition: transform 0.7s var(--out), opacity 0.5s; -webkit-tap-highlight-color: transparent; }
 .bx:focus-visible { outline-offset: 30px; border-radius: 30px; }
@@ -410,10 +413,12 @@
 .is-lid .bx-lid, .is-open .bx-lid { transform: translateY(-34px) rotateX(106deg); }
 .is-open .bx { transform: translateY(70px) scale(0.72); opacity: 0.35; }
 .bx-hint { position: absolute; left: 0; right: 0; bottom: 14px; margin: 0; color: var(--muted); font-size: 14px; }
-.bx-card { position: absolute; left: 50%; top: 50%; z-index: 3; width: min(460px, calc(100% - 20px)); transform: translate(-50%, -54%); perspective: 1200px; }
+.bx-card { position: relative; z-index: 3; width: min(460px, calc(100% - 20px)); perspective: 1200px; }
 .bx-card-in { position: relative; overflow: hidden; padding: 24px 24px 20px; border-radius: 26px; background: var(--elev); text-align: left; box-shadow: var(--shadow-lg); transform-origin: 50% 90%; }
 .bx-card-in::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--q, linear-gradient(90deg, var(--q-alpha), var(--q-gamma), var(--q-beta), var(--q-delta))); }
 .bx-card header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.bx-card header .chip { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.bx-cat { flex: none; }
 .bx-em { width: 44px; height: 44px; flex: none; }
 .bx-cat { margin-left: auto; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
 .bx-text { margin: 0 0 18px; font-size: 19px; line-height: 1.46; letter-spacing: -0.016em; }
@@ -490,7 +495,7 @@
   .wide-art, .lc-art { width: 90px; height: 90px; }
   .aspect-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
   .aspect { padding: 18px 16px; }
-  .box-stage { height: 440px; }
+  .box-stage { min-height: 440px; }
   .bx-glow { width: 260px; height: 260px; }
   .type-nav a { padding: 14px 16px; }
 }

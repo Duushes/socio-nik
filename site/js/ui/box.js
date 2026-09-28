@@ -129,7 +129,7 @@
         S.fx.confetti(colors, { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height * 0.45) / innerHeight, n: 70 });
         count.innerHTML = counter();
         const more = card.querySelector('[data-more]');
-        if (more) more.focus({ preventScroll: true });
+        if (more && document.documentElement.classList.contains('kbd')) more.focus({ preventScroll: true });
         busy = false;
       }, 900);
     }
