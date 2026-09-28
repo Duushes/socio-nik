@@ -142,7 +142,7 @@
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(255,255,255,0.72)';
     ctx.font = font(600, 34);
-    const site = S.config && S.config.SITE_URL ? S.config.SITE_URL.replace(/^https?:\/\//, '') : 'Socio-Nik';
+    const site = S.config && S.config.SITE_URL ? S.config.SITE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '') : 'Socio-Nik';
     ctx.fillText(`Узнай свой тип — ${site}`, W / 2, L.foot);
     return canvas;
   }
@@ -206,5 +206,97 @@
     await navigator.share({ files: [file], text: text(axes), title: 'Мой соционический тип' });
   }
 
-  S.share = { render, url, text, toBlob, download, copy, canShareFiles, share };
+  // Перенос текста по словам под ширину
+  function wrap(ctx, str, maxW) {
+    const lines = [];
+    let line = '';
+    str.split(/\s+/).forEach(w => {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test;
+    });
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  // Факт из mystery box картинкой для сторис (1080×1920) — для Instagram, который ссылки не принимает
+  function renderFact(canvas, fact) {
+    const W = 1080, H = 1920;
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const t = fact.type ? S.core.modelA.type(fact.type) : null;
+    const q = t ? S.data.quadras.find(x => x.id === t.quadra) : null;
+    const c = q ? q.color.dark : '#3987e5';
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+    S.data.quadras.forEach((qq, i) => {
+      const pos = [[0.08, 0.06], [0.95, 0.12], [0.05, 0.92], [0.92, 0.88]][i];
+      blob(ctx, W * pos[0], H * pos[1], W * 0.55, qq.color.dark, q && qq.id === q.id ? 0 : 0.16);
+    });
+    blob(ctx, W / 2, 470, W * 0.6, c, 0.45);
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.62)';
+    ctx.font = font(600, 30);
+    ctx.fillText('SOCIO-NIK · MYSTERY BOX', W / 2, 118);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = font(600, 40);
+    const cat = S.factCats && S.factCats[fact.cat];
+    ctx.fillText(cat ? 'Факт · ' + cat.charAt(0).toLowerCase() + cat.slice(1) : 'Факт', W / 2, 176);
+
+    if (t) {
+      ctx.save();
+      ctx.translate(W / 2, 470);
+      ctx.scale(2.05, 2.05);
+      S.art.toCanvas(ctx, S.art.emblemNodes(t, 'dark', { at: 22 }));
+      ctx.restore();
+      ctx.fillStyle = '#fff';
+      ctx.font = font(800, 170);
+      ctx.fillText(t.code, W / 2, 860);
+      const sub = `«${t.alias}» · ${t.role}`;
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      fit(ctx, sub, W - 160, 500, 42);
+      ctx.fillText(sub, W / 2, 924);
+    } else {
+      S.data.quadras.forEach((qq, i) => {
+        const x = W / 2 + (i - 1.5) * 130, y = 500, g = ctx.createRadialGradient(x - 16, y - 18, 4, x, y, 52);
+        g.addColorStop(0, tone(qq.color.dark, 0.55));
+        g.addColorStop(1, tone(qq.color.dark, -0.35));
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(x, y, 48, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.fillStyle = '#fff';
+      ctx.font = font(800, 130);
+      ctx.fillText('Соционика', W / 2, 860);
+    }
+
+    // текст факта в полупрозрачной карточке; кегль уменьшается, пока текст не влезет в 9 строк
+    let size = 60, lines = [];
+    for (; size >= 40; size -= 2) {
+      ctx.font = font(600, size);
+      lines = wrap(ctx, fact.text, W - 240);
+      if (lines.length <= 9) break;
+    }
+    const lh = Math.round(size * 1.34), top = 1080;
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    roundRect(ctx, 70, top - size - 44, W - 140, lines.length * lh + 96, 48);
+    ctx.fill();
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#fff';
+    lines.forEach((l, i) => ctx.fillText(l, 120, top + i * lh));
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.72)';
+    ctx.font = font(600, 34);
+    const site = S.config && S.config.SITE_URL ? S.config.SITE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '') : 'Socio-Nik';
+    ctx.fillText(`Открой свою коробку — ${site}`, W / 2, H - 110);
+    return canvas;
+  }
+
+  const factImage = fact => toBlob(renderFact(document.createElement('canvas'), fact));
+
+  S.share = { render, renderFact, factImage, url, text, toBlob, download, copy, canShareFiles, share };
 })(window);

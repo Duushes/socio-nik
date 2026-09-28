@@ -62,6 +62,16 @@
       </div>`;
   };
 
+  // Текст и ссылка факта для шера: ссылка ведёт на страницу типа (или в коробку для общих фактов)
+  const factText = f => {
+    const t = f.type ? S.core.modelA.type(f.type) : null;
+    return `${t ? t.code + ' «' + t.alias + '»: ' : ''}${f.text} — факт из mystery box Socio-Nik`;
+  };
+  const factUrl = f => {
+    const base = S.config && S.config.SITE_URL;
+    return base ? base.replace(/\/$/, '') + '/#/' + (f.type ? 'types/' + f.type : 'box') : '';
+  };
+
   function cardHTML(f, reset) {
     const t = f.type ? S.core.modelA.type(f.type) : null;
     return `
@@ -74,9 +84,13 @@
         ${reset ? '<p class="bx-reset">Все факты этой колоды уже открыты — перемешали заново.</p>' : ''}
         <footer>
           <button class="btn btn-sm" type="button" data-more>Ещё факт</button>
-          <button class="btn btn-sm btn-ghost" type="button" data-share-fact>Поделиться</button>
           ${t ? `<a class="link" href="#/types/${t.id}">Открыть ${t.code}</a>` : ''}
         </footer>
+        <div class="bx-share">
+          <span class="bx-share-lab">Поделиться</span>
+          ${S.social.bar({ text: factText(f), url: factUrl(f), compact: true, label: 'Поделиться фактом' })}
+          <p class="bx-share-status" aria-live="polite"></p>
+        </div>
       </div>`;
   }
 
@@ -126,17 +140,12 @@
     }
 
     btn.addEventListener('click', open);
-    card.addEventListener('click', async e => {
-      if (e.target.closest('[data-more]')) close(open);
-      if (e.target.closest('[data-share-fact]') && current) {
-        const t = current.type ? S.core.modelA.type(current.type) : null;
-        const txt = `${t ? t.code + ' «' + t.alias + '»: ' : ''}${current.text} — факт из mystery box Socio-Nik`;
-        const status = e.target.closest('[data-share-fact]');
-        try {
-          if (navigator.share) await navigator.share({ text: txt });
-          else if (await S.share.copy(txt)) status.textContent = 'Скопировано';
-        } catch (err) { /* закрыли меню */ }
-      }
+    card.addEventListener('click', e => { if (e.target.closest('[data-more]')) close(open); });
+    const offSocial = S.social.mount(card, {
+      text: () => factText(current),
+      url: () => factUrl(current),
+      image: () => S.share.factImage(current),
+      status: () => card.querySelector('.bx-share-status')
     });
 
     // режимы
@@ -155,6 +164,6 @@
       });
       if (pick) pick.querySelector('select').addEventListener('change', e => { box.dataset.type = e.target.value; close(); hint.hidden = false; });
     }
-    return () => timers.forEach(clearTimeout);
+    return () => { timers.forEach(clearTimeout); offSocial(); };
   };
 })(window);

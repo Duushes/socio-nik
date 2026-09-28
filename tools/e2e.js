@@ -50,6 +50,10 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     const flow = await b.eval(async () => {
       const sleep = ms => new Promise(r => setTimeout(r, ms));
       const seen = [];
+      const stage = document.querySelector('.q-stage');
+      let maxQ = 0;
+      const mo = new MutationObserver(() => { maxQ = Math.max(maxQ, stage.querySelectorAll('.q').length); });
+      mo.observe(stage, { childList: true });
       for (let i = 0; i < 20; i++) {
         const q = document.querySelector('.q-stage .q:last-child');
         if (!q) return { fail: 'нет вопроса ' + i };
@@ -57,10 +61,12 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
         q.querySelectorAll('.dot')[[0, 1, 3, 4, 1][i % 5]].click();
         await sleep(560);
       }
+      mo.disconnect();
       await sleep(2300);
-      return { unique: new Set(seen).size, view: document.body.dataset.view, code: (document.querySelector('.res-code') || {}).textContent };
+      return { unique: new Set(seen).size, maxQ, view: document.body.dataset.view, code: (document.querySelector('.res-code') || {}).textContent };
     });
     check('тест: 20 разных вопросов кликами → экран результата', flow.unique === 20 && flow.view === 'result', JSON.stringify(flow));
+    check('смена вопроса без наложения: на экране всегда один вопрос', flow.maxQ === 1, 'одновременно вопросов: ' + flow.maxQ);
     await shot('d-result-top');
 
     await b.reload();
@@ -116,7 +122,16 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       });
       check('ссылка на результат открывает тот же тип', round.view === 'shared' && round.shared === round.code, JSON.stringify(round));
       await go('#/result', 900);
-      check('кнопки Telegram, VK, WhatsApp на месте', (await b.eval(`document.querySelectorAll('.share-links a').length`)) === 3);
+      const soc = await b.eval(() => {
+        const bar = document.querySelector('.share .socials');
+        const href = n => (bar.querySelector(`[data-social="${n}"]`) || {}).href || '';
+        return { tg: href('telegram'), wa: href('whatsapp'), x: href('x'), vk: href('vk'), ig: Boolean(bar.querySelector('[data-social="instagram"]')), copy: Boolean(bar.querySelector('[data-social="copy"]')) };
+      });
+      const enc = encodeURIComponent(await b.eval('Socio.share.url(Socio.state.result())'));
+      check('результат: Telegram, Instagram, WhatsApp, X, ВКонтакте и «Скопировать ссылку»',
+        soc.tg.startsWith('https://t.me/share/url?url=' + enc) && soc.wa.startsWith('https://wa.me/?text=') && soc.wa.includes(enc) &&
+        soc.x.startsWith('https://x.com/intent/tweet?text=') && soc.x.includes('&url=' + enc) && soc.vk.startsWith('https://vk.com/share.php?url=' + enc) && soc.ig && soc.copy,
+        JSON.stringify(soc));
     } else {
       check('текст шера без ссылки, пока нет SITE_URL', /^Мой соционический тип — .+ Socio-Nik$/.test(share.text), share.text);
     }
@@ -138,6 +153,22 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     });
     check('mystery box открывается и показывает факт', box.open && box.t1.length > 20, JSON.stringify(box));
     check('«Ещё факт» — другой факт, счётчик растёт', box.t2 && box.t2 !== box.t1 && Number(box.count2) > Number(box.count1), JSON.stringify(box));
+    const fsoc = await b.eval(async () => {
+      const card = document.querySelector('.bx-card');
+      const nets = Array.from(card.querySelectorAll('[data-social]')).map(el => el.dataset.social);
+      const tg = (card.querySelector('[data-social="telegram"]') || {}).href || '';
+      const png = await Socio.share.factImage(Socio.facts.all()[0]);
+      const canFiles = Socio.share.canShareFiles();
+      let status = '';
+      if (!canFiles) {
+        card.querySelector('[data-social="instagram"]').click();
+        await new Promise(r => setTimeout(r, 800));
+        status = card.querySelector('.bx-share-status').textContent;
+      }
+      return { nets, tg, png: png.size, canFiles, status };
+    });
+    check('факт: пять соцсетей и ссылка на тип', ['telegram', 'instagram', 'whatsapp', 'x', 'vk'].every(n => fsoc.nets.includes(n)) && /%23%2Ftypes%2F[a-z]{3}|%23%2Fbox/.test(fsoc.tg), JSON.stringify(fsoc));
+    check('факт для Instagram — картинка сторис собирается', fsoc.png > 60000 && (fsoc.canFiles || /сохранена/.test(fsoc.status)), JSON.stringify(fsoc));
     await shot('d-box-open', '.box-stage', 140);
 
     // ---------- калькулятор ----------

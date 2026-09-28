@@ -76,6 +76,8 @@
         cycle = setInterval(() => { const g = stage.querySelector('[data-morph-auto]'); if (g) g.classList.toggle('is-b'); }, 1800);
       };
 
+      // Смена вопроса по очереди: старый уезжает, и только потом въезжает новый — без наложения двух вопросов.
+      // Высоту сцены держим на время смены, чтобы страница не прыгала.
       function paint(dir) {
         const i = st.index, q = qs[i];
         bar.querySelector('i').style.setProperty('--p', (i / qs.length) * 100 + '%');
@@ -85,16 +87,19 @@
         const tmp = document.createElement('div');
         tmp.innerHTML = question(q, i, qs.length, st.answers[q.id]);
         const next = tmp.firstElementChild;
-        if (S.dom.reducedMotion() || !old) {
+        const enter = () => {
           stage.replaceChildren(next);
-        } else {
-          old.classList.add(dir > 0 ? 'q-out-l' : 'q-out-r');
-          next.classList.add(dir > 0 ? 'q-in-r' : 'q-in-l');
-          stage.appendChild(next);
-          timers.push(setTimeout(() => old.remove(), 460));
-        }
-        const focus = next.querySelector('.dot[tabindex="0"]');
-        if (focus) focus.focus({ preventScroll: true });
+          if (!S.dom.reducedMotion()) next.classList.add(dir > 0 ? 'q-in-r' : 'q-in-l');
+          const focus = next.querySelector('.dot[tabindex="0"]');
+          if (focus && document.documentElement.classList.contains('kbd')) focus.focus({ preventScroll: true });
+          locked = false;
+          timers.push(setTimeout(() => { stage.style.minHeight = ''; }, 450));
+        };
+        if (S.dom.reducedMotion() || !old) { enter(); return; }
+        locked = true;
+        stage.style.minHeight = stage.offsetHeight + 'px';
+        old.classList.add(dir > 0 ? 'q-out-l' : 'q-out-r');
+        timers.push(setTimeout(enter, 200));
       }
 
       function choose(v) {
@@ -112,10 +117,11 @@
         cur.querySelector('.q-a').classList.toggle('lean', v < 0);
         cur.querySelector('.q-b').classList.toggle('lean', v > 0);
         locked = true;
-        timers.push(setTimeout(() => { locked = false; st.index < qs.length - 1 ? go(1) : finish(); }, S.dom.reducedMotion() ? 60 : 280));
+        timers.push(setTimeout(() => { locked = false; st.index < qs.length - 1 ? go(1) : finish(); }, S.dom.reducedMotion() ? 60 : 260));
       }
 
       function go(dir) {
+        if (locked) return;
         const n = st.index + dir;
         if (n < 0 || n >= qs.length) return;
         st.index = n;
@@ -136,7 +142,7 @@
 
       const onClick = e => {
         const dot = e.target.closest('.dot');
-        if (dot && stage.contains(dot)) choose(Number(dot.dataset.v));
+        if (dot && stage.contains(dot) && !dot.closest('.q-out-l, .q-out-r')) choose(Number(dot.dataset.v));
         if (e.target.closest('[data-back]')) go(-1);
         if (e.target.closest('[data-restart]')) {
           st = { answers: {}, index: 0 };
@@ -161,7 +167,7 @@
       document.addEventListener('keydown', onKey);
       startCycle();
       const first = stage.querySelector('.dot[tabindex="0"]');
-      if (first) first.focus({ preventScroll: true });
+      if (first && document.documentElement.classList.contains('kbd')) first.focus({ preventScroll: true });
       return () => {
         root.removeEventListener('click', onClick);
         document.removeEventListener('keydown', onKey);

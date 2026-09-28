@@ -155,6 +155,9 @@
         if (S.theme.preferred() === 'auto') { S.theme.apply(); render({ instant: true, keepScroll: true }); }
       });
     }
+    // Фокус переносим программно только тем, кто пользуется клавиатурой, — мышь и палец не видят лишних рамок
+    addEventListener('keydown', e => { if (e.key === 'Tab' || e.key.startsWith('Arrow') || /^[1-5]$/.test(e.key)) document.documentElement.classList.add('kbd'); }, true);
+    addEventListener('pointerdown', () => document.documentElement.classList.remove('kbd'), true);
     addEventListener('hashchange', () => render());
     addEventListener('scroll', () => document.body.classList.toggle('scrolled', scrollY > 8), { passive: true });
     render({ instant: true });

@@ -276,9 +276,24 @@
 .seg button:disabled { opacity: 0.45; cursor: default; }
 .share-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .share-status { min-height: 1.5em; margin: 12px 0 0; color: var(--muted); font-size: 14px; }
-.share-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-.chip-btn { display: inline-flex; align-items: center; min-height: 36px; padding: 7px 15px; border: 0; border-radius: var(--r-pill); background: var(--chip); color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none !important; transition: background 0.2s, color 0.2s; }
-.chip-btn:hover { background: var(--accent-soft); color: var(--link); }
+/* соцсети: значок в фирменном цвете, подпись — текстовым цветом */
+.socials { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; --soc-cut: var(--card-alt); }
+.soc { --brand: var(--link); display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 15px 8px 11px; border: 0; border-radius: var(--r-pill); background: var(--chip); color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none !important; transition: background 0.2s, transform 0.25s var(--ease); }
+.soc svg { flex: none; width: 22px; height: 22px; color: var(--brand); }
+.soc:hover { background: color-mix(in srgb, var(--brand) 14%, transparent); }
+.soc:active { transform: scale(0.95); }
+.soc-telegram { --brand: #2aabee; }
+.soc-instagram { --brand: #e1306c; }
+.soc-whatsapp { --brand: #25d366; }
+.soc-x { --brand: var(--text); }
+.soc-vk { --brand: #0077ff; }
+.socials-compact { gap: 6px; margin: 0; }
+.soc-icon { width: 40px; height: 40px; padding: 0; justify-content: center; }
+.soc-icon svg { width: 20px; height: 20px; }
+.bx-share { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--hair); }
+.bx-share .socials { --soc-cut: var(--elev); }
+.bx-share-lab { margin-right: 2px; color: var(--muted); font-size: 13px; font-weight: 600; }
+.bx-share-status { flex-basis: 100%; min-height: 1.2em; margin: 0; color: var(--muted); font-size: 13px; }
 
 /* страница типа */
 .checks { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
@@ -442,7 +457,7 @@
   .calc-out { grid-template-columns: 1fr; gap: 10px; }
   .share { grid-template-columns: 1fr; gap: 32px; justify-items: center; text-align: center; }
   .share-preview { width: min(300px, 80vw); }
-  .share-actions, .share-links { justify-content: center; }
+  .share-actions, .share .socials { justify-content: center; }
 }
 @media (max-width: 734px) {
   .hero { min-height: 92svh; }

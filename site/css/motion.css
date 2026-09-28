@@ -59,14 +59,15 @@
 .calc-out.pop .calc-text { animation: pop-in 0.6s var(--out) 0.08s both; }
 
 /* ---------- тест ---------- */
-.q-out-l { animation: q-out-l 0.45s var(--ease) forwards; }
-.q-out-r { animation: q-out-r 0.45s var(--ease) forwards; }
-.q-in-r { animation: q-in-r 0.6s var(--out) both; }
-.q-in-l { animation: q-in-l 0.6s var(--out) both; }
-@keyframes q-out-l { to { opacity: 0; transform: translateX(-70px); filter: blur(6px); } }
-@keyframes q-out-r { to { opacity: 0; transform: translateX(70px); filter: blur(6px); } }
-@keyframes q-in-r { from { opacity: 0; transform: translateX(80px); filter: blur(6px); } }
-@keyframes q-in-l { from { opacity: 0; transform: translateX(-80px); filter: blur(6px); } }
+/* Вопросы меняются по очереди (см. views/test.js): короткий уход, затем въезд; без размытия — оно мутнит текст */
+.q-out-l { animation: q-out-l 0.2s var(--ease) forwards; pointer-events: none; }
+.q-out-r { animation: q-out-r 0.2s var(--ease) forwards; pointer-events: none; }
+.q-in-r { animation: q-in-r 0.45s var(--out) both; }
+.q-in-l { animation: q-in-l 0.45s var(--out) both; }
+@keyframes q-out-l { to { opacity: 0; transform: translateX(-36px); } }
+@keyframes q-out-r { to { opacity: 0; transform: translateX(36px); } }
+@keyframes q-in-r { from { opacity: 0; transform: translateX(44px); } }
+@keyframes q-in-l { from { opacity: 0; transform: translateX(-44px); } }
 .dot.pop { animation: dot-pop 0.45s var(--spring); }
 .dot.pop span { animation: ring 0.7s var(--out); }
 @keyframes dot-pop { 40% { transform: scale(1.2); } }

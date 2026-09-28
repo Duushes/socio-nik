@@ -14,7 +14,6 @@
     const qc = (S.content.quadras || {})[q.id] || {};
     const friend = !shared && S.state.friend ? S.core.scoring.result(S.state.friend).top.id : null;
     const link = shared ? '' : S.share.url(axes), plain = S.share.text(axes, { withUrl: false });
-    const enc = encodeURIComponent;
 
     return `
       <section class="res-hero" style="${ui.qStyle(t.quadra)}" data-anim>
@@ -114,12 +113,7 @@
                 <button class="btn" type="button" data-do="download">Скачать картинку</button>
                 <button class="btn btn-ghost" type="button" data-do="copy">Скопировать текст</button>
               </div>
-              ${link ? `<div class="share-links">
-                <button class="chip-btn" type="button" data-do="link">Скопировать ссылку</button>
-                <a class="chip-btn" target="_blank" rel="noopener" href="https://t.me/share/url?url=${enc(link)}&amp;text=${enc(plain)}">Telegram</a>
-                <a class="chip-btn" target="_blank" rel="noopener" href="https://vk.com/share.php?url=${enc(link)}&amp;title=${enc(plain)}">VK</a>
-                <a class="chip-btn" target="_blank" rel="noopener" href="https://wa.me/?text=${enc(plain + ' ' + link)}">WhatsApp</a>
-              </div>` : ''}
+              ${S.social.bar({ text: plain, url: link, label: 'Поделиться результатом' })}
               <p class="share-status" aria-live="polite"></p>
             </div>
           </div>
@@ -173,12 +167,18 @@
         if (act.dataset.do === 'share') { await S.share.share(canvas, axes, fmt); status.textContent = ''; }
         if (act.dataset.do === 'download') { S.share.download(await S.share.toBlob(canvas), `socio-nik-${id}-${fmt}.png`); status.textContent = 'Картинка сохранена'; }
         if (act.dataset.do === 'copy') status.textContent = (await S.share.copy(S.share.text(axes))) ? 'Текст скопирован' : 'Не удалось скопировать — выдели текст вручную';
-        if (act.dataset.do === 'link') status.textContent = (await S.share.copy(S.share.url(axes))) ? 'Ссылка скопирована' : 'Не удалось скопировать ссылку';
       } catch (err) {
         if (err && err.name !== 'AbortError') status.textContent = 'Не получилось — попробуй «Скачать картинку»';
       }
     });
-    return () => {};
+    // Instagram берёт картинку сторис, остальные сети — текст и ссылку на результат
+    return S.social.mount(box, {
+      text: () => S.share.text(axes, { withUrl: false }),
+      url: () => S.share.url(axes),
+      image: () => { const c = document.createElement('canvas'); S.share.render(c, axes, 'story'); return S.share.toBlob(c); },
+      status: () => status
+    });
+
   }
 
   V.result = {
