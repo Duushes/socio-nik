@@ -111,6 +111,26 @@ Object.keys(modelA).forEach(id => {
   }
 });
 
+// ---------- знаменитости с похожим типом ----------
+const celebs = C.celebs || {};
+const seenNames = new Map();
+Object.keys(celebs).forEach(id => {
+  const list = celebs[id], w = `celebs.${id}`;
+  if (!TYPES.includes(id)) return err(w, 'неизвестный id типа');
+  if (!Array.isArray(list) || list.length !== 6) return err(w, 'нужно ровно 6');
+  const real = list.filter(c => c.kind === 'real').length, fiction = list.filter(c => c.kind === 'fiction').length;
+  if (real !== 3 || fiction !== 3) err(w, `нужно 3 реальных и 3 персонажа, сейчас ${real} и ${fiction}`);
+  list.forEach((c, i) => {
+    const wc = `${w}[${i}]`;
+    if (!str(c.name) || c.name.length > 40) err(`${wc}.name`, 'имя пустое или длиннее 40');
+    if (!str(c.who) || c.who.length > 48) err(`${wc}.who`, 'пояснение «кто это» пустое или длиннее 48');
+    if (!str(c.note) || c.note.length < 30 || c.note.length > 120) err(`${wc}.note`, `«почему» — 30–120 знаков, сейчас ${c.note ? c.note.length : 0}`);
+    [c.name, c.who, c.note].forEach(x => { if (str(x) && /'/.test(x)) err(wc, 'апостроф — используй «ёлочки»'); if (str(x) && BANNED.test(x)) err(wc, 'ссылка в тексте'); });
+    const key = String(c.name).toLowerCase().replace(/ё/g, 'е').trim();
+    if (seenNames.has(key)) err(wc, `«${c.name}» уже есть у ${seenNames.get(key)}`); else seenNames.set(key, id);
+  });
+});
+
 // ---------- общие факты ----------
 const general = (C.facts && C.facts.general) || [];
 general.forEach((f, i) => checkFact(`facts.general[${i}]`, f));
@@ -122,6 +142,7 @@ if (full) {
   KINDS.forEach(k => { if (!rels[k]) err('полнота', `нет текстов отношения ${k}`); });
   if (general.length < 18) err('полнота', `общих фактов ${general.length} < 18`);
   TYPES.forEach(id => { if (!modelA[id]) err('полнота', `нет текстов модели А для ${id}`); });
+  TYPES.forEach(id => { if (!celebs[id]) err('полнота', `нет знаменитостей для ${id}`); });
 }
 
 if (notes.length) console.log(notes.join(' · '));

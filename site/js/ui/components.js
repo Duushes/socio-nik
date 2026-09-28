@@ -184,6 +184,49 @@
       </details>`;
   };
 
+  // ---------- знаменитости с похожим типом ----------
+  // Монограмма вместо фото: реальные люди — матовый круг, персонажи — стеклянный «кадр»
+  const celebsOf = id => (S.content.celebs && S.content.celebs[id]) || [];
+  const initials = name => {
+    const w = name.split(/[\s-]+/).filter(x => /^[A-ZА-ЯЁ]/.test(x));
+    return w.length ? (w[0][0] + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase() : name.slice(0, 1).toUpperCase();
+  };
+  const ava = (c, cls = '') => `<span class="celeb-ava${c.kind === 'fiction' ? ' fic' : ''}${cls}" aria-hidden="true">${esc(initials(c.name))}</span>`;
+  const INFO = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="10" cy="6.2" r="1.1" fill="currentColor"/></svg>';
+
+  ui.celebs = t => {
+    const list = celebsOf(t.id);
+    if (!list.length) return '';
+    const col = (kind, title, i) => `
+      <div class="card celeb-col reveal" style="--i:${i}">
+        <h3 class="celeb-kicker">${title}</h3>
+        <ul class="celeb-list">${list.filter(c => c.kind === kind).map((c, k) => `
+          <li class="celeb" style="--k:${k}">${ava(c)}
+            <span class="celeb-txt"><b class="celeb-name">${esc(c.name)}</b><span class="celeb-who">${esc(c.who)}</span><span class="celeb-note">${esc(c.note)}</span></span>
+          </li>`).join('')}</ul>
+      </div>`;
+    return `
+      <div class="wrap celebs" id="celebs" style="${ui.qStyle(t.quadra)}">
+        <h2 class="title-sm reveal">Похожий тип у знаменитостей</h2>
+        <p class="sub reveal">Кого из известных людей и героев книг и фильмов часто относят к ${t.code}.</p>
+        <div class="grid2 celeb-grid">${col('real', 'Люди', 0)}${col('fiction', 'Персонажи', 1)}</div>
+        <p class="celeb-disc reveal">${INFO}<span>Это популярные типировки по публичному образу, а не диагноз: сами знаменитости тест не проходили, а разные школы соционики иногда называют для них другой тип.</span></p>
+      </div>`;
+  };
+
+  // Строчка для результата: три монограммы внахлёст, два человека и персонаж, ссылка на полный список
+  ui.celebLine = t => {
+    const list = celebsOf(t.id);
+    if (!list.length) return '';
+    const real = list.filter(c => c.kind === 'real'), fic = list.filter(c => c.kind === 'fiction');
+    const pick = [real[0], real[1], fic[0]].filter(Boolean);
+    return `<a class="celeb-line reveal" href="#/types/${t.id}#celebs" style="${ui.qStyle(t.quadra)}">
+      <span class="celeb-stack" aria-hidden="true">${pick.map(c => ava(c, ' sm')).join('')}</span>
+      <span class="celeb-line-txt"><span class="celeb-line-k">Похожий тип — у знаменитостей</span> <b>${pick.map(c => esc(c.name)).join(', ')}</b> и ещё ${list.length - pick.length}</span>
+      <span class="celeb-go" aria-hidden="true">›</span>
+    </a>`;
+  };
+
   // ---------- подсказка для [data-tip]: «значение|подпись» ----------
   ui.mountTips = scope => {
     const tip = document.createElement('div');

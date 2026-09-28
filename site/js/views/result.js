@@ -85,6 +85,7 @@
           <p class="lead-sm reveal">${esc(c.tagline || '')}</p>
           <p class="body reveal">${esc((c.about || [])[0] || '')}</p>
           <p class="reveal"><a class="link" href="#/types/${t.id}">Читать полностью</a></p>
+          ${ui.celebLine(t)}
           <div class="grid2 gap-top">
             <a class="card link-card tilt reveal" href="#/quadras#${q.id}" style="${ui.qStyle(q.id)}">
               <span class="lc-art" data-anim>${S.art.quadraEmblem(q)}</span>
@@ -294,6 +295,7 @@
           <p class="sub reveal">Отрывок из описания — оно написано для человека этого типа.</p>
           <p class="body reveal">${esc((c.about || [])[0] || '')}</p>
           <ul class="checks reveal" style="${ui.qStyle(t.quadra)}">${(c.strengths || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+          ${ui.celebLine(t)}
           <p class="reveal gap-top"><a class="link" href="#/types/${t.id}">Всё о ${t.code}: описание, модель А, отношения</a></p>
         </div>
       </section>

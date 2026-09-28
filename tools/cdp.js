@@ -38,7 +38,7 @@ async function launch() {
       const { ok, fail } = pending.get(msg.id);
       pending.delete(msg.id);
       msg.error ? fail(new Error(msg.error.message)) : ok(msg.result);
-    } else if (msg.method) listeners.forEach(l => l(msg));
+    } else if (msg.method) listeners.slice().forEach(l => l(msg)); // копия: once() удаляет себя прямо во время обхода
   });
   const send = (method, params = {}) => new Promise((ok, fail) => {
     const id = ++seq;

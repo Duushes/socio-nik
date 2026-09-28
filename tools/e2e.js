@@ -281,6 +281,44 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     await b.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
     await b.sleep(700);
     check('шторка закрывается по Esc', (await b.eval(`document.querySelectorAll('dialog.sheet').length`)) === 0);
+
+    // ---------- знаменитости с похожим типом ----------
+    const cel = await b.eval(async () => {
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      const box = document.getElementById('celebs');
+      if (!box) return { none: true };
+      box.scrollIntoView({ block: 'start' });
+      await sleep(1800);
+      const cols = Array.from(box.querySelectorAll('.celeb-col'));
+      const res = {
+        real: cols[0] ? cols[0].querySelectorAll('.celeb .celeb-ava:not(.fic)').length : 0,
+        fic: cols[1] ? cols[1].querySelectorAll('.celeb .celeb-ava.fic').length : 0,
+        disc: /не диагноз/.test((box.querySelector('.celeb-disc') || {}).textContent || ''),
+        visible: Array.from(box.querySelectorAll('.celeb-ava')).every(a => getComputedStyle(a).opacity === '1')
+      };
+      location.hash = '#/result';
+      await sleep(1200);
+      const line = document.querySelector('.celeb-line');
+      res.mine = Socio.state.myType();
+      res.line = line ? line.getAttribute('href') : null;
+      res.lineText = line ? line.querySelector('.celeb-line-txt').textContent.replace(/\s+/g, ' ').trim() : '';
+      if (line) {
+        line.click();
+        await sleep(1800);
+        const el = document.getElementById('celebs');
+        res.after = { hash: location.hash, top: el ? Math.round(el.getBoundingClientRect().top) : null };
+      }
+      location.hash = '#/r/1-80-85-20-15';
+      await sleep(1200);
+      res.shared = (document.querySelector('.celeb-line') || {}).getAttribute ? document.querySelector('.celeb-line').getAttribute('href') : null;
+      return res;
+    });
+    check('страница типа: 3 человека и 3 персонажа с похожим типом и оговоркой', cel.real === 3 && cel.fic === 3 && cel.disc && cel.visible, JSON.stringify(cel));
+    check('результат: строчка «Похожий тип — у знаменитостей» ведёт к списку на странице типа',
+      cel.line === `#/types/${cel.mine}#celebs` && /^Похожий тип — у знаменитостей .+ и ещё 3$/.test(cel.lineText) && cel.after && cel.after.top !== null && cel.after.top < 200, JSON.stringify(cel));
+    check('страница по ссылке: та же строчка для чужого типа', cel.shared === '#/types/iee#celebs', String(cel.shared));
+    await go('#/types/esi', 1200);
+    await shot('d-type-celebs', '#celebs', 40);
     await go('#/relations/ile/lse', 1200);
     await shot('d-pair');
     await go('#/quadras', 1200);

@@ -65,6 +65,7 @@
             <h2 class="title-sm reveal">О типе</h2>
             ${(c.about || []).map((p, k) => `<p class="body reveal" style="--i:${k}">${esc(p)}</p>`).join('')}
           </div>
+          ${ui.celebs(t)}
         </section>
 
         <section class="sec sec-alt">
