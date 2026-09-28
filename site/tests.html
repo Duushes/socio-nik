@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Socio-Nik · тесты ядра</title>
+<style>
+  :root { color-scheme: light dark; --bg: #fff; --card: #f5f5f7; --text: #1d1d1f; --muted: #6e6e73; --line: #d2d2d7; --ok: #0f9d7a; --bad: #d9480f }
+  @media (prefers-color-scheme: dark) { :root { --bg: #000; --card: #1c1c1e; --text: #f5f5f7; --muted: #a1a1a6; --line: #3a3a3c; --ok: #1c9b86; --bad: #e0662a } }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.47 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased }
+  main { max-width: 760px; margin: 0 auto; padding: 56px 22px 64px }
+  .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px }
+  h1 { font-size: 48px; line-height: 1.05; letter-spacing: -.025em; margin: 0 0 10px }
+  .sum { font-size: 21px; color: var(--muted); margin: 0 0 32px }
+  .sum b { color: var(--ok) }
+  .sum b.bad { color: var(--bad) }
+  ul { list-style: none; margin: 0; padding: 0; background: var(--card); border-radius: 20px; overflow: hidden }
+  li { position: relative; padding: 13px 20px 13px 44px; border-bottom: 1px solid var(--line); font-size: 15px }
+  li:last-child { border-bottom: 0 }
+  li::before { content: ""; position: absolute; left: 20px; top: 20px; width: 10px; height: 10px; border-radius: 50%; background: var(--ok) }
+  li.bad::before { background: var(--bad) }
+  .err { display: block; margin-top: 4px; color: var(--bad); font-size: 13px }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">Socio-Nik · этап 1</p>
+  <h1>Тесты ядра</h1>
+  <p class="sum" id="sum">Запуск…</p>
+  <ul id="list"></ul>
+</main>
+<script src="js/data/aspects.js"></script>
+<script src="js/data/types.js"></script>
+<script src="js/data/quadras.js"></script>
+<script src="js/data/relations.js"></script>
+<script src="js/data/questions.js"></script>
+<script src="js/core/modelA.js"></script>
+<script src="js/core/scoring.js"></script>
+<script src="js/core/payload.js"></script>
+<script src="js/tests/tests.js"></script>
+<script>
+  (function () {
+    var res = Socio.runTests();
+    var sum = document.getElementById('sum');
+    var b = document.createElement('b');
+    b.textContent = res.failed ? 'Упало ' + res.failed : 'Все ' + res.total + ' прошли';
+    if (res.failed) b.className = 'bad';
+    sum.textContent = '';
+    sum.appendChild(b);
+    sum.appendChild(document.createTextNode(res.failed ? ' из ' + res.total : ''));
+    var list = document.getElementById('list');
+    res.results.forEach(function (r) {
+      var li = document.createElement('li');
+      li.textContent = r.name;
+      if (!r.ok) {
+        li.className = 'bad';
+        var err = document.createElement('span');
+        err.className = 'err';
+        err.textContent = r.error;
+        li.appendChild(err);
+      }
+      list.appendChild(li);
+    });
+    document.documentElement.setAttribute('data-tests', res.failed ? 'fail' : 'pass');
+    window.__socioTests = res;
+  })();
+</script>
+</body>
+</html>

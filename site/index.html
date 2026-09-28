@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Socio-Nik — соционический тип за 4 минуты</title>
+<meta name="description" content="Тест из 20 вопросов покажет твой соционический тип в процентах. Описания 16 типов, квадры, отношения между типами и mystery box со случайными фактами.">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23000'/%3E%3Ccircle cx='22' cy='22' r='9' fill='%232a78d6'/%3E%3Ccircle cx='42' cy='22' r='9' fill='%23e2571f'/%3E%3Ccircle cx='22' cy='42' r='9' fill='%231baf7a'/%3E%3Ccircle cx='42' cy='42' r='9' fill='%23b8479c'/%3E%3C/svg%3E">
+<script>
+  /* Тема до первой отрисовки — без вспышки светлого экрана */
+  (function () {
+    try {
+      var q = new URLSearchParams(location.search).get('theme');
+      var p = q || JSON.parse(localStorage.getItem('socio.theme') || '"auto"');
+      var dark = p === 'dark' || (p !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    } catch (e) {
+      document.documentElement.setAttribute('data-theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    }
+    document.documentElement.classList.add('js');
+  })();
+</script>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/motion.css">
+</head>
+<body>
+<a class="skip" href="#app">К содержимому</a>
+
+<header class="nav">
+  <div class="nav-in">
+    <a class="brand" href="#/" aria-label="Socio-Nik — на главную">
+      <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="4" fill="var(--q-alpha)"/><circle cx="16" cy="8" r="4" fill="var(--q-beta)"/><circle cx="8" cy="16" r="4" fill="var(--q-delta)"/><circle cx="16" cy="16" r="4" fill="var(--q-gamma)"/></svg>
+      <span>Socio-Nik</span>
+    </a>
+    <nav class="nav-links" aria-label="Разделы">
+      <a href="#/test" data-nav="test">Тест</a>
+      <a href="#/types" data-nav="types">Типы</a>
+      <a href="#/quadras" data-nav="quadras">Квадры</a>
+      <a href="#/relations" data-nav="relations">Отношения</a>
+      <a href="#/box" data-nav="box">Mystery box</a>
+      <a href="#/about" data-nav="about">О соционике</a>
+    </nav>
+    <div class="nav-tools">
+      <button class="icon-btn" type="button" data-theme-toggle aria-label="Сменить тему">
+        <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.2A8 8 0 1 1 9.8 4a6.4 6.4 0 0 0 10.2 10.2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="icon-btn menu-btn" type="button" data-menu aria-label="Меню" aria-expanded="false">
+        <span class="burger" aria-hidden="true"><i></i><i></i></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="app" tabindex="-1"></main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <a class="brand" href="#/"><svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="4" fill="var(--q-alpha)"/><circle cx="16" cy="8" r="4" fill="var(--q-beta)"/><circle cx="8" cy="16" r="4" fill="var(--q-delta)"/><circle cx="16" cy="16" r="4" fill="var(--q-gamma)"/></svg><span>Socio-Nik</span></a>
+      <nav class="footer-links" aria-label="Разделы">
+        <a href="#/test">Тест</a><a href="#/types">Типы</a><a href="#/quadras">Квадры</a><a href="#/relations">Отношения</a><a href="#/box">Mystery box</a><a href="#/about">О соционике</a>
+      </nav>
+    </div>
+    <p class="footer-note">Соционика — популярная типологическая модель, а не проверенный научный метод. Результат теста — повод понаблюдать за собой, а не диагноз. Ответы хранятся только на этом устройстве.</p>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script src="js/lib/base.js"></script>
+<script src="js/data/aspects.js"></script>
+<script src="js/data/types.js"></script>
+<script src="js/data/quadras.js"></script>
+<script src="js/data/relations.js"></script>
+<script src="js/data/questions.js"></script>
+<script src="js/core/modelA.js"></script>
+<script src="js/core/scoring.js"></script>
+<script src="js/core/payload.js"></script>
+<script src="js/content/types-alpha.js"></script>
+<script src="js/content/types-beta.js"></script>
+<script src="js/content/types-gamma.js"></script>
+<script src="js/content/types-delta.js"></script>
+<script src="js/content/relations.js"></script>
+<script src="js/content/facts.js"></script>
+<script src="js/art/prims.js"></script>
+<script src="js/art/glyphs.js"></script>
+<script src="js/art/emblem.js"></script>
+<script src="js/art/scenes.js"></script>
+<script src="js/fx/fx.js"></script>
+<script src="js/share/card.js"></script>
+<script src="js/ui/components.js"></script>
+<script src="js/ui/box.js"></script>
+<script src="js/views/home.js"></script>
+<script src="js/views/test.js"></script>
+<script src="js/views/result.js"></script>
+<script src="js/views/types.js"></script>
+<script src="js/views/quadras.js"></script>
+<script src="js/views/relations.js"></script>
+<script src="js/views/misc.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

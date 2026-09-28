@@ -1,0 +1,7 @@
+# рабочие заметки и артефакты ревью — локально
+context.md
+review/
+# однофайловая сборка собирается командой: node tools/bundle.js index.html
+dist/
+.DS_Store
+node_modules/

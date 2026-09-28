@@ -1,0 +1,97 @@
+/* Socio-Nik · дизайн-токены. База — Apple-кит ya_report; цвета квадр продублированы в js/data/quadras.js */
+:root {
+  color-scheme: light;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  --bg: #ffffff;
+  --bg-alt: #f5f5f7;
+  --card: #f5f5f7;
+  --card-alt: #ffffff;
+  --elev: #ffffff;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --faint: #86868b;
+  --line: #d2d2d7;
+  --hair: rgba(0, 0, 0, 0.08);
+  --chip: rgba(0, 0, 0, 0.05);
+  --glass: rgba(255, 255, 255, 0.6);
+  --track: rgba(0, 0, 0, 0.05);
+  --seg-off: rgba(0, 0, 0, 0.1);
+  --dot-line: rgba(0, 0, 0, 0.22);
+
+  --btn: #0071e3;
+  --btn-hover: #0077ed;
+  --link: #0066cc;
+  --accent-soft: rgba(0, 113, 227, 0.1);
+  --focus: #0071e3;
+
+  --q-alpha: #2a78d6;
+  --q-beta: #e2571f;
+  --q-gamma: #b8479c;
+  --q-delta: #1baf7a;
+
+  /* Тон отношений — одна нейтральная шкала «темнее = легче», чтобы не спорить с цветами квадр */
+  --tone-support: #1d1d1f;
+  --tone-work: rgba(29, 29, 31, 0.3);
+  --tone-tense: rgba(29, 29, 31, 0.06);
+
+  --nav-bg: rgba(255, 255, 255, 0.72);
+  --nav-line: rgba(0, 0, 0, 0.1);
+  --tip-bg: rgba(29, 29, 31, 0.94);
+  --tip-fg: #ffffff;
+
+  --shadow: 0 2px 6px rgba(0, 0, 0, 0.04), 0 14px 36px rgba(0, 0, 0, 0.09);
+  --shadow-lg: 0 30px 80px rgba(0, 0, 0, 0.22);
+
+  --r: 20px;
+  --r-lg: 28px;
+  --r-pill: 980px;
+
+  --ease: cubic-bezier(0.28, 0.11, 0.32, 1);
+  --out: cubic-bezier(0.16, 1, 0.3, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --nav-h: 44px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #000000;
+  --bg-alt: #0c0c0d;
+  --card: #1c1c1e;
+  --card-alt: #161617;
+  --elev: #1c1c1e;
+  --text: #f5f5f7;
+  --muted: #a1a1a6;
+  --faint: #86868b;
+  --line: #3a3a3c;
+  --hair: rgba(255, 255, 255, 0.1);
+  --chip: rgba(255, 255, 255, 0.08);
+  --glass: rgba(28, 28, 30, 0.6);
+  --track: rgba(255, 255, 255, 0.06);
+  --seg-off: rgba(255, 255, 255, 0.14);
+  --dot-line: rgba(255, 255, 255, 0.3);
+
+  --btn: #0071e3;
+  --btn-hover: #0077ed;
+  --link: #2997ff;
+  --accent-soft: rgba(41, 151, 255, 0.14);
+  --focus: #2997ff;
+
+  --q-alpha: #3987e5;
+  --q-beta: #e2652f;
+  --q-gamma: #c85fa8;
+  --q-delta: #17a774;
+
+  --tone-support: #f5f5f7;
+  --tone-work: rgba(245, 245, 247, 0.34);
+  --tone-tense: rgba(245, 245, 247, 0.07);
+
+  --nav-bg: rgba(22, 22, 23, 0.72);
+  --nav-line: rgba(255, 255, 255, 0.1);
+  --tip-bg: rgba(245, 245, 247, 0.96);
+  --tip-fg: #1d1d1f;
+
+  --shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 30px 80px rgba(0, 0, 0, 0.7);
+}
