@@ -95,6 +95,22 @@ Object.keys(rels).forEach(kind => {
   if (ROLES[kind]) ROLES[kind].forEach(role => checkText(`${w}.roles.${role}`, r.roles && r.roles[role], 220));
 });
 
+// ---------- модель А: как каждая функция проявляется у типа ----------
+const modelA = C.modelA || {};
+Object.keys(modelA).forEach(id => {
+  const m = modelA[id], w = `modelA.${id}`;
+  if (!TYPES.includes(id)) return err(w, 'неизвестный id типа');
+  for (let n = 1; n <= 8; n++) {
+    const f = m[n], wf = `${w}[${n}]`;
+    if (!f) { err(wf, 'нет функции'); continue; }
+    checkText(`${wf}.text`, f.text, 560, { you: true });
+    if (str(f.text) && f.text.length < 200) err(`${wf}.text`, `${f.text.length} знаков — нужно от 200`);
+    if (str(f.text) && (sentences(f.text) < 2 || sentences(f.text) > 5)) err(`${wf}.text`, 'нужно 2–5 предложений');
+    checkText(`${wf}.tip`, f.tip, 170, { you: true });
+    if (str(f.tip) && f.tip.length < 40) err(`${wf}.tip`, 'совет короче 40 знаков');
+  }
+});
+
 // ---------- общие факты ----------
 const general = (C.facts && C.facts.general) || [];
 general.forEach((f, i) => checkFact(`facts.general[${i}]`, f));
@@ -105,6 +121,7 @@ if (full) {
   QUADRAS.forEach(id => { if (!quadras[id]) err('полнота', `нет текстов квадры ${id}`); });
   KINDS.forEach(k => { if (!rels[k]) err('полнота', `нет текстов отношения ${k}`); });
   if (general.length < 18) err('полнота', `общих фактов ${general.length} < 18`);
+  TYPES.forEach(id => { if (!modelA[id]) err('полнота', `нет текстов модели А для ${id}`); });
 }
 
 if (notes.length) console.log(notes.join(' · '));

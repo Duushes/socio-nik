@@ -186,6 +186,17 @@
 @keyframes clash-b { 0%, 100% { transform: translateX(0); } 34% { transform: translateX(-58px); } 46% { transform: translateX(16px) rotate(8deg); } 70% { transform: translateX(0); } }
 @keyframes hit { 0%, 30%, 55%, 100% { opacity: 0; transform: scale(0.5); } 36% { opacity: 1; transform: scale(1.25); } }
 
+/* ---------- страница результата по ссылке ---------- */
+.sh-badge i { animation: sh-ping 2.2s var(--out) infinite; }
+@keyframes sh-ping { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--q) 55%, transparent); } to { box-shadow: 0 0 0 12px transparent; } }
+.sc-mystery .sa { animation: bob 4s ease-in-out infinite; }
+.sc-mystery .sb { animation: mystery 2.8s ease-in-out infinite; }
+.sc-mystery .sc-q { transform-box: fill-box; transform-origin: center; animation: q-pulse 2.8s ease-in-out infinite; }
+.sc-mystery .sx-arc { animation: arc-flow 1.6s linear infinite; }
+@keyframes mystery { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.09); } }
+@keyframes q-pulse { 0%, 100% { opacity: 0.5; transform: scale(0.92); } 50% { opacity: 1; transform: scale(1.08); } }
+@keyframes arc-flow { to { stroke-dashoffset: -18; } }
+
 /* ---------- пауза вне экрана и щадящий режим ---------- */
 .is-off, .is-off * { animation-play-state: paused !important; }
 

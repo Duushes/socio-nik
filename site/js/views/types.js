@@ -26,12 +26,13 @@
     const m = M().modelA(t.ego), A = S.data.aspects, F = S.data.functions;
     const cell = n => {
       const a = A[m[n - 1]];
-      return `<div class="ma-cell reveal${n <= 2 ? ' ego' : ''}" style="--i:${n}">
+      return `<button type="button" class="ma-cell reveal${n <= 2 ? ' ego' : ''}" style="--i:${n}" data-fn="${n}" aria-haspopup="dialog" aria-label="${F[n - 1].name} функция — ${esc(a.name)}. Подробнее">
         <span class="ma-n">${n}</span>
         <span class="ma-glyph">${S.art.glyphSVG(a.id, S.theme.quadraColor(t.quadra), 'ma-svg')}</span>
         <span class="ma-fn">${F[n - 1].name}</span>
         <span class="ma-asp">${a.short} · ${esc(a.name)}</span>
-      </div>`;
+        <span class="ma-more" aria-hidden="true">›</span>
+      </button>`;
     };
     const rows = [['Эго', 1, 2, 'то, чем тип живёт и действует'], ['Суперэго', 4, 3, 'то, что даётся с напряжением'], ['Суперид', 6, 5, 'то, чего ждёт от других'], ['Ид', 7, 8, 'сильное, но фоновое']];
     return `<div class="ma" style="${ui.qStyle(t.quadra)}">${rows.map(([name, l, r, hint]) => `
@@ -85,7 +86,7 @@
         <section class="sec">
           <div class="wrap">
             <h2 class="title-sm reveal">Модель А</h2>
-            <p class="sub reveal">Восемь функций: какие аспекты информации тип обрабатывает легко и уверенно, а какие — с трудом или с помощью других.</p>
+            <p class="sub reveal">Восемь функций: какие аспекты информации тип обрабатывает легко и уверенно, а какие — с трудом или с помощью других. Нажми на функцию — расскажем, как она проявляется у ${t.code}.</p>
             ${modelA(t)}
           </div>
         </section>
@@ -110,6 +111,15 @@
           <a href="#/types/${next.id}" style="${ui.qStyle(next.quadra)}"><span>${next.code} ›</span><small>${esc(next.alias)}</small></a>
         </nav>`;
     },
-    mount(root) { return ui.mountBox(root); }
+    mount(root, id) {
+      const t = M().type(id);
+      const onClick = e => {
+        const cell = e.target.closest('[data-fn]');
+        if (cell && root.contains(cell)) ui.openFunction(t, Number(cell.dataset.fn), cell);
+      };
+      root.addEventListener('click', onClick);
+      const off = ui.mountBox(root);
+      return () => { root.removeEventListener('click', onClick); off(); };
+    }
   };
 })(window);

@@ -296,7 +296,45 @@
     return canvas;
   }
 
+  // Превью ссылки для мессенджеров 1200×630 — как hero главной: «аврора», парящие знаки, градиентный заголовок
+  function renderOG(canvas) {
+    const W = 1200, H = 630;
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const Q = id => S.data.quadras.find(q => q.id === id).color.dark;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+    [['alpha', 0.14, 0.2], ['gamma', 0.86, 0.16], ['beta', 0.82, 0.9], ['delta', 0.16, 0.9]].forEach(([q, x, y]) => blob(ctx, W * x, H * y, W * 0.5, Q(q), 0.4));
+    [['Ne', 'alpha', 0.1, 0.24, 1.25], ['Fe', 'beta', 0.9, 0.22, 1.1], ['Ti', 'beta', 0.13, 0.78, 1.0], ['Si', 'alpha', 0.89, 0.76, 1.0],
+      ['Se', 'gamma', 0.31, 0.9, 0.7], ['Ni', 'gamma', 0.69, 0.91, 0.72], ['Te', 'delta', 0.035, 0.52, 0.7], ['Fi', 'delta', 0.965, 0.5, 0.72]]
+      .forEach(([a, q, x, y, s]) => {
+        ctx.save();
+        ctx.translate(W * x, H * y);
+        ctx.scale(s, s);
+        S.art.toCanvas(ctx, S.art.glyphOf(a, Q(q), 'dark'));
+        ctx.restore();
+      });
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.72)';
+    ctx.font = font(600, 30);
+    ctx.fillText('Socio-Nik', W / 2, 196);
+    ctx.fillStyle = '#fff';
+    ctx.font = font(800, 80);
+    ctx.fillText('Узнай свой', W / 2, 298);
+    const g = ctx.createLinearGradient(W / 2 - 390, 0, W / 2 + 390, 0);
+    g.addColorStop(0, Q('alpha'));
+    g.addColorStop(0.52, Q('gamma'));
+    g.addColorStop(1, Q('beta'));
+    ctx.fillStyle = g;
+    ctx.fillText('соционический тип', W / 2, 392);
+    ctx.fillStyle = 'rgba(255,255,255,0.72)';
+    ctx.font = font(500, 30);
+    ctx.fillText('20 вопросов · 4 минуты · 16 типов и их отношения', W / 2, 462);
+    return canvas;
+  }
+
   const factImage = fact => toBlob(renderFact(document.createElement('canvas'), fact));
 
-  S.share = { render, renderFact, factImage, url, text, toBlob, download, copy, canShareFiles, share };
+  S.share = { render, renderFact, factImage, renderOG, url, text, toBlob, download, copy, canShareFiles, share };
 })(window);

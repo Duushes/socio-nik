@@ -6,6 +6,23 @@
   const { esc } = S.dom;
   const M = () => S.core.modelA;
 
+  // Тест пройден по ссылке друга — сразу показываем ваши отношения
+  function friendPair(me, fr) {
+    const r = M().relation(me, fr), txt = ui.relText(r.kind);
+    return `
+      <section class="sec sec-alt sh-you">
+        <div class="wrap center">
+          <p class="eyebrow reveal">Ты и тот, кто прислал ссылку</p>
+          <h2 class="title reveal">${me.code} и ${fr.code}</h2>
+          <div class="sh-pair reveal" data-anim>${ui.pairScene(me, fr, { labels: ['ты', fr.code] })}</div>
+          <h3 class="sh-rel reveal">${esc(ui.relTitle(r, me, fr))}</h3>
+          <p class="reveal">${ui.toneChip(r.tone)}</p>
+          <p class="lead reveal">${esc(txt.line || '')}</p>
+          <p class="reveal"><a class="btn" href="#/relations/${me.id}/${fr.id}">Подробнее о ваших отношениях</a></p>
+        </div>
+      </section>`;
+  }
+
   function page(axes, { shared = false } = {}) {
     const res = S.core.scoring.result(axes);
     const t = M().type(res.top.id), q = ui.quadra(t.quadra), c = ui.content(t.id);
@@ -30,6 +47,7 @@
           ${shared ? `<p class="reveal" style="--i:5"><a class="btn" href="#/test" data-friend>Пройди тест — узнаем, какие у вас отношения</a></p>` : ''}
         </div>
       </section>
+      ${friend ? friendPair(t, M().type(friend)) : ''}
 
       <section class="sec">
         <div class="wrap">
@@ -213,15 +231,96 @@
     }
   };
 
+  // Страница для того, кто открыл ссылку на чужой результат: чей-то тип + приглашение пройти тест самому
+  function sharedPage(axes) {
+    const res = S.core.scoring.result(axes);
+    const t = M().type(res.top.id), q = ui.quadra(t.quadra), c = ui.content(t.id);
+    const mineId = S.state.myType(), mine = mineId ? M().type(mineId) : null;
+    const rel = mine ? M().relation(mine, t) : null;
+    const test = label => `<a class="btn btn-lg" href="#/test" data-friend>${label}</a>`;
+    return `
+      <section class="res-hero sh-hero" style="${ui.qStyle(t.quadra)}" data-anim>
+        <div class="res-glow" aria-hidden="true"></div>
+        <div class="wrap res-top">
+          <p class="sh-badge reveal"><i aria-hidden="true"></i>Тебе прислали результат теста Socio-Nik</p>
+          <div class="res-emblem reveal" style="--i:1">${ui.emblem(t, { live: true, cls: 'em-big' })}</div>
+          <h1 class="res-code reveal" style="--i:2">${t.code}</h1>
+          <p class="res-name reveal" style="--i:3">${esc(t.name)}</p>
+          <p class="res-alias reveal" style="--i:3">«${esc(t.alias)}» · ${esc(t.role)} · квадра ${q.name} · ${res.top.pct} %</p>
+          <p class="sh-motto reveal" style="--i:4"><span>Коротко о типе</span>«${esc(c.tagline || '')}»</p>
+          <div class="cta reveal" style="--i:5">
+            ${mine ? `<a class="btn btn-lg" href="#/relations/${mine.id}/${t.id}">Ваши отношения</a><a class="link" href="#/test" data-friend>Пройти тест заново</a>`
+                   : `${test('Узнать свой тип')}<a class="link" href="#/types/${t.id}">Подробнее о ${t.code}</a>`}
+          </div>
+          <p class="sh-note reveal" style="--i:5">20 вопросов · около 4 минут · без регистрации</p>
+        </div>
+      </section>
+
+      <section class="sec sec-alt">
+        <div class="wrap center">
+          <p class="eyebrow reveal">${mine ? 'Вы вдвоём' : 'Твоя очередь'}</p>
+          <h2 class="title reveal">${mine ? `${mine.code} и ${t.code}` : 'А какой тип у тебя?'}</h2>
+          <p class="lead reveal">${mine ? esc(ui.relText(rel.kind).line || '') : 'Пройди тест — и сразу увидишь, как устроены ваши отношения: дуальные, зеркальные, деловые или ещё какие-то из четырнадцати видов.'}</p>
+          <div class="sh-pair reveal" data-anim>${mine ? ui.pairScene(mine, t, { labels: ['ты', t.code] }) : S.art.mystery(t)}</div>
+          ${mine ? `<h3 class="sh-rel reveal">${esc(ui.relTitle(rel, mine, t))}</h3><p class="reveal"><a class="btn" href="#/relations/${mine.id}/${t.id}">Подробнее о ваших отношениях</a></p>`
+                 : `<p class="reveal">${test('Пройти тест')}</p>`}
+        </div>
+      </section>
+
+      <section class="sec">
+        <div class="wrap">
+          <h2 class="title-sm reveal">Как распределились ответы</h2>
+          <p class="sub reveal">Какой полюс каждой пары ближе тому, кто прислал ссылку.</p>
+          ${ui.axisBars(res.axes)}
+          <h2 class="title-sm reveal gap-top">Ещё похоже на</h2>
+          <div class="next-grid">
+            ${res.next.map((r, i) => {
+              const tt = M().type(r.id);
+              return `<a class="next-card tilt reveal" style="${ui.qStyle(tt.quadra)};--i:${i}" href="#/types/${tt.id}">
+                <span class="next-art">${ui.emblem(tt, { label: false })}</span>
+                <span class="next-code">${tt.code}</span>
+                <span class="next-name">${esc(tt.alias)} · ${esc(tt.role)}</span>
+                <span class="next-pct">${r.pct} %</span>
+                <span class="glare" aria-hidden="true"></span>
+              </a>`;
+            }).join('')}
+          </div>
+        </div>
+      </section>
+
+      <section class="sec sec-alt">
+        <div class="wrap narrow">
+          <h2 class="title-sm reveal">Что за тип — ${t.code}</h2>
+          <p class="sub reveal">Отрывок из описания — оно написано для человека этого типа.</p>
+          <p class="body reveal">${esc((c.about || [])[0] || '')}</p>
+          <ul class="checks reveal" style="${ui.qStyle(t.quadra)}">${(c.strengths || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+          <p class="reveal gap-top"><a class="link" href="#/types/${t.id}">Всё о ${t.code}: описание, модель А, отношения</a></p>
+        </div>
+      </section>
+
+      <section class="sec final">
+        <div class="wrap center">
+          <h2 class="title reveal">${mine ? 'Сравни и с другими.' : 'Твоя очередь.'}</h2>
+          <p class="lead reveal">${mine ? 'Калькулятор покажет отношения с любым из 16 типов.' : 'Узнай свой соционический тип и то, как вы с этим человеком дополняете друг друга.'}</p>
+          <p class="reveal">${mine ? '<a class="btn btn-lg" href="#/relations">Открыть калькулятор</a>' : test('Пройти тест')}</p>
+        </div>
+      </section>`;
+  }
+
   V.shared = {
-    title: code => 'Результат по ссылке',
+    title: code => {
+      const axes = S.core.payload.decode(code);
+      return 'Результат друга — ' + M().type(S.core.scoring.result(axes).top.id).code;
+    },
     valid: code => Boolean(S.core.payload.decode(code)),
-    render(code) { return page(S.core.payload.decode(code), { shared: true }); },
+    render(code) { return sharedPage(S.core.payload.decode(code)); },
     mount(root, code) {
       const axes = S.core.payload.decode(code);
-      const btn = root.querySelector('[data-friend]');
-      if (btn) btn.addEventListener('click', () => { S.state.friend = axes; S.store.del('test'); });
-      return ui.mountTips(root);
+      const onClick = e => {
+        if (e.target.closest('[data-friend]')) { S.state.friend = axes; S.store.del('test'); }
+      };
+      root.addEventListener('click', onClick);
+      return () => root.removeEventListener('click', onClick);
     }
   };
 })(window);

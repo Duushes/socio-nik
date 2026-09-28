@@ -194,6 +194,45 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     await shot('d-relations-kinds', '.kinds', 90);
     await shot('d-relations-matrix', '.matrix', 150);
 
+    // ---------- страница результата по ссылке ----------
+    const shared = await b.eval(async () => {
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      const code = '1-80-85-20-15';                   // Э · И · этика · иррационал → ИЭЭ
+      const mine = Socio.state.myType();
+      location.hash = '#/r/' + code;
+      await sleep(1000);
+      const withMine = {
+        badge: Boolean(document.querySelector('.sh-badge')),
+        cta: (document.querySelector('.sh-hero .cta .btn') || {}).getAttribute('href'),
+        scene: Boolean(document.querySelector('.sh-pair .scene')) && !document.querySelector('.sc-mystery')
+      };
+      localStorage.removeItem('socio.result');
+      location.hash = '#/';
+      await sleep(700);
+      location.hash = '#/r/' + code;
+      await sleep(1000);
+      const fresh = { code: document.querySelector('.res-code').textContent, mystery: Boolean(document.querySelector('.sc-mystery')), cta: document.querySelector('.sh-hero [data-friend]').textContent };
+      document.querySelector('.sh-hero [data-friend]').click();
+      await sleep(1000);
+      for (let i = 0; i < 20; i++) {
+        const q = document.querySelector('.q-stage .q:last-child');
+        if (!q) return { fail: 'нет вопроса ' + i };
+        q.querySelectorAll('.dot')[[4, 3, 1, 0, 2][i % 5]].click();
+        await sleep(560);
+      }
+      await sleep(2300);
+      const you = { view: document.body.dataset.view, title: (document.querySelector('.sh-you h2') || {}).textContent || '', rel: (document.querySelector('.sh-you .sh-rel') || {}).textContent || '' };
+      return { mine, withMine, fresh, you };
+    });
+    check('ссылка на чужой результат: своя страница с плашкой и кнопкой к вашим отношениям', shared.withMine.badge && shared.withMine.cta === `#/relations/${shared.mine}/iee` && shared.withMine.scene, JSON.stringify(shared.withMine));
+    check('без своего результата: загадка «?» и кнопка «Узнать свой тип»', shared.fresh.code === 'ИЭЭ' && shared.fresh.mystery && shared.fresh.cta === 'Узнать свой тип', JSON.stringify(shared.fresh));
+    check('после теста по ссылке — блок «Ты и тот, кто прислал ссылку»', shared.you.view === 'result' && / и ИЭЭ$/.test(shared.you.title) && shared.you.rel.length > 5, JSON.stringify(shared.you));
+    await shot('d-shared-you', '.sh-you', 60);
+    await go('#/r/1-80-85-20-15', 1200);
+    await shot('d-shared');
+
+    await go('#/relations', 1000);
+
     // ---------- тема ----------
     const theme = await b.eval(async () => {
       const before = document.documentElement.dataset.theme;
@@ -214,6 +253,34 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     await shot('d-type-top');
     await shot('d-type-modelA', '.ma', 120);
     await shot('d-type-relations', '.rel-groups', 120);
+
+    // ---------- шторка функции модели А ----------
+    const fn = await b.eval(async () => {
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      const cell = document.querySelector('[data-fn="4"]');
+      cell.scrollIntoView({ block: 'center' });
+      await sleep(500);
+      cell.click();
+      await sleep(900);
+      const d = document.querySelector('dialog.sheet');
+      const own = Socio.content.modelA && Socio.content.modelA.esi && Socio.content.modelA.esi[4];
+      const main = d.querySelector('.fn-main p').textContent;
+      const res = { open: d.open, title: d.querySelector('.fn-title').textContent, own: Boolean(own) && main === own.text, tip: Boolean(d.querySelector('.fn-tip')), rel: d.querySelector('.fn-rel').getAttribute('href') };
+      d.querySelector('.fn-nav [data-fn-go]:last-child').click();
+      await sleep(700);
+      res.next = d.querySelector('.fn-title').textContent;
+      d.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+      await sleep(700);
+      res.arrow = d.querySelector('.fn-title').textContent;
+      return res;
+    });
+    check('шторка модели А: ЭСИ, болевая, свой текст типа и совет', fn.open && fn.title === 'Болевая' && fn.own && fn.tip && fn.rel === '#/relations/esi/ile', JSON.stringify(fn));
+    check('шторка листается кнопкой и стрелкой', fn.next === 'Суггестивная' && fn.arrow === 'Активационная', JSON.stringify(fn));
+    await shot('d-sheet');
+    await b.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+    await b.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+    await b.sleep(700);
+    check('шторка закрывается по Esc', (await b.eval(`document.querySelectorAll('dialog.sheet').length`)) === 0);
     await go('#/relations/ile/lse', 1200);
     await shot('d-pair');
     await go('#/quadras', 1200);
