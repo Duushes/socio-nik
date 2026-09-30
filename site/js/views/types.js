@@ -70,7 +70,7 @@
 
         <section class="sec sec-alt">
           <div class="wrap">
-            <div class="grid2">
+            <div class="grid2" style="${ui.qStyle(t.quadra)}">
               <div class="card reveal"><h3 class="card-title">Сильные стороны</h3>
                 <ul class="checks">${(c.strengths || []).map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>
               <div class="card reveal" style="--i:1"><h3 class="card-title">Зоны роста</h3>
