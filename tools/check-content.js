@@ -11,6 +11,10 @@ const files = full ? fs.readdirSync(CONTENT).filter(f => f.endsWith('.js')).map(
 
 const ctx = vm.createContext({});
 for (const f of files) vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
+// иконки знаменитостей: набор, на который ссылаются герои в celebs.js
+const ICONS_FILE = path.join(__dirname, '..', 'site', 'js', 'art', 'celeb-icons.js');
+vm.runInContext(fs.readFileSync(ICONS_FILE, 'utf8'), ctx, { filename: ICONS_FILE });
+const ICONS = (ctx.Socio && ctx.Socio.art && ctx.Socio.art.celebIcons) || {};
 const C = (ctx.Socio && ctx.Socio.content) || {};
 
 const errors = [];
@@ -114,6 +118,7 @@ Object.keys(modelA).forEach(id => {
 // ---------- знаменитости с похожим типом ----------
 const celebs = C.celebs || {};
 const seenNames = new Map();
+const seenIcons = new Map();
 Object.keys(celebs).forEach(id => {
   const list = celebs[id], w = `celebs.${id}`;
   if (!TYPES.includes(id)) return err(w, 'неизвестный id типа');
@@ -126,6 +131,8 @@ Object.keys(celebs).forEach(id => {
     if (!str(c.who) || c.who.length > 48) err(`${wc}.who`, 'пояснение «кто это» пустое или длиннее 48');
     if (!str(c.note) || c.note.length < 30 || c.note.length > 120) err(`${wc}.note`, `«почему» — 30–120 знаков, сейчас ${c.note ? c.note.length : 0}`);
     [c.name, c.who, c.note].forEach(x => { if (str(x) && /'/.test(x)) err(wc, 'апостроф — используй «ёлочки»'); if (str(x) && BANNED.test(x)) err(wc, 'ссылка в тексте'); });
+    if (!str(c.icon) || !ICONS[c.icon]) err(`${wc}.icon`, `нет иконки «${c.icon}» в art/celeb-icons.js`);
+    else if (seenIcons.has(c.icon)) err(`${wc}.icon`, `иконка «${c.icon}» уже у «${seenIcons.get(c.icon)}»`); else seenIcons.set(c.icon, c.name);
     const key = String(c.name).toLowerCase().replace(/ё/g, 'е').trim();
     if (seenNames.has(key)) err(wc, `«${c.name}» уже есть у ${seenNames.get(key)}`); else seenNames.set(key, id);
   });

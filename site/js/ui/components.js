@@ -185,13 +185,17 @@
   };
 
   // ---------- знаменитости с похожим типом ----------
-  // Монограмма вместо фото: реальные люди — матовый круг, персонажи — стеклянный «кадр»
+  // Аватар героя: иконка вещи, с которой он ассоциируется; реальные люди — матовый круг, персонажи — стеклянный «кадр»
   const celebsOf = id => (S.content.celebs && S.content.celebs[id]) || [];
   const initials = name => {
     const w = name.split(/[\s-]+/).filter(x => /^[A-ZА-ЯЁ]/.test(x));
     return w.length ? (w[0][0] + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase() : name.slice(0, 1).toUpperCase();
   };
-  const ava = (c, cls = '') => `<span class="celeb-ava${c.kind === 'fiction' ? ' fic' : ''}${cls}" aria-hidden="true">${esc(initials(c.name))}</span>`;
+  // Иконка героя (art/celeb-icons.js); если её нет — инициалы
+  const ava = (c, cls = '') => {
+    const ic = S.art.celebIcon ? S.art.celebIcon(c.icon) : '';
+    return `<span class="celeb-ava${c.kind === 'fiction' ? ' fic' : ''}${ic ? ' has-ic' : ''}${cls}" aria-hidden="true">${ic || esc(initials(c.name))}</span>`;
+  };
   const INFO = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="10" cy="6.2" r="1.1" fill="currentColor"/></svg>';
 
   ui.celebs = t => {

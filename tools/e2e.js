@@ -294,6 +294,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
         real: cols[0] ? cols[0].querySelectorAll('.celeb .celeb-ava:not(.fic)').length : 0,
         fic: cols[1] ? cols[1].querySelectorAll('.celeb .celeb-ava.fic').length : 0,
         disc: /не диагноз/.test((box.querySelector('.celeb-disc') || {}).textContent || ''),
+        icons: Array.from(box.querySelectorAll('.celeb-ava')).filter(a => a.querySelector('svg.celeb-ic')).length,
         visible: Array.from(box.querySelectorAll('.celeb-ava')).every(a => getComputedStyle(a).opacity === '1')
       };
       location.hash = '#/result';
@@ -313,7 +314,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       res.shared = (document.querySelector('.celeb-line') || {}).getAttribute ? document.querySelector('.celeb-line').getAttribute('href') : null;
       return res;
     });
-    check('страница типа: 3 человека и 3 персонажа с похожим типом и оговоркой', cel.real === 3 && cel.fic === 3 && cel.disc && cel.visible, JSON.stringify(cel));
+    check('страница типа: 3 человека и 3 персонажа с похожим типом, у каждого своя иконка, и оговорка', cel.real === 3 && cel.fic === 3 && cel.icons === 6 && cel.disc && cel.visible, JSON.stringify(cel));
     check('результат: строчка «Похожий тип — у знаменитостей» ведёт к списку на странице типа',
       cel.line === `#/types/${cel.mine}#celebs` && /^Похожий тип — у знаменитостей .+ и ещё 3$/.test(cel.lineText) && cel.after && cel.after.top !== null && cel.after.top < 200, JSON.stringify(cel));
     check('страница по ссылке: та же строчка для чужого типа', cel.shared === '#/types/iee#celebs', String(cel.shared));

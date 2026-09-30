@@ -620,6 +620,9 @@ html.sheet-open { overflow: hidden; }
 .celeb-ava.fic::after { content: ""; position: absolute; inset: 3px 3px 52%; border-radius: 14px 14px 40% 40%; background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), transparent); pointer-events: none; }
 :root[data-theme="dark"] .celeb-ava.fic::after { background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent); }
 .celeb:hover .celeb-ava { transform: rotate(-6deg) scale(1.06); }
+.celeb-ic { width: 60%; height: 60%; overflow: visible; }
+.celeb-ava:not(.fic) .celeb-ic { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.18)); }
+.celeb-ava.fic .celeb-ic { position: relative; z-index: 1; }
 .js .celeb-col.reveal.in .celeb-ava { animation: ava-pop 0.9s var(--spring) backwards; animation-delay: calc(var(--k, 0) * 110ms + 220ms); }
 
 /* строчка на результате: монограммы внахлёст с кольцом цвета подложки */
