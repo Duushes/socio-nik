@@ -218,7 +218,7 @@
     return lines;
   }
 
-  // Факт из mystery box картинкой для сторис (1080×1920) — для Instagram, который ссылки не принимает
+  // Факт из mystery box картинкой для сторис (1080×1920): сторис принимают картинку, а не ссылку
   function renderFact(canvas, fact) {
     const W = 1080, H = 1920;
     canvas.width = W;

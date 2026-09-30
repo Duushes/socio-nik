@@ -283,7 +283,7 @@
 .soc:hover { background: color-mix(in srgb, var(--brand) 14%, transparent); }
 .soc:active { transform: scale(0.95); }
 .soc-telegram { --brand: #2aabee; }
-.soc-instagram { --brand: #e1306c; }
+.soc-story { --brand: var(--link); }
 .soc-whatsapp { --brand: #25d366; }
 .soc-x { --brand: var(--text); }
 .soc-vk { --brand: #0077ff; }

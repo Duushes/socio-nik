@@ -190,7 +190,7 @@
         if (err && err.name !== 'AbortError') status.textContent = 'Не получилось — попробуй «Скачать картинку»';
       }
     });
-    // Instagram берёт картинку сторис, остальные сети — текст и ссылку на результат
+    // Картинка для сторис уходит файлом, остальные сети берут текст и ссылку на результат
     return S.social.mount(box, {
       text: () => S.share.text(axes, { withUrl: false }),
       url: () => S.share.url(axes),

@@ -125,12 +125,12 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       const soc = await b.eval(() => {
         const bar = document.querySelector('.share .socials');
         const href = n => (bar.querySelector(`[data-social="${n}"]`) || {}).href || '';
-        return { tg: href('telegram'), wa: href('whatsapp'), x: href('x'), vk: href('vk'), ig: Boolean(bar.querySelector('[data-social="instagram"]')), copy: Boolean(bar.querySelector('[data-social="copy"]')) };
+        return { tg: href('telegram'), wa: href('whatsapp'), x: href('x'), vk: href('vk'), story: Boolean(bar.querySelector('[data-social="story"]')), meta: /instagram|инстаграм/i.test(document.body.innerHTML), copy: Boolean(bar.querySelector('[data-social="copy"]')) };
       });
       const enc = encodeURIComponent(await b.eval('Socio.share.url(Socio.state.result())'));
-      check('результат: Telegram, Instagram, WhatsApp, X, ВКонтакте и «Скопировать ссылку»',
+      check('результат: Telegram, WhatsApp, X, ВКонтакте, «Картинка для сторис» и «Скопировать ссылку»; упоминаний Instagram нет',
         soc.tg.startsWith('https://t.me/share/url?url=' + enc) && soc.wa.startsWith('https://wa.me/?text=') && soc.wa.includes(enc) &&
-        soc.x.startsWith('https://x.com/intent/tweet?text=') && soc.x.includes('&url=' + enc) && soc.vk.startsWith('https://vk.com/share.php?url=' + enc) && soc.ig && soc.copy,
+        soc.x.startsWith('https://x.com/intent/tweet?text=') && soc.x.includes('&url=' + enc) && soc.vk.startsWith('https://vk.com/share.php?url=' + enc) && soc.story && soc.copy && !soc.meta,
         JSON.stringify(soc));
     } else {
       check('текст шера без ссылки, пока нет SITE_URL', /^Мой соционический тип — .+ Socio-Nik$/.test(share.text), share.text);
@@ -161,14 +161,14 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       const canFiles = Socio.share.canShareFiles();
       let status = '';
       if (!canFiles) {
-        card.querySelector('[data-social="instagram"]').click();
+        card.querySelector('[data-social="story"]').click();
         await new Promise(r => setTimeout(r, 800));
         status = card.querySelector('.bx-share-status').textContent;
       }
-      return { nets, tg, png: png.size, canFiles, status };
+      return { nets, tg, png: png.size, canFiles, status, meta: /instagram|инстаграм/i.test(card.innerHTML) };
     });
-    check('факт: пять соцсетей и ссылка на тип', ['telegram', 'instagram', 'whatsapp', 'x', 'vk'].every(n => fsoc.nets.includes(n)) && /%23%2Ftypes%2F[a-z]{3}|%23%2Fbox/.test(fsoc.tg), JSON.stringify(fsoc));
-    check('факт для Instagram — картинка сторис собирается', fsoc.png > 60000 && (fsoc.canFiles || /сохранена/.test(fsoc.status)), JSON.stringify(fsoc));
+    check('факт: четыре сети, картинка для сторис и ссылка на тип; упоминаний Instagram нет', ['telegram', 'whatsapp', 'x', 'vk', 'story'].every(n => fsoc.nets.includes(n)) && !fsoc.meta && /%23%2Ftypes%2F[a-z]{3}|%23%2Fbox/.test(fsoc.tg), JSON.stringify(fsoc));
+    check('факт: картинка для сторис собирается', fsoc.png > 60000 && (fsoc.canFiles || /сохранена/.test(fsoc.status)), JSON.stringify(fsoc));
     await shot('d-box-open', '.box-stage', 140);
 
     // ---------- калькулятор ----------
