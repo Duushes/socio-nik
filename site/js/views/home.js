@@ -107,15 +107,15 @@
         <div class="wrap">
           <p class="eyebrow reveal">Пример</p>
           <h2 class="title reveal">${da.mbti} и ${db.mbti}:<br>${esc((P().titles || {})[dr.id] || '')}.</h2>
-          <div class="demo reveal">
-            <div class="demo-map">${ui.pairMapFigure(da, db, { label: `Карта пары ${da.mbti} и ${db.mbti}: восемь сфер жизни` })}</div>
-            <div class="demo-copy">
+          <div class="demo">
+            <div class="demo-map">${ui.pairVenn(da, db, { mode: 'demo', label: `Карта пары ${da.mbti} и ${db.mbti}: у кого какая сфера жизни` })}</div>
+            <div class="demo-copy reveal">
               <p class="demo-line">${esc(dt.line || '')}</p>
               <ul class="teaser-counts">${S.core.pair.GROUPS.map(g => `<li class="${sum[g.id] ? '' : 'none'}">${S.art.groupIcon(g.id)}<span>${esc((G[g.id] || {}).title || '')}</span><b>${sum[g.id]}</b></li>`).join('')}</ul>
               <p><a class="btn" href="#/pair/${da.mbti.toLowerCase()}/${db.mbti.toLowerCase()}">Открыть пример пары</a></p>
             </div>
           </div>
-          <p class="sub reveal">На карте — восемь сфер жизни пары. Длина лепестка — насколько легко это даётся каждому, насыщенность — насколько это важно.</p>
+          <p class="sub reveal">Восемь сфер жизни — от денег до близости. Каждая стоит у того, кто в ней силён: в твоём круге, в круге партнёра, в пересечении — или под кругами, если её не ведёт никто.</p>
         </div>
       </section>
 
@@ -150,6 +150,7 @@
           <p class="links-row reveal"><a class="link" href="#/types">16 типов</a><a class="link" href="#/quadras">Квадры</a><a class="link" href="#/relations">Отношения</a><a class="link" href="#/box">Mystery box</a><a class="link" href="#/about">О методике</a></p>
         </div>
       </section>`;
-    }
+    },
+    mount: root => ui.mountVenn(root)
   };
 })(window);

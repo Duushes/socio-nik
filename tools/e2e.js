@@ -283,17 +283,21 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
 
     // ---------- бесплатный экран пары и пейвол ----------
     const free = await b.eval(() => ({
-      offer: Boolean(document.querySelector('.offer-sec [data-offer]')), price: (document.querySelector('[data-offer]') || {}).textContent || '',
+      offer: Boolean(document.querySelector('.offer-cta [data-offer]')), price: (document.querySelector('.offer-cta [data-offer]') || {}).textContent || '',
       counts: document.querySelectorAll('.teaser-counts li').length, report: Boolean(document.querySelector('[data-report]')),
+      chips: document.querySelectorAll('.pv-locked .pv-chip').length, free: document.querySelectorAll('.pv-locked .pv-chip.free').length,
+      leak: Array.from(document.querySelectorAll('.pv-locked .pv-chip.locked')).filter(c => /[А-Яа-яЁё]{3,}/.test(c.textContent + c.getAttribute('aria-label').replace('Закрытая сфера — откроется в разборе', '') + c.dataset.sphere)).length,
       title: document.querySelector('.pair-hero h1').textContent, events: Socio.track.log.map(e => e.event)
     }));
+    check('тизер: карта из 8 сфер, одна открыта бесплатно, имена остальных не попадают в разметку', free.chips === 8 && free.free === 1 && free.leak === 0, JSON.stringify(free));
     check('экран пары бесплатно: вид отношений, тизер на 5 групп и кнопка с ценой; разбор закрыт', free.offer && /\d[\s\u00a0]₽/.test(free.price) && free.counts === 5 && !free.report && free.title.length > 5 &&
       free.events.includes('pair_view') && free.events.includes('offer_view') && free.events.includes('partner_test_done'), JSON.stringify(free));
     await shot('p-pair-offer', '#razbor', 40);
 
     const fd = await b.eval(async () => {
       const sleep = ms => new Promise(r => setTimeout(r, ms));
-      document.querySelector('[data-offer]').click();
+      // закрытая сфера на карте тоже открывает предложение
+      document.querySelector('.pv-chip.locked').click();
       await sleep(800);
       const sheet = document.querySelector('dialog.sheet.offer');
       const beta = sheet ? /бесплатно/.test(sheet.textContent) && /ничего не спишется/.test(sheet.textContent) : false;
@@ -301,12 +305,20 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
       for (let i = 0; i < 40 && !document.querySelector('[data-report].ready'); i++) await sleep(150);
       await sleep(400);
       const ev = Socio.track.log.filter(e => /^(offer_click|report_unlocked)$/.test(e.event)).map(e => e.event + ':' + (e.props.price || ''));
-      return { beta, ready: Boolean(document.querySelector('[data-report].ready')), labs: document.querySelectorAll('.pmap .pm-lab').length, zones: document.querySelectorAll('.zone').length,
+      const fig = document.querySelector('[data-report] [data-pv]');
+      const chip = fig && fig.querySelector('.pv-chip');
+      if (chip) chip.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));
+      const readout = fig ? fig.querySelector('.pv-readout').textContent : '';
+      const hoverOk = chip ? readout.startsWith(chip.dataset.sphere) && fig.classList.contains('focus') : false;
+      if (fig) fig.dispatchEvent(new PointerEvent('pointerleave', { bubbles: false }));
+      const fromMap = Socio.track.log.some(e => e.event === 'offer_click' && e.props.from === 'map');
+      return { beta, unveil: Boolean(fig && fig.classList.contains('pv-unveil')), hoverOk, fromMap, ready: Boolean(document.querySelector('[data-report].ready')), labs: document.querySelectorAll('.pv-open .pv-chip').length, zones: document.querySelectorAll('.zone').length,
         deals: document.querySelectorAll('.deals li').length, qs: document.querySelectorAll('.questions li').length, scripts: document.querySelectorAll('.scripts li').length, ev };
     });
-    check('fake door: цена → честная шторка беты → разбор: карта на 8 сфер, 8 зон, 5 договорённостей, 6 вопросов, 3 фразы', fd.beta && fd.ready && fd.labs === 8 && fd.zones === 8 && fd.deals === 5 && fd.qs === 6 && fd.scripts === 3, JSON.stringify(fd));
+    check('fake door: закрытая сфера на карте → честная шторка беты → разбор: карта на 8 сфер, 8 зон, 5 договорённостей, 6 вопросов, 3 фразы', fd.beta && fd.fromMap && fd.ready && fd.labs === 8 && fd.zones === 8 && fd.deals === 5 && fd.qs === 6 && fd.scripts === 3, JSON.stringify(fd));
+    check('после открытия карта «распаковывается», при наведении на сферу — подсказка под картой', fd.unveil && fd.hoverOk, JSON.stringify(fd));
     check('события пейвола записаны с ценой: offer_click и report_unlocked', fd.ev.some(x => /^offer_click:\d+/.test(x)) && fd.ev.some(x => /^report_unlocked:\d+/.test(x)), JSON.stringify(fd.ev));
-    await shot('p-report-map', '.pmap', 90);
+    await shot('p-report-map', '.pv-open', 90);
     await shot('p-report-zones', '.zone-groups', 70);
     await shot('p-report-recs', '.deals', 140);
 
@@ -529,7 +541,7 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
     await shot('m-result-axes', '.axes', 90);
     await b.goto(BASE + '?unlock=1#/pair/enfp/isfp');
     await b.sleep(1800);
-    await shot('m-report-map', '.pmap', 70);
+    await shot('m-report-map', '.pv-open', 70);
     await shot('m-report-zones', '.zone-groups', 60);
     await b.goto(BASE + '#/pair/enfp/isfp');
     await b.sleep(1500);

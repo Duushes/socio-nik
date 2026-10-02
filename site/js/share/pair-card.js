@@ -96,7 +96,7 @@
     return canvas;
   }
 
-  // «Карта нашей пары»: лепестки двоих по восьми сферам, подписи сфер и счётчики зон
+  // «Карта нашей пары»: Венн — у кого какая сфера, что вместе и чего не хватает; внизу — счётчики зон
   function renderMap(canvas, a, b) {
     canvas.width = W;
     canvas.height = H;
@@ -104,20 +104,22 @@
     const { font, fit, roundRect } = U();
     const r = S.core.modelA.relation(a, b);
     const zones = S.core.pair.map(a, b), sum = S.core.pair.summary(a, b);
-    const geo = S.art.pairMapNodes(a, b, 'dark', { zones });
+    const PV = S.art.pairVenn, c = PV.colors(a, b, 'dark'), D = P().domains || {};
+    const names = {};
+    zones.forEach(z => { names[z.aspect] = (D[z.aspect] || {}).short || z.aspect; });
     backdrop(ctx, a, b);
     header(ctx, 'Карта нашей пары');
 
-    // коды двоих с цветными точками
+    // коды двоих с цветными точками и вид отношений
     ctx.font = font(800, 76);
-    const left = `${a.mbti}`, right = `${b.mbti}`, gap = 120;
+    const left = a.mbti, right = b.mbti, gap = 120;
     const wl = ctx.measureText(left).width, wr = ctx.measureText(right).width;
     const x0 = W / 2 - (wl + wr + gap) / 2;
-    [[left, x0, geo.colors.me], [right, x0 + wl + gap, geo.colors.partner]].forEach(([t, x, c]) => {
+    [[left, x0, c.me], [right, x0 + wl + gap, c.partner]].forEach(([t, x, col]) => {
       ctx.textAlign = 'left';
       ctx.fillStyle = '#fff';
       ctx.fillText(t, x, 300);
-      ctx.fillStyle = c;
+      ctx.fillStyle = col;
       ctx.beginPath();
       ctx.arc(x + ctx.measureText(t).width / 2, 336, 11, 0, Math.PI * 2);
       ctx.fill();
@@ -129,37 +131,41 @@
     fit(ctx, titleOf(r), W - 200, 700, 48);
     ctx.fillText(titleOf(r), W / 2, 410);
 
-    // карта
-    const cx = W / 2, cy = 900, k = 2.05;
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.scale(k, k);
-    S.art.toCanvas(ctx, geo.nodes);
-    ctx.restore();
-    const D = P().domains || {};
-    ctx.font = font(700, 34);
-    geo.labels.forEach(l => {
-      const name = (D[l.aspect] || {}).short || l.aspect;
-      const x = cx + l.x * k, y = cy + l.y * k;
-      ctx.textAlign = Math.abs(l.x) < 20 ? 'center' : l.x > 0 ? 'left' : 'right';
-      const dx = Math.abs(l.x) < 20 ? 0 : l.x > 0 ? -18 : 18;
-      ctx.fillStyle = '#fff';
-      ctx.fillText(name, x + dx, y + 12);
+    // подписи регионов — кодами, а не «ты»: картинку смотрят чужие люди
+    const ox = 60, w = W - 120, oy = 560, L = PV.layout(zones);
+    [['me', `Ведёт ${a.mbti}`], ['both', 'Сильны вместе'], ['partner', `Ведёт ${b.mbti}`]].forEach(([reg, text]) => {
+      const x = ox + w * PV.COL[reg] / 100;
+      ctx.fillStyle = L.count[reg] ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.4)';
+      ctx.font = font(600, 32);
+      ctx.fillText(text, x, oy - 30);
+      ctx.font = font(800, 30);
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.fillText(String(L.count[reg]), x, oy + 6);
     });
+
+    // сама карта и «не хватает паре»
+    const gapY = oy + w * (PV.VB.h / PV.VB.w) + 92;
+    PV.drawVenn(ctx, a, b, { ox, oy: oy + 20, w, zones, names, font, theme: 'dark', gapY: L.count.none ? gapY : null });
+    if (L.count.none) {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = font(600, 30);
+      ctx.fillText(`Не хватает паре · ${L.count.none}`, W / 2, gapY - 50);
+    }
 
     // счётчики зон
     const G = P().groups || {};
     const rows = S.core.pair.GROUPS.filter(g => sum[g.id]);
-    const top = 1440, rh = 72;
+    const rh = 68, top = H - 130 - rows.length * rh;
     ctx.fillStyle = 'rgba(255,255,255,0.08)';
-    roundRect(ctx, 110, top - 64, W - 220, rows.length * rh + 60, 40);
+    roundRect(ctx, 110, top - 60, W - 220, rows.length * rh + 50, 40);
     ctx.fill();
     rows.forEach((g, i) => {
       const y = top + i * rh;
       ctx.save();
       ctx.translate(170, y - 24);
       ctx.scale(1.7, 1.7);
-      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+      ctx.strokeStyle = g.id === 'care' ? '#ec835a' : 'rgba(255,255,255,0.9)';
       ctx.lineWidth = 1.7;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -168,10 +174,10 @@
       ctx.restore();
       ctx.textAlign = 'left';
       ctx.fillStyle = '#fff';
-      ctx.font = font(600, 40);
+      ctx.font = font(600, 38);
       ctx.fillText((G[g.id] || {}).title || g.id, 230, y + 6);
       ctx.textAlign = 'right';
-      ctx.font = font(800, 44);
+      ctx.font = font(800, 42);
       ctx.fillText(String(sum[g.id]), W - 160, y + 8);
     });
 

@@ -267,30 +267,36 @@
   }
 
   function teaser(sd) {
-    const a = sd.me.type, b = sd.partner.type, sum = PR().summary(a, b), G = P().groups || {};
-    const price = S.paywall.price();
+    const a = sd.me.type, b = sd.partner.type, zones = PR().map(a, b), sum = PR().summary(a, b), G = P().groups || {}, D = P().domains;
+    const price = S.paywall.price(), sample = sampleOf(zones);
     return `
       <section class="sec offer-sec" id="razbor">
         <div class="wrap">
           <p class="eyebrow reveal">Разбор пары</p>
           <h2 class="title reveal">Карта вашей пары.</h2>
-          <p class="lead reveal">Восемь сфер жизни — от денег до близости. Где вы дополняете друг друга, где говорите на одном языке, а где нужна бережность. И что с этим делать на этой неделе.</p>
-          <div class="teaser reveal">
-            <div class="teaser-map" aria-hidden="true">${S.art.pairMapSVG(a, b)}<span class="teaser-lock">${LOCK}</span></div>
-            <ul class="teaser-counts" aria-label="Зоны вашей пары">
-              ${PR().GROUPS.map(g => `<li class="${sum[g.id] ? '' : 'none'}">${S.art.groupIcon(g.id)}<span>${esc((G[g.id] || {}).title || g.id)}</span><b>${sum[g.id]}</b></li>`).join('')}
-            </ul>
-          </div>
-          <div class="offer-cta reveal">
-            <button class="btn btn-lg" type="button" data-offer>Открыть разбор — ${S.paywall.rub(price)}</button>
-            <button class="ghost-btn" type="button" data-offer-gift>Подарить разбор</button>
+          <p class="lead reveal">Восемь сфер жизни — от денег до близости. Кто что ведёт, в чём вы сильны вместе и чего не хватает паре. И что с этим делать на этой неделе.</p>
+          <div class="teaser">
+            <div class="teaser-map">
+              ${ui.pairVenn(a, b, { zones, mode: 'locked', sample, pname: partnerLabel(sd) })}
+              <ul class="pv-legend teaser-counts reveal" aria-label="Зоны вашей пары">${PR().GROUPS.map(g => `<li class="${sum[g.id] ? '' : 'zero'}">${S.art.groupIcon(g.id)}<span>${esc((G[g.id] || {}).short || g.id)}</span><b>${sum[g.id]}</b></li>`).join('')}</ul>
+            </div>
+            <div class="teaser-side">
+              <div class="card sample reveal" data-sample="${sample.aspect}">
+                <p class="sample-k">${S.art.groupIcon(sample.group)}<span>Открыто бесплатно</span></p>
+                <h3 class="sample-title">${esc(D[sample.aspect].short)} <small>${esc(whoOf(sample))}</small></h3>
+                <p class="sample-text" data-sample-text>${esc((G[sample.group] || {}).about || '')}</p>
+              </div>
+              <div class="offer-cta reveal">
+                <button class="btn btn-lg btn-shine" type="button" data-offer>Открыть все 8 сфер — ${S.paywall.rub(price)}</button>
+                <button class="ghost-btn" type="button" data-offer-gift>Подарить разбор</button>
+              </div>
+              <p class="teaser-note reveal">Ещё 7 сфер — у тебя, у партнёра и вместе, пять договорённостей на неделю, как мириться и вопросы для вечера вдвоём.</p>
+            </div>
           </div>
           <div class="reveal">${ui.offerInside()}</div>
         </div>
       </section>`;
   }
-
-  const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.6" fill="currentColor"/><path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5" fill="none" stroke="currentColor" stroke-width="1.9"/></svg>';
 
   function reportShell(sd) {
     return `<section class="sec report" id="razbor" data-report="${esc(sd.path.join('/'))}">
@@ -315,32 +321,96 @@
     </li>`;
   }
 
-  // Карта с подписями сфер: в разборе подписи — кнопки (открывают шторку), в примере на главной — просто подписи
-  ui.pairMapFigure = (a, b, { zones, interactive = false, label = '' } = {}) => {
-    const D = P().domains, G = P().groups, z0 = zones || PR().map(a, b), geo = S.art.pairMapNodes(a, b, null, { zones: z0 });
-    const tag = interactive ? 'button' : 'span';
-    return `<div class="pmap${interactive ? '' : ' static'}" ${interactive ? 'role="group" aria-label="Карта пары: восемь сфер, нажми на сферу — откроется разбор"' : ''}>
-      ${S.art.pairMapSVG(a, b, { zones: z0, label })}
-      ${geo.labels.map((l, i) => {
-        const z = z0[i], name = esc(D[l.aspect].short), group = esc((G[z.group] || {}).title || '');
-        const attrs = interactive ? `type="button" data-aspect="${l.aspect}" aria-label="${name}: ${group}"` : 'aria-hidden="true"';
-        return `<${tag} class="pm-lab" ${attrs} style="left:${l.left.toFixed(2)}%;top:${l.top.toFixed(2)}%">
-          <span class="pm-name">${name}</span>${S.art.groupIcon(z.group, 'gi pm-gi')}</${tag}>`;
-      }).join('')}
-    </div>`;
+  // ---------- карта пары: Венн «мы двое» ----------
+  // Кто ведёт сферу — человеческими словами; без рода и без имён внутри фразы
+  const WHO = {
+    complement: s => (s === 'me' ? 'ведёшь ты' : 'ведёт партнёр'),
+    cover: s => (s === 'me' ? 'ведёшь ты, незаметно' : 'ведёт партнёр, незаметно'),
+    ask: s => (s === 'me' ? 'партнёр сможет, если попросишь' : 'ты сможешь, если партнёр попросит'),
+    values: s => (s === 'me' ? 'сильны вместе, тебе это важнее' : 'сильны вместе, партнёру это важнее'),
+    press: s => (s === 'me' ? 'тебе легко, партнёру трудно' : 'партнёру легко, тебе трудно'),
+    shared: () => 'сильны вместе и цените это',
+    background: () => 'получается у вас двоих, без лишнего значения',
+    need: () => 'нужно вам двоим, а дать некому',
+    blind: () => 'трудно вам двоим',
+    unanswered: s => (s === 'me' ? 'тебе нужно, партнёру трудно' : 'партнёру нужно, тебе трудно')
+  };
+  const whoOf = z => (WHO[z.kind] ? WHO[z.kind](z.side) : '');
+
+  // Сфера, которую тизер показывает бесплатно: лучше всего — где ты дополняешь партнёра
+  const SAMPLE = [z => z.group === 'fit' && z.side === 'me', z => z.group === 'fit', z => z.group === 'common', z => z.group === 'ask', z => z.group === 'care', () => true];
+  function sampleOf(zones) {
+    for (const f of SAMPLE) { const z = zones.find(f); if (z) return z; }
+    return zones[0];
+  }
+
+  // mode: open — разбор (фишки открывают шторку сферы), locked — тизер (имена скрыты, кроме одной сферы),
+  // demo — пример на главной. Фишка стоит у того, кто в сфере силён; значок — вид зоны
+  ui.pairVenn = (a, b, { zones, mode = 'open', sample = null, pname = 'партнёр', label = '' } = {}) => {
+    const PV = S.art.pairVenn, D = P().domains, G = P().groups || {};
+    const z0 = zones || PR().map(a, b), L = PV.layout(z0), c = PV.colors(a, b, S.theme.resolved());
+    const locked = mode === 'locked', interactive = mode !== 'demo';
+    const cap = { me: 'Ведёшь ты', both: 'Сильны вместе', partner: `Ведёт ${pname}` };
+    const chip = (s, i) => {
+      const z = s.z, free = locked && sample && z.aspect === sample.aspect, hidden = locked && !free;
+      const name = D[z.aspect].short, gt = (G[z.group] || {}).title || '';
+      const tag = interactive ? 'button' : 'span';
+      const attrs = !interactive ? 'aria-hidden="true"'
+        : hidden ? 'type="button" data-offer aria-label="Закрытая сфера — откроется в разборе"'
+        : `type="button" data-aspect="${z.aspect}" aria-label="${esc(name)}: ${esc(whoOf(z))}. ${esc(gt)}"`;
+      const pos = s.region === 'none' ? `--d:${i}` : `--x:${s.x};--y:${s.y.toFixed(2)};--d:${i}`;
+      return `<${tag} class="pv-chip g-${z.group}${hidden ? ' locked' : ''}${free ? ' free' : ''}" data-region="${s.region}" data-sphere="${esc(hidden ? '' : name)}" data-who="${esc(hidden ? '' : whoOf(z))}" data-gtitle="${esc(hidden ? '' : gt)}" ${attrs} style="${pos}">
+        <span class="pv-ic">${hidden ? S.art.lockIcon('gi') : S.art.groupIcon(z.group)}</span><span class="pv-name">${hidden ? '<i class="pv-blur">•••••</i>' : esc(name)}</span>${free ? '<span class="pv-tag">открыто</span>' : ''}
+      </${tag}>`;
+    };
+    const inStage = L.slots.filter(s => s.region !== 'none'), outside = L.slots.filter(s => s.region === 'none');
+    const hint = locked ? `Открыта 1 сфера из 8 — остальные в разборе` : interactive ? 'Нажми на сферу — расскажем, как она устроена у вас' : 'Сфера стоит у того, кто в ней силён';
+    return `<figure class="pv pv-${mode} reveal" data-pv style="--ca:${c.me};--cb:${c.partner}">
+      <div class="pv-caps" aria-hidden="true">${['me', 'both', 'partner'].map((reg, i) => `<span class="pv-cap${L.count[reg] ? '' : ' zero'}" style="--i:${i}"><b>${esc(cap[reg])}</b><i>${L.count[reg]}</i></span>`).join('')}</div>
+      <div class="pv-stage">
+        <div class="pv-aura" aria-hidden="true"></div>
+        ${PV.svg(a, b, { label: label || `Карта пары ${a.mbti} и ${b.mbti}` })}
+        <span class="pv-flash" aria-hidden="true"></span>
+        ${inStage.map((s, i) => chip(s, i)).join('')}
+      </div>
+      ${outside.length ? `<div class="pv-gap"><span class="pv-gap-cap">Не хватает паре <i>${outside.length}</i></span><div class="pv-gap-row">${outside.map((s, i) => chip(s, inStage.length + i)).join('')}</div></div>` : ''}
+      <figcaption class="pv-readout" aria-live="polite">${esc(hint)}</figcaption>
+    </figure>`;
+  };
+
+  // Наведение и фокус: подсвечиваем фишку и её регион, остальное приглушаем, в строке под картой — что это за сфера
+  ui.mountVenn = scope => {
+    const offs = [];
+    scope.querySelectorAll('[data-pv]').forEach(fig => {
+      const out = fig.querySelector('.pv-readout'), def = out.textContent;
+      const set = ch => {
+        fig.querySelectorAll('.pv-chip.on').forEach(x => x.classList.remove('on'));
+        fig.classList.toggle('focus', Boolean(ch));
+        fig.dataset.focus = ch ? ch.dataset.region : '';
+        out.textContent = '';
+        if (!ch) { out.textContent = def; return; }
+        ch.classList.add('on');
+        if (ch.classList.contains('locked')) { out.textContent = 'Закрытая сфера — откроется в разборе'; return; }
+        const b = document.createElement('b');
+        b.textContent = ch.dataset.sphere;
+        out.append(b, ` — ${ch.dataset.who} · ${ch.dataset.gtitle}`);
+      };
+      const over = e => { const ch = e.target.closest && e.target.closest('.pv-chip'); if (ch && fig.contains(ch)) set(ch); };
+      const leave = e => { if (!e.relatedTarget || !fig.contains(e.relatedTarget)) set(null); };
+      fig.addEventListener('pointerover', over);
+      fig.addEventListener('focusin', over);
+      fig.addEventListener('pointerleave', leave);
+      fig.addEventListener('focusout', leave);
+      offs.push(() => { fig.removeEventListener('pointerover', over); fig.removeEventListener('focusin', over); fig.removeEventListener('pointerleave', leave); fig.removeEventListener('focusout', leave); });
+    });
+    return () => offs.forEach(f => f());
   };
 
   function mapBlock(sd, zones) {
-    const a = sd.me.type, b = sd.partner.type, geo = S.art.pairMapNodes(a, b, null, { zones });
-    const c = geo.colors;
-    return `<div class="pmap-wrap">
-      ${ui.pairMapFigure(a, b, { zones, interactive: true })}
-      <div class="pm-legend">
-        <span><i class="pm-dot" style="background:${c.me}"></i>${esc(meLabel(sd))} · ${a.mbti}</span>
-        <span><i class="pm-dot" style="background:${c.partner}"></i>${esc(partnerLabel(sd))} · ${b.mbti}</span>
-        <span class="pm-key">Длина лепестка — насколько легко даётся. Насыщенный — человеку это важно, бледный — умеет или терпит, но не ценит.</span>
-      </div>
-      <ul class="pm-groups">${PR().GROUPS.map(g => `<li>${S.art.groupIcon(g.id)}${esc(P().groups[g.id].short)}</li>`).join('')}</ul>
+    const a = sd.me.type, b = sd.partner.type, sum = PR().summary(a, b), G = P().groups;
+    return `<div class="pv-wrap">
+      ${ui.pairVenn(a, b, { zones, mode: 'open', pname: partnerLabel(sd) })}
+      <ul class="pv-legend" aria-label="Виды зон">${PR().GROUPS.map(g => `<li class="${sum[g.id] ? '' : 'zero'}">${S.art.groupIcon(g.id)}<span>${esc(G[g.id].short)}</span><b>${sum[g.id]}</b></li>`).join('')}</ul>
     </div>`;
   }
 
@@ -354,8 +424,8 @@
     const roles = [
       [rep.lead.me, `Ведёшь ты · ${a.mbti}`, 'то, что тебе легко, а партнёру нужно'],
       [rep.lead.partner, `Ведёт ${pname} · ${b.mbti}`, 'то, что партнёру легко, а тебе нужно'],
-      [rep.can.partner, `${pname === 'партнёр' ? 'Партнёр' : pname} возьмёт, если попросишь`, 'умеет, но сам не предложит'],
-      [rep.can.me, 'Возьмёшь ты, если партнёр попросит', 'умеешь, но сама сфера для тебя не главная'],
+      [rep.can.partner, `${pname === 'партнёр' ? 'Партнёр' : pname} возьмёт, если попросишь`, 'умеет, но без просьбы не предложит'],
+      [rep.can.me, 'Возьмёшь ты, если партнёр попросит', 'умеешь, но для тебя эта сфера не главная'],
       [rep.cares.me, 'Тебе это важнее', 'договоритесь, что последнее слово здесь — твоё'],
       [rep.cares.partner, `${pname === 'партнёр' ? 'Партнёру' : pname} это важнее`, 'здесь последнее слово — за партнёром'],
       [rep.split, 'Делите договорённостью', 'роли сами не делятся — распределите их явно']
@@ -539,22 +609,59 @@
     setTimeout(() => form.n.focus(), 380);
   }
 
+  // Тизер на экране — подгружаем тексты и показываем начало одной сферы бесплатно
+  function mountSample(root, sd) {
+    const card = root.querySelector('[data-sample]');
+    if (!card || !('IntersectionObserver' in window)) return () => {};
+    let alive = true;
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      io.disconnect();
+      loadReport().then(() => {
+        if (!alive) return;
+        const z = PR().report(sd.me.type, sd.partner.type, P()).zones.find(x => x.aspect === card.dataset.sample);
+        const el = card.querySelector('[data-sample-text]');
+        if (z && z.copy && el) {
+          el.textContent = PR().firstSentence(z.copy.text, 200) + ' …';
+          card.classList.add('loaded');
+        }
+      }).catch(() => {});
+    }, { rootMargin: '0px 0px 200px 0px' });
+    io.observe(card);
+    return () => { alive = false; io.disconnect(); };
+  }
+
   const shareText = (a, b, title) => `Наша пара по 16 типам: ${a.mbti} и ${b.mbti} — «${title}». Проверьте свою на Socio-Nik`;
+
+  // Разбор только что открыли — карта играет «распаковку»: фишки переворачиваются, из пересечения — искры
+  let justUnlocked = false;
 
   function mountReport(root, sd) {
     const box = root.querySelector('[data-report]');
     if (!box) return () => {};
-    let alive = true, offSurvey = null;
+    let alive = true, offSurvey = null, offReveal = null, offVenn = null;
     loadReport().then(() => {
       if (!alive) return;
       box.innerHTML = reportHTML(sd);
-      box.querySelectorAll('.reveal').forEach(el => S.fx.show(el));
       box.classList.add('ready');
+      const fig = box.querySelector('[data-pv]');
+      if (justUnlocked && fig) {
+        justUnlocked = false;
+        fig.classList.add('pv-unveil');
+        setTimeout(() => {
+          const r = fig.querySelector('.pv-stage').getBoundingClientRect();
+          if (!alive || r.bottom < 0 || r.top > innerHeight) return;
+          const PV = S.art.pairVenn, c = PV.colors(sd.me.type, sd.partner.type, S.theme.resolved());
+          S.fx.confetti([c.me, c.partner, S.color.tone(c.me, 0.4), S.color.tone(c.partner, 0.4), '#ffffff'], { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height / 2) / innerHeight, n: 70 });
+        }, 700);
+      }
+      offReveal = S.fx.reveal(box);
+      offVenn = ui.mountVenn(box);
       offSurvey = ui.mountSurvey(box);
     }).catch(() => {
       if (alive) box.querySelector('.report-loading').textContent = 'Не получилось загрузить разбор — обнови страницу.';
     });
-    return () => { alive = false; if (offSurvey) offSurvey(); };
+    return () => { alive = false; [offSurvey, offReveal, offVenn].forEach(f => f && f()); };
   }
 
   V.pair = {
@@ -567,7 +674,7 @@
       const title = (P().titles || {})[M().relation(a, b).id] || '';
       S.track('pair_view', { relation: M().relation(a, b).id, unlocked: S.paywall.unlocked() });
       if (!S.paywall.unlocked()) S.track('offer_view', { product: 'pair', price: S.paywall.price(), mode: S.paywall.mode() });
-      const offs = [mountReport(root, view)];
+      const offs = [mountReport(root, view), ui.mountVenn(root), mountSample(root, sd)];
 
       // картинка пары
       const shareBox = root.querySelector('[data-share-pair]');
@@ -583,8 +690,10 @@
       }
 
       const onClick = async e => {
-        if (e.target.closest('[data-offer]')) ui.openOffer({ from: e.target.closest('[data-offer]'), ctx: { relation: M().relation(a, b).id }, onUnlock: () => S.app.render({ instant: true, keepScroll: true }) });
-        if (e.target.closest('[data-offer-gift]')) ui.openOffer({ gift: true, from: e.target.closest('[data-offer-gift]'), ctx: { relation: M().relation(a, b).id }, onUnlock: () => S.app.render({ instant: true, keepScroll: true }) });
+        const unlocked = () => { justUnlocked = true; S.app.render({ instant: true, keepScroll: true }); };
+        const offerFrom = e.target.closest('[data-offer]');
+        if (offerFrom) ui.openOffer({ from: offerFrom, ctx: { relation: M().relation(a, b).id, from: offerFrom.classList.contains('pv-chip') ? 'map' : 'button' }, onUnlock: unlocked });
+        if (e.target.closest('[data-offer-gift]')) ui.openOffer({ gift: true, from: e.target.closest('[data-offer-gift]'), ctx: { relation: M().relation(a, b).id }, onUnlock: unlocked });
         const asp = e.target.closest('[data-aspect]');
         if (asp && root.querySelector('[data-report].ready')) zoneSheet(view, asp.dataset.aspect);
         const p = e.target.closest('[data-persp]');

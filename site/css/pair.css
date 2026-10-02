@@ -35,11 +35,8 @@
 .step h3 { margin: 0 0 8px; font-size: 21px; letter-spacing: -0.02em; }
 .step p { margin: 0; color: var(--muted); }
 
-.demo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 40px; margin: 34px 0 20px; }
-.demo-map { width: min(100%, 460px); margin: 0 auto; }
-.demo-map .pmap { width: calc(100% - 40px); }
-.pmap.static .pm-lab { cursor: default; }
-.pmap.static .pm-lab:hover { background: transparent; }
+.demo { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: center; gap: 44px; margin: 34px 0 20px; }
+.demo-map { width: 100%; }
 .demo-line { font-size: 21px; line-height: 1.42; font-weight: 600; letter-spacing: -0.016em; margin: 0 0 18px; }
 
 .fears { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
@@ -92,11 +89,22 @@
 
 /* ---------- тизер и предложение ---------- */
 .offer-sec { background: linear-gradient(180deg, var(--bg) 0%, color-mix(in srgb, var(--btn) 5%, var(--bg)) 100%); }
-.teaser { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 40px; margin: 10px 0 28px; }
-.teaser-map { position: relative; width: min(100%, 420px); margin: 0 auto; }
-.teaser-map .pm-svg { width: 100%; height: auto; overflow: visible; filter: blur(7px) saturate(1.1); opacity: 0.85; }
-.teaser-lock { position: absolute; left: 50%; top: 50%; display: grid; place-items: center; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: var(--glass); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: inset 0 0 0 1px var(--hair), var(--shadow); color: var(--text); }
-.teaser-lock svg { width: 26px; height: 26px; }
+.teaser { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: center; gap: 44px; margin: 14px 0 30px; }
+.teaser-side { display: grid; gap: 18px; align-content: center; }
+.teaser-side .offer-cta { margin: 0; }
+.teaser-note { margin: 0; color: var(--muted); font-size: 15px; }
+.teaser-map .pv-legend { margin-top: 14px; }
+.sample { padding: 20px 22px 18px; }
+.sample-k { display: flex; align-items: center; gap: 7px; margin: 0 0 8px !important; color: var(--link); font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.sample-k .gi { width: 15px; height: 15px; }
+.sample-title { margin: 0 0 8px; font-size: 22px; line-height: 1.15; letter-spacing: -0.02em; }
+.sample-title small { display: block; margin-top: 3px; color: var(--muted); font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
+.sample-text { margin: 0 !important; color: var(--muted); transition: color 0.4s ease; }
+.sample.loaded .sample-text { color: var(--text); }
+/* кнопка с ценой: блик раз в несколько секунд — живая, но не назойливая */
+.btn-shine { position: relative; overflow: hidden; isolation: isolate; }
+.btn-shine::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.42) 50%, transparent 70%); transform: translateX(-130%); animation: btn-shine 5.2s cubic-bezier(0.4, 0, 0.2, 1) 2.4s infinite; }
+@keyframes btn-shine { 0% { transform: translateX(-130%); } 26%, 100% { transform: translateX(130%); } }
 .teaser-counts { list-style: none; margin: 0 0 22px; padding: 0; display: grid; gap: 4px; }
 .teaser-counts li { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 16px; background: var(--card); font-size: 17px; font-weight: 600; }
 .sec-alt .teaser-counts li { background: var(--card-alt); }
@@ -128,22 +136,6 @@
 .persp-note { margin: 0 0 12px; color: var(--muted); font-size: 15px; }
 
 /* карта */
-.pmap-wrap { margin: 18px 0 46px; }
-.pmap { position: relative; width: min(100%, 560px); aspect-ratio: 1; margin: 0 auto; }
-.pmap .pm-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.pm-petal { transition: transform 1s var(--out), opacity 0.6s; }
-.js .report:not(.ready) .pm-petal { opacity: 0; transform: scale(0.3); }
-.pm-lab { position: absolute; transform: translate(-50%, -50%); display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 8px; border: 0; border-radius: 12px; background: transparent; color: var(--text); font: inherit; cursor: pointer; transition: background 0.2s; }
-.pm-lab:hover, .pm-lab:focus-visible { background: var(--chip); }
-.pm-name { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
-.pm-gi { width: 16px; height: 16px; color: var(--muted); }
-.pm-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; max-width: 640px; margin: 18px auto 0; color: var(--muted); font-size: 14px; text-align: center; }
-.pm-legend > span:not(.pm-key) { display: inline-flex; align-items: center; gap: 8px; color: var(--text); font-weight: 600; }
-.pm-dot { width: 12px; height: 12px; border-radius: 50%; }
-.pm-key { flex-basis: 100%; }
-.pm-groups { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; margin: 14px 0 0; padding: 0; color: var(--muted); font-size: 13px; font-weight: 600; }
-.pm-groups li { display: inline-flex; align-items: center; gap: 6px; }
-.pm-groups .gi { width: 15px; height: 15px; }
 
 /* зоны по группам */
 .zone-groups { display: grid; gap: 40px; }
@@ -208,6 +200,134 @@
 .zsheet .fn-kicker .gi { width: 15px; height: 15px; }
 .fn-pos { margin-top: 6px !important; color: var(--faint); font-size: 13px !important; }
 
+/* ================= КАРТА ПАРЫ: ВЕНН «МЫ ДВОЕ» ================= */
+/* Пружины — настоящая физика через linear(): упругая (k 260, c 19, перелёт ~10 %) для фишек, мягкая (k 150, c 21) для кругов.
+   Где linear() не поддерживается — кубические кривые с похожим характером */
+:root { --spring-juicy: cubic-bezier(0.34, 1.56, 0.64, 1); --spring-soft: cubic-bezier(0.22, 1, 0.36, 1); --care: #d9622e; }
+:root[data-theme="dark"] { --care: #ff9a6b; }
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --spring-juicy: linear(0, 0.072, 0.236, 0.435, 0.632, 0.8, 0.931, 1.02, 1.073, 1.096, 1.098, 1.087, 1.069, 1.049, 1.03, 1.014, 1.003, 0.996, 0.992, 0.99, 0.991, 0.992, 0.994, 0.996, 0.998, 0.999, 1, 1.001, 1.001, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1);
+    --spring-soft: linear(0, 0.074, 0.224, 0.397, 0.553, 0.684, 0.789, 0.864, 0.918, 0.955, 0.977, 0.992, 0.999, 1.003, 1.005, 1.005, 1.004, 1.003, 1.003, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+  }
+}
+
+.pv { position: relative; width: 100%; max-width: 640px; margin: 0 auto; }   /* width: в grid поля auto отключают растягивание */
+.js .pv.reveal { opacity: 1; translate: none; }                 /* сама карта не въезжает — двигаются её части */
+.pv-caps { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0 0 4px; text-align: center; }
+.pv-cap { display: inline-flex; justify-content: center; align-items: baseline; gap: 6px; font-size: 14px; color: var(--muted); }
+.pv-cap b { color: var(--text); font-weight: 600; letter-spacing: -0.01em; }
+.pv-cap i { font-style: normal; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pv-cap.zero b { color: var(--faint); font-weight: 500; }
+.pv-stage { position: relative; aspect-ratio: 3 / 2; container-type: inline-size; perspective: 900px; }
+.pv-aura { position: absolute; inset: -14% -8%; pointer-events: none; filter: blur(30px);
+  background: radial-gradient(38% 54% at 33% 50%, color-mix(in srgb, var(--ca) 28%, transparent), transparent 72%),
+              radial-gradient(38% 54% at 67% 50%, color-mix(in srgb, var(--cb) 28%, transparent), transparent 72%); }
+.pv-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.08)); }
+:root[data-theme="dark"] .pv-svg { filter: none; }
+.pv-c { transform-box: fill-box; transform-origin: center; transition: opacity 0.35s ease; }
+:root[data-theme="dark"] .pv-c { mix-blend-mode: screen; }
+.pv-lens { mix-blend-mode: screen; transform-box: fill-box; transform-origin: center; transition: opacity 0.35s ease; }
+.js .pv:not(.in) .pv-lens { opacity: 0; }
+.pv.in .pv-lens { animation: pv-fade 0.9s ease 0.5s backwards; }
+.pv[data-focus="me"] .pv-lens, .pv[data-focus="partner"] .pv-lens, .pv[data-focus="none"] .pv-lens { opacity: 0.3; }
+.pv-code { font: 800 64px var(--font); letter-spacing: -0.035em; }
+.pv-flash { position: absolute; left: 50%; top: 50%; width: 34%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.35) 35%, rgba(255, 255, 255, 0) 68%); }
+
+/* фишки сфер: стекло, текстовый цвет; значок — вид зоны; тёплый акцент — только у «бережно» */
+.pv-chip { --fx: calc((50 - var(--x, 50)) * 1cqw); --fy: calc((50 - var(--y, 50)) * 0.6667cqw);
+  position: absolute; z-index: 2; left: calc(var(--x) * 1%); top: calc(var(--y) * 1%); translate: -50% -50%; width: max-content;
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px 7px 10px; border: 0; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86); -webkit-backdrop-filter: blur(14px) saturate(170%); backdrop-filter: blur(14px) saturate(170%);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04), 0 6px 18px rgba(0, 0, 0, 0.1), inset 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  color: #1d1d1f; font: 600 14px/1.15 var(--font); letter-spacing: -0.01em; white-space: nowrap; cursor: pointer;
+  transition: transform 0.45s var(--spring-juicy), box-shadow 0.3s ease, opacity 0.25s ease; }
+:root[data-theme="dark"] .pv-chip { background: rgba(44, 44, 46, 0.8); color: #f5f5f7; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), inset 0 0 0 0.5px rgba(255, 255, 255, 0.14); }
+span.pv-chip { cursor: default; }
+.pv-ic { flex: none; display: grid; place-items: center; color: inherit; opacity: 0.75; }
+.pv-chip .gi { width: 15px; height: 15px; }
+.pv-chip:hover, .pv-chip.on, .pv-chip:focus-visible { transform: translateY(-2px) scale(1.06); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06), 0 14px 30px rgba(0, 0, 0, 0.16), inset 0 0 0 0.5px rgba(0, 0, 0, 0.08); }
+.pv-chip.g-care { box-shadow: 0 6px 18px rgba(217, 98, 46, 0.18), inset 0 0 0 1.5px var(--care); }
+.pv-chip.g-care .pv-ic { color: var(--care); opacity: 1; }
+:root[data-theme="dark"] .pv-chip.g-care { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), inset 0 0 0 1.5px var(--care); }
+:root[data-theme="dark"] .pv-chip:hover, :root[data-theme="dark"] .pv-chip.on, :root[data-theme="dark"] .pv-chip:focus-visible { box-shadow: 0 14px 30px rgba(0, 0, 0, 0.6), inset 0 0 0 0.5px rgba(255, 255, 255, 0.22); }
+.pv.focus .pv-chip:not(.on) { opacity: 0.38; }
+.pv[data-focus="me"] .pv-c-partner, .pv[data-focus="partner"] .pv-c-me { opacity: 0.4; }
+.pv[data-focus="none"] .pv-c { opacity: 0.45; }
+
+/* «не хватает паре» — под кругами, пунктиром: здесь сила ни у кого из вас */
+.pv-gap { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 8px 0 0; }
+.pv-gap-cap { color: var(--muted); font-size: 14px; }
+.pv-gap-cap i { font-style: normal; font-weight: 700; margin-left: 4px; }
+.pv-gap-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.pv-gap .pv-chip { position: relative; left: auto; top: auto; translate: none; background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: none; border: 1.5px dashed var(--faint); color: var(--muted); padding: 6px 13px 6px 9px; }
+:root[data-theme="dark"] .pv-gap .pv-chip { background: transparent; color: var(--muted); box-shadow: none; }
+.pv-readout { min-height: 1.5em; margin: 16px auto 0; max-width: 560px; text-align: center; color: var(--muted); font-size: 15px; text-wrap: balance; }
+.sample-title, .teaser-note, .pv-gap-cap { text-wrap: balance; }
+.pv-readout b { color: var(--text); }
+
+/* тизер: имена закрытых сфер мерцают, одна сфера открыта бесплатно */
+.pv-blur { font-style: normal; letter-spacing: 2px; background: linear-gradient(90deg, var(--faint) 0%, var(--faint) 38%, var(--text) 50%, var(--faint) 62%, var(--faint) 100%);
+  background-size: 260% 100%; background-position: 100% 0; -webkit-background-clip: text; background-clip: text; color: transparent; }
+.pv-chip.locked .pv-ic { opacity: 0.5; }
+.pv-chip.free, :root[data-theme="dark"] .pv-chip.free { box-shadow: 0 0 0 2px var(--btn), 0 10px 26px color-mix(in srgb, var(--btn) 30%, transparent); }
+.pv-tag { position: absolute; left: 50%; top: -9px; translate: -50% 0; padding: 1px 7px; border-radius: 999px; background: var(--btn); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+
+/* легенда видов зон под картой разбора */
+.pv-wrap { margin: 18px 0 46px; }
+.pv-legend { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 16px 0 0; padding: 0; }
+.pv-legend li { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--chip); font-size: 13px; font-weight: 600; }
+.pv-legend li b { color: var(--muted); font-variant-numeric: tabular-nums; }
+.pv-legend li.zero { opacity: 0.45; }
+.pv-legend .gi { width: 15px; height: 15px; }
+.pv-legend .gi-care { color: var(--care); }
+
+/* ---------- хореография: встреча → вспышка → сферы разлетаются к тому, кто их ведёт ---------- */
+.js .pv:not(.in) .pv-c, .js .pv:not(.in) .pv-chip, .js .pv:not(.in) .pv-cap, .js .pv:not(.in) .pv-gap-cap, .js .pv:not(.in) .pv-readout, .js .pv:not(.in) .pv-aura { opacity: 0; }
+.pv.in .pv-aura { animation: pv-fade 1.4s ease 0.2s backwards; }
+.pv.in .pv-c-me { animation: pv-in-me 1.15s var(--spring-soft) backwards; }
+.pv.in .pv-c-partner { animation: pv-in-partner 1.15s var(--spring-soft) backwards; }
+@keyframes pv-in-me { from { opacity: 0; transform: translateX(-34%) scale(0.86); } }
+@keyframes pv-in-partner { from { opacity: 0; transform: translateX(34%) scale(0.86); } }
+.pv.in .pv-flash { animation: pv-flash 1.2s ease-out 0.55s both; }
+@keyframes pv-flash { 0% { opacity: 0; transform: scale(0.4); } 30% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.7); } }
+.pv.in .pv-stage .pv-chip { animation: pv-fly 0.95s var(--spring-juicy) backwards; animation-delay: calc(0.62s + var(--d, 0) * 70ms); }
+@keyframes pv-fly { from { opacity: 0; transform: translate(var(--fx), var(--fy)) scale(0.35); } 30% { opacity: 1; } }
+.pv.in .pv-gap .pv-chip { animation: pv-rise 0.8s var(--spring-juicy) backwards; animation-delay: calc(0.8s + var(--d, 0) * 70ms); }
+.pv.in .pv-cap { animation: pv-rise 0.7s var(--spring-soft) backwards; animation-delay: calc(1.05s + var(--i, 0) * 90ms); }
+.pv.in .pv-gap-cap, .pv.in .pv-readout { animation: pv-fade 0.6s ease 1.3s backwards; }
+@keyframes pv-rise { from { opacity: 0; transform: translateY(14px) scale(0.94); } }
+@keyframes pv-fade { from { opacity: 0; } }
+/* тизер живой: круги дышат, закрытые имена мерцают, открытая сфера мягко пульсирует */
+.pv-locked.in .pv-c-me { animation: pv-in-me 1.15s var(--spring-soft) backwards, pv-breathe 6.5s ease-in-out 1.6s infinite; }
+.pv-locked.in .pv-c-partner { animation: pv-in-partner 1.15s var(--spring-soft) backwards, pv-breathe 6.5s ease-in-out 2.2s infinite; }
+@keyframes pv-breathe { 50% { transform: scale(1.018); } }
+.pv-locked.in .pv-blur { animation: pv-shimmer 2.8s ease-in-out infinite; animation-delay: calc(1.7s + var(--d, 0) * 150ms); }
+@keyframes pv-shimmer { from { background-position: 100% 0; } to { background-position: -160% 0; } }
+.pv-locked.in .pv-chip.free { animation: pv-fly 0.95s var(--spring-juicy) backwards, pv-glow 2.8s ease-in-out 2s infinite; animation-delay: calc(0.62s + var(--d, 0) * 70ms), 2s; }
+@keyframes pv-glow { 50% { box-shadow: 0 0 0 2px var(--btn), 0 0 0 9px color-mix(in srgb, var(--btn) 14%, transparent), 0 10px 26px color-mix(in srgb, var(--btn) 30%, transparent); } }
+/* разбор только что открыли: фишки переворачиваются и показывают сферы — пик опыта */
+.pv-unveil.in .pv-stage .pv-chip, .pv-unveil.in .pv-gap .pv-chip { animation: pv-flip 0.95s var(--spring-juicy) backwards; animation-delay: calc(0.3s + var(--d, 0) * 85ms); }
+@keyframes pv-flip { from { opacity: 0; transform: rotateY(-100deg) scale(0.88); } 35% { opacity: 1; } }
+.pv-unveil.in .pv-c-me, .pv-unveil.in .pv-c-partner { animation: pv-pop 0.9s var(--spring-juicy) backwards; }
+@keyframes pv-pop { from { transform: scale(0.95); } }
+.pv-unveil.in .pv-flash { animation: pv-flash 1.3s ease-out 0.1s both; }
+
+@media (max-width: 734px) {
+  .pv-chip { padding: 5px 10px 5px 8px; gap: 5px; font-size: 12.5px; }
+  .pv-chip .gi { width: 13px; height: 13px; }
+  .pv-gap .pv-chip { padding: 4px 10px 4px 7px; }
+  .pv-cap { flex-direction: column; align-items: center; gap: 0; font-size: 12px; }
+  .pv-tag { top: -8px; font-size: 9px; }
+  .pv-readout { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pv *, .btn-shine::after { animation: none !important; }
+  .js .pv:not(.in) .pv-c, .js .pv:not(.in) .pv-chip, .js .pv:not(.in) .pv-cap, .js .pv:not(.in) .pv-gap-cap, .js .pv:not(.in) .pv-readout, .js .pv:not(.in) .pv-aura { opacity: 1; }
+}
+
 /* ================= БИБЛИОТЕКА, О МЕТОДИКЕ, ОТНОШЕНИЯ ================= */
 .dich-letters { color: var(--faint); font-weight: 600; font-size: 0.8em; }
 .calc-term { margin: -6px 0 12px; color: var(--muted); font-size: 14px; }
@@ -231,9 +351,6 @@
   .ways { grid-template-columns: 1fr; }
   .ways .way:last-child { grid-column: auto; }
   .scene-card p { font-size: 17px; }
-  .pmap { width: calc(100% - 56px); }
-  .pm-name { font-size: 12px; }
-  .pm-lab { padding: 4px 4px; }
   .scripts li { grid-template-columns: 1fr; }
   .rp { margin-top: 48px; }
   .offer-cta .btn { width: 100%; }
@@ -252,10 +369,12 @@
   .sec { padding: 18pt 0; }
   .pair-hero { padding: 0 0 12pt; }
   .js .reveal { opacity: 1 !important; translate: none !important; }
-  .pm-petal { opacity: 1 !important; transform: none !important; }
+  .pv *, .pv-chip { animation: none !important; opacity: 1 !important; }
+  .pv-aura, .pv-flash { display: none !important; }
+  .pv-chip { box-shadow: none !important; border: 1px solid #c7c7cc; background: #fff !important; color: #1d1d1f !important; }
   .zone-btn, .deals li, .scripts li, .card { break-inside: avoid; box-shadow: none !important; }
   .rp, .zg { break-inside: avoid-page; }
-  .pmap { width: 12cm; }
+  .pv { max-width: 14cm; }
   a { color: inherit; }
 }
 
