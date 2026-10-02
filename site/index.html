@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Socio-Nik — соционический тип за 4 минуты</title>
-<meta name="description" content="Тест из 20 вопросов покажет твой соционический тип в процентах. Описания 16 типов, квадры, отношения между типами и mystery box со случайными фактами.">
+<title>Socio-Nik — совместимость пары по 16 типам личности</title>
+<meta name="description" content="Тест на 16 типов личности для двоих: по 4 минуты каждому — и сразу видно, где вы дополняете друг друга, а где нужна бережность. Коды как в MBTI, совместимость по соционике.">
 <meta name="theme-color" content="#ffffff">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Socio-Nik">
-<meta property="og:title" content="Socio-Nik — узнай свой соционический тип">
-<meta property="og:description" content="20 вопросов и около 4 минут: тип в процентах, квадра, отношения с остальными 15 типами и mystery box с фактами.">
+<meta property="og:title" content="Socio-Nik — как устроена ваша пара">
+<meta property="og:description" content="Тест на 16 типов личности для двоих: совместимость сразу и бесплатно — где вы дополняете друг друга, а где нужна бережность.">
 <meta property="og:url" content="https://duushes.github.io/socio-nik/">
 <meta property="og:image" content="https://duushes.github.io/socio-nik/og.jpg">
 <meta property="og:image:width" content="1200">
@@ -35,6 +35,7 @@
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/pair.css">
 <link rel="stylesheet" href="css/motion.css">
 </head>
 <body>
@@ -47,12 +48,10 @@
       <span>Socio-Nik</span>
     </a>
     <nav class="nav-links" aria-label="Разделы">
+      <a href="#/pair" data-nav="pair">Совместимость</a>
       <a href="#/test" data-nav="test">Тест</a>
-      <a href="#/types" data-nav="types">Типы</a>
-      <a href="#/quadras" data-nav="quadras">Квадры</a>
-      <a href="#/relations" data-nav="relations">Отношения</a>
-      <a href="#/box" data-nav="box">Mystery box</a>
-      <a href="#/about" data-nav="about">О соционике</a>
+      <a href="#/library" data-nav="library">Библиотека</a>
+      <a href="#/about" data-nav="about">О методике</a>
     </nav>
     <div class="nav-tools">
       <button class="icon-btn" type="button" data-theme-toggle aria-label="Сменить тему">
@@ -73,15 +72,18 @@
     <div class="footer-top">
       <a class="brand" href="#/"><svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="4" fill="var(--q-alpha)"/><circle cx="16" cy="8" r="4" fill="var(--q-beta)"/><circle cx="8" cy="16" r="4" fill="var(--q-delta)"/><circle cx="16" cy="16" r="4" fill="var(--q-gamma)"/></svg><span>Socio-Nik</span></a>
       <nav class="footer-links" aria-label="Разделы">
-        <a href="#/test">Тест</a><a href="#/types">Типы</a><a href="#/quadras">Квадры</a><a href="#/relations">Отношения</a><a href="#/box">Mystery box</a><a href="#/about">О соционике</a>
+        <a href="#/pair">Совместимость</a><a href="#/test">Тест</a><a href="#/library">Библиотека</a><a href="#/types">16 типов</a><a href="#/quadras">Квадры</a><a href="#/relations">Отношения</a><a href="#/box">Mystery box</a><a href="#/about">О методике</a>
       </nav>
     </div>
-    <p class="footer-note">Соционика — популярная типологическая модель, а не проверенный научный метод. Результат теста — повод понаблюдать за собой, а не диагноз. Ответы хранятся только на этом устройстве.</p>
+    <p class="footer-note">MBTI и соционика — популярные типологии, а не проверенные научные методы. Результат теста и разбор пары — повод поговорить и понаблюдать за собой, а не диагноз. Ответы и имена хранятся только на этом устройстве.</p>
+    <p class="footer-note">MBTI — товарный знак The Myers-Briggs Company. Socio-Nik с ней не связан и упоминает коды MBTI только для описания типов.</p>
   </div>
 </footer>
 
 <script src="config.js"></script>
 <script src="js/lib/base.js"></script>
+<script src="js/lib/track.js"></script>
+<script src="js/lib/lazy.js"></script>
 <script src="js/data/aspects.js"></script>
 <script src="js/data/types.js"></script>
 <script src="js/data/quadras.js"></script>
@@ -90,11 +92,14 @@
 <script src="js/core/modelA.js"></script>
 <script src="js/core/scoring.js"></script>
 <script src="js/core/payload.js"></script>
+<script src="js/core/pair.js"></script>
+<script src="js/core/couple.js"></script>
 <script src="js/content/types-alpha.js"></script>
 <script src="js/content/types-beta.js"></script>
 <script src="js/content/types-gamma.js"></script>
 <script src="js/content/types-delta.js"></script>
 <script src="js/content/relations.js"></script>
+<script src="js/content/pair.js"></script>
 <script src="js/content/functions.js"></script>
 <script src="js/content/modelA-alpha.js"></script>
 <script src="js/content/modelA-beta.js"></script>
@@ -107,12 +112,15 @@
 <script src="js/art/emblem.js"></script>
 <script src="js/art/scenes.js"></script>
 <script src="js/art/celeb-icons.js"></script>
+<script src="js/art/pairmap.js"></script>
 <script src="js/fx/fx.js"></script>
 <script src="js/share/card.js"></script>
 <script src="js/share/social.js"></script>
+<script src="js/share/pair-card.js"></script>
 <script src="js/ui/components.js"></script>
 <script src="js/ui/box.js"></script>
 <script src="js/ui/sheet.js"></script>
+<script src="js/ui/paywall.js"></script>
 <script src="js/views/home.js"></script>
 <script src="js/views/test.js"></script>
 <script src="js/views/result.js"></script>
@@ -120,6 +128,9 @@
 <script src="js/views/quadras.js"></script>
 <script src="js/views/relations.js"></script>
 <script src="js/views/misc.js"></script>
+<script src="js/views/pair.js"></script>
+<script src="js/views/library.js"></script>
+<!-- Тексты разбора пары (js/content/pair-zones-*.js, pair-relations-*.js) грузятся по требованию — см. views/pair.js -->
 <script src="js/app.js"></script>
 </body>
 </html>

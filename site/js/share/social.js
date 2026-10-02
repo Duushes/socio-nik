@@ -53,6 +53,7 @@
       if (!b || !scope.contains(b)) return;
       const say = msg => { const el = get.status && get.status(); if (el) el.textContent = msg; };
       const net = b.dataset.social;
+      if (S.track) S.track('share_click', { net });
       try {
         if (net === 'copy') say((await S.share.copy(get.url())) ? 'Ссылка скопирована' : 'Не удалось скопировать ссылку');
         if (net === 'more') await navigator.share({ text: get.text(), url: get.url() || undefined });

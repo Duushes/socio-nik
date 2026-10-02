@@ -1,4 +1,6 @@
-/* Socio-Nik · тест: 20 вопросов по одному, шкала из 5, автопереход, «Назад», клавиатура, сохранение прогресса */
+/* Socio-Nik · тест: 20 вопросов по одному, шкала из 5, автопереход, «Назад», клавиатура, сохранение прогресса.
+   Тест вдвоём на одном телефоне: шаг 1 — отвечаешь ты (результат сохраняется как твой), шаг 2 — партнёр
+   (результат хранится отдельно и не затирает твой), после второго теста сразу открывается экран пары. */
 (function (root) {
   const S = root.Socio;
   const V = S.views = S.views || {};
@@ -46,6 +48,8 @@
     render() {
       const qs = S.data.questions, st = load();
       const i = Math.min(st.index, qs.length - 1);
+      const duo = S.core.couple.duo();
+      const who = duo ? (duo.step === 2 ? '<p class="duo-chip on">Отвечает партнёр</p>' : '<p class="duo-chip">Отвечаешь ты · потом партнёр</p>') : '';
       return `
         <section class="test">
           <div class="test-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${qs.length}" aria-valuenow="${i}"><i style="--p:${(i / qs.length) * 100}%"></i></div>
@@ -53,12 +57,13 @@
           <div class="wrap test-wrap">
             <div class="test-head">
               <button class="ghost-btn" type="button" data-back${i === 0 ? ' disabled' : ''}>‹ Назад</button>
+              ${who}
               <button class="ghost-btn" type="button" data-restart>Начать заново</button>
             </div>
             <div class="q-stage" aria-live="polite">${question(qs[i], i, qs.length, st.answers[qs[i].id])}</div>
             <p class="test-hint">Отвечай так, как обычно бывает, а не как «правильно».<span class="kbd-hint"> Можно нажимать клавиши 1–5.</span></p>
           </div>
-          <div class="counting" hidden><div class="counting-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p>Считаем твой тип…</p></div>
+          <div class="counting" hidden><div class="counting-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p>${duo && duo.step === 2 ? 'Считаем тип партнёра…' : 'Считаем твой тип…'}</p></div>
         </section>`;
     },
     mount(root) {
@@ -131,13 +136,30 @@
 
       function finish() {
         const res = S.core.scoring.score(st.answers, qs);
-        S.state.saveResult(res.axes);
+        const CP = S.core.couple, duo = CP.duo(), mine = S.state.result(), enc = S.core.payload.encode;
+        let next = '#/result';
         S.store.del('test');
-        S.state.justFinished = true;
+        if (duo && duo.step === 2 && mine) {
+          // второй в паре на том же телефоне: результат партнёра — отдельно, свой не трогаем
+          const code = enc(res.axes);
+          CP.setPartner(code, { via: 'duo' });
+          CP.setDuo(null);
+          S.track('partner_test_done', { mode: 'duo' });
+          next = `#/pair/${enc(mine)}/${code}`;
+        } else {
+          S.state.saveResult(res.axes);
+          S.state.justFinished = true;
+          S.track('test_finish', { type: S.core.modelA.type(res.top.id).mbti, close: Boolean(res.close) });
+          if (duo && duo.step === 1) { CP.setDuo(2); next = '#/duo'; S.state.justFinished = false; }
+          else if (S.state.friend) {
+            CP.setPartner(enc(S.state.friend), { via: 'invite' });
+            S.track('partner_test_done', { mode: 'invite' });
+          }
+        }
         bar.querySelector('i').style.setProperty('--p', '100%');
         const ov = root.querySelector('.counting');
         ov.hidden = false;
-        timers.push(setTimeout(() => { location.hash = '#/result'; }, S.dom.reducedMotion() ? 50 : 1300));
+        timers.push(setTimeout(() => { location.hash = next; }, S.dom.reducedMotion() ? 50 : 1300));
       }
 
       const onClick = e => {

@@ -138,6 +138,126 @@ Object.keys(celebs).forEach(id => {
   });
 });
 
+// ---------- пара: тексты экрана пары и разбора ----------
+const PAIR = C.pair || {};
+const ASPECTS = ['Fi', 'Fe', 'Ne', 'Ni', 'Ti', 'Te', 'Se', 'Si'];
+const PAIR_KINDS = ['complement', 'cover', 'shared', 'background', 'ask', 'values', 'press', 'need', 'blind', 'unanswered'];
+const PAIR_SYM = ['shared', 'background', 'need', 'blind'];
+const sidesOf = k => (PAIR_SYM.includes(k) ? ['both'] : ['me', 'partner']);
+const REL_IDS = ['dual', 'activation', 'mirror', 'semidual', 'mirage', 'identity', 'kindred', 'business', 'quasi', 'benefactor', 'beneficiary', 'extinguish', 'superego', 'supervisor', 'supervisee', 'conflict'];
+const GROUP_IDS = ['fit', 'common', 'ask', 'care', 'gap'];
+// Без эзотерики и приговоров; про партнёра — без «он/она»; без прошедшего времени после «ты» и «партнёр» (оно даёт род)
+const PAIR_STOP = /(судьб|карм[аеуы]|вселенн|энергетик|обреч|несовместим|идеальн(ая|ой|ую) пар|вы не подходите|половинк|гороскоп)/i;
+const PRONOUN = /(^|[^а-яё])(он|она)(?=[^а-яё]|$)/i;
+// слова, которые выдают род пары: «вы оба», «обе», «каждый из вас», «ни один из вас»;
+// «в обе стороны», «с обеих сторон» — про стороны, а не про людей, это можно
+const PAIR_GENDER_RE = /(^|[^а-яё])(оба|обе|обоим|обеим|обоих|обеих|каждый из вас|каждая из вас|ни один из вас|ни одна из вас)(?=[^а-яё]|$)/gi;
+const pairGender = s => {
+  for (const m of s.matchAll(PAIR_GENDER_RE)) {
+    const after = s.slice(m.index + m[0].length).trimStart().toLowerCase();
+    if (/^(оба|обе|обоим|обеим|обоих|обеих)$/i.test(m[2]) && /^(сторон|рук|руками|концов|концах)/.test(after)) continue;
+    return m[2];
+  }
+  return '';
+};
+const PAST_SUBJ = /(^|[^а-яё])(ты|партн[её]р)\s+(?:[а-яё]+\s+)?([а-яё]*[аеёиоуыяю]л(?:а|ся|ась|ось)?)(?=[^а-яё]|$)/gi;
+// существительные на -л, которые не глаголы: «накрываешь стол», «много сил»
+const NOT_VERB = new Set(['стол', 'пол', 'зал', 'сил', 'дел', 'тел', 'предел', 'отдел', 'идеал', 'финал', 'сериал', 'канал', 'сигнал', 'материал', 'вокзал', 'футбол', 'козёл', 'угол', 'орёл', 'мол', 'школа', 'сила', 'тела', 'дела', 'стола', 'начала', 'правила', 'зала',
+  'сначала', 'тепла', 'числа', 'игла', 'скала', 'мгла', 'пчела', 'стрела', 'весла', 'села', 'мыла', 'смысла', 'угла', 'зла', 'стекла', 'масла']);
+const pastSubj = s => {
+  for (const m of s.matchAll(PAST_SUBJ)) if (!NOT_VERB.has(m[3].toLowerCase())) return m[0].trim();
+  return '';
+};
+const seenPair = new Map();
+
+function checkPair(where, s, { min, max, sMin, sMax }) {
+  checkText(where, s, max, { you: true });
+  if (!str(s)) return;
+  if (min && s.length < min) err(where, `${s.length} знаков < ${min}`);
+  if (sMin) {
+    const n = sentences(s);
+    if (n < sMin || n > sMax) err(where, `${n} предложений — нужно ${sMin}–${sMax}`);
+  }
+  if (PAIR_STOP.test(s)) err(where, `стоп-слово «${s.match(PAIR_STOP)[0]}»`);
+  if (PRONOUN.test(s)) err(where, `«${s.match(PRONOUN)[2]}» — про партнёра пишем без местоимений с родом`);
+  const g = pairGender(s);
+  if (g) err(where, `«${g}» выдаёт род — лучше «вы двое», «никто из вас», «вам двоим»`);
+  const past = pastSubj(s);
+  if (past) err(where, `прошедшее время даёт род: «${past}»`);
+  // одно и то же предложение в двух местах разбора
+  s.split(/(?<=[.!?…])\s+/).forEach(x => {
+    const k = x.trim().toLowerCase();
+    if (k.length < 30) return;
+    if (seenPair.has(k) && seenPair.get(k) !== where) err(where, `повтор предложения из ${seenPair.get(k)}`);
+    else seenPair.set(k, where);
+  });
+}
+
+if (PAIR.domains) ASPECTS.forEach(a => {
+  const d = PAIR.domains[a], w = `pair.domains.${a}`;
+  if (!d) return err(w, 'нет сферы');
+  checkText(`${w}.short`, d.short, 14);
+  checkText(`${w}.long`, d.long, 60);
+});
+if (PAIR.groups) GROUP_IDS.forEach(g => {
+  const x = PAIR.groups[g], w = `pair.groups.${g}`;
+  if (!x) return err(w, 'нет группы');
+  checkText(`${w}.title`, x.title, 32);
+  checkText(`${w}.short`, x.short, 14);
+  checkPair(`${w}.about`, x.about, { min: 60, max: 220, sMin: 2, sMax: 2 });
+});
+if (PAIR.titles) REL_IDS.forEach(id => checkText(`pair.titles.${id}`, PAIR.titles[id], 36));
+if (PAIR.questions) ASPECTS.forEach(a => ['hard', 'easy'].forEach(k => {
+  const q = PAIR.questions[a] && PAIR.questions[a][k], w = `pair.questions.${a}.${k}`;
+  checkPair(w, q, { min: 30, max: 140 });
+  if (str(q) && !q.endsWith('?')) err(w, 'вопрос должен заканчиваться «?»');
+}));
+if (PAIR.texts) ['disclaimer', 'safety', 'third'].forEach(k => checkPair(`pair.texts.${k}`, PAIR.texts[k], { min: 80, max: 420 }));
+
+const PZ = PAIR.zones || {};
+Object.keys(PZ).forEach(asp => {
+  const z = PZ[asp], w = `pair.zones.${asp}`;
+  if (!ASPECTS.includes(asp)) return err(w, 'неизвестный аспект');
+  Object.keys(z).forEach(k => { if (!PAIR_KINDS.includes(k)) err(`${w}.${k}`, 'неизвестный вид взаимодействия'); });
+  PAIR_KINDS.forEach(k => sidesOf(k).forEach(side => {
+    const e = z[k] && z[k][side], we = `${w}.${k}.${side}`;
+    if (!e) return err(we, 'нет текста');
+    checkPair(`${we}.text`, e.text, { min: 160, max: 460, sMin: 2, sMax: 4 });
+    checkPair(`${we}.deal`, e.deal, { min: 50, max: 240, sMin: 1, sMax: 2 });
+  }));
+});
+
+// как сфера выглядит у партнёра такого типа — со стороны, в третьем лице
+const PV = PAIR.partnerView || {};
+Object.keys(PV).forEach(id => {
+  const w = `pair.partnerView.${id}`;
+  if (!TYPES.includes(id)) return err(w, 'неизвестный id типа');
+  for (let n = 1; n <= 8; n++) {
+    const x = PV[id][n], wn = `${w}[${n}]`;
+    checkPair(wn, x, { min: 90, max: 260, sMin: 1, sMax: 2 });
+    if (str(x) && !/партн[её]р/i.test(x)) err(wn, 'текст про партнёра — слово «партнёр» должно быть в тексте');
+  }
+});
+
+const PRel = PAIR.relations || {};
+Object.keys(PRel).forEach(id => {
+  const r = PRel[id], w = `pair.relations.${id}`;
+  if (!REL_IDS.includes(id)) return err(w, 'неизвестная позиция отношений');
+  if (!Array.isArray(r.story) || r.story.length !== 2) err(`${w}.story`, 'нужно ровно 2 абзаца');
+  else {
+    r.story.forEach((x, i) => checkPair(`${w}.story[${i}]`, x, { min: 200, max: 620, sMin: 2, sMax: 5 }));
+    const n = r.story.reduce((sum, x) => sum + (str(x) ? words(x) : 0), 0);
+    if (n < 80 || n > 180) err(`${w}.story`, `${n} слов — нужно 80–180`);
+  }
+  checkPair(`${w}.ritual`, r.ritual, { min: 80, max: 280, sMin: 1, sMax: 2 });
+  checkPair(`${w}.repair`, r.repair, { min: 140, max: 420, sMin: 2, sMax: 3 });
+  if (!Array.isArray(r.scripts) || r.scripts.length !== 3) err(`${w}.scripts`, 'нужно ровно 3 пары фраз');
+  else r.scripts.forEach((x, i) => {
+    checkPair(`${w}.scripts[${i}].instead`, x && x.instead, { min: 12, max: 100 });
+    checkPair(`${w}.scripts[${i}].say`, x && x.say, { min: 20, max: 150 });
+  });
+});
+
 // ---------- общие факты ----------
 const general = (C.facts && C.facts.general) || [];
 general.forEach((f, i) => checkFact(`facts.general[${i}]`, f));
@@ -150,6 +270,10 @@ if (full) {
   if (general.length < 18) err('полнота', `общих фактов ${general.length} < 18`);
   TYPES.forEach(id => { if (!modelA[id]) err('полнота', `нет текстов модели А для ${id}`); });
   TYPES.forEach(id => { if (!celebs[id]) err('полнота', `нет знаменитостей для ${id}`); });
+  ['domains', 'groups', 'titles', 'questions', 'texts'].forEach(k => { if (!PAIR[k]) err('полнота', `нет pair.${k}`); });
+  ASPECTS.forEach(a => { if (!PZ[a]) err('полнота', `нет текстов разбора для сферы ${a}`); });
+  REL_IDS.forEach(id => { if (!PRel[id]) err('полнота', `нет текстов разбора для отношений ${id}`); });
+  TYPES.forEach(id => { if (!PV[id]) err('полнота', `нет взгляда со стороны для типа ${id}`); });
 }
 
 if (notes.length) console.log(notes.join(' · '));

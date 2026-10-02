@@ -109,13 +109,13 @@
         <header class="fn-head sheet-drag">
           <div class="fn-art"><span class="fn-float">${S.art.glyphSVG(id, S.theme.quadraColor(t.quadra), 'fn-svg')}</span></div>
           <div class="fn-titles">
-            <p class="fn-kicker">${t.code} · ${BLOCKS[n]} · функция ${n} из 8</p>
+            <p class="fn-kicker">${t.mbti} · ${BLOCKS[n]} · функция ${n} из 8</p>
             <h2 class="fn-title">${F[n - 1].name}</h2>
             <p class="fn-aspect">${S.art.symbol(id)}<b>${a.short}</b> ${esc(a.name)}</p>
           </div>
         </header>
         <section class="fn-sec fn-main">
-          <h3>Как это у ${t.code}</h3>
+          <h3>Как это у ${t.mbti}</h3>
           <p>${esc(own ? own.text : C.positions[n] + ' ' + C.aspectsLong[id])}</p>
           ${own ? `<p class="fn-tip"><b>Совет.</b> ${esc(own.tip)}</p>` : ''}
         </section>
@@ -123,9 +123,9 @@
         <section class="fn-sec"><h3>Что это за аспект</h3><p>${esc(C.aspectsLong[id])}</p></section>
         <a class="fn-rel" href="#/relations/${t.id}/${rt.id}" style="--rq:var(--q-${rt.quadra})">
           <span class="fn-rel-em">${S.art.emblem(rt, { cls: 'em-mini', label: false })}</span>
-          <span>${esc(relText(`${rt.code} «${rt.alias}»`))}</span>
+          <span>${esc(relText(`${rt.mbti} «${rt.title}»`))}</span>
         </a>
-        <nav class="fn-nav" aria-label="Другие функции ${t.code}">
+        <nav class="fn-nav" aria-label="Другие функции ${t.mbti}">
           <button type="button" data-fn-go="${prev}" aria-label="Предыдущая: ${F[prev - 1].name}">‹ ${F[prev - 1].name}</button>
           <span class="fn-dots" aria-hidden="true">${[1, 2, 3, 4, 5, 6, 7, 8].map(k => `<i class="${k === n ? 'on' : ''}"></i>`).join('')}</span>
           <button type="button" data-fn-go="${next}" aria-label="Следующая: ${F[next - 1].name}">${F[next - 1].name} ›</button>
@@ -136,7 +136,7 @@
   ui.openFunction = (t, n, from) => {
     let cur = n;
     const sheet = ui.openSheet({
-      label: `${t.code}: ${S.data.functions[n - 1].name.toLowerCase()} функция`,
+      label: `${t.mbti}: ${S.data.functions[n - 1].name.toLowerCase()} функция`,
       from,
       render: () => fnHTML(t, cur),
       onKey: e => {
@@ -146,7 +146,7 @@
     });
     function go(k, dir) {
       cur = k;
-      sheet.dlg.setAttribute('aria-label', `${t.code}: ${S.data.functions[k - 1].name.toLowerCase()} функция`);
+      sheet.dlg.setAttribute('aria-label', `${t.mbti}: ${S.data.functions[k - 1].name.toLowerCase()} функция`);
       sheet.swap(fnHTML(t, k), dir);
     }
     sheet.dlg.addEventListener('click', e => {

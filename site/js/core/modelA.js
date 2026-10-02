@@ -82,5 +82,24 @@
   // Квадра — та, в ценностях которой оба аспекта Эго
   const quadraOf = t => S.data.quadras.find(q => t.ego.every(id => q.values.includes(id))) || null;
 
-  core.modelA = { modelA, isValidEgo, dichotomies, type, typeByEgo, typeByPoles, relationById, partner, relation, quadraOf };
+  // Код MBTI — по буквам дихотомий: рационал → J, иррационал → P. Тест меряет поведение,
+  // и тот, кто ответил «планирую заранее», должен увидеть J. Руками коды не храним.
+  function mbti(t) {
+    const d = dichotomies(t.ego);
+    return d.EI + d.NS + d.TF + (d.RP === 'R' ? 'J' : 'P');
+  }
+
+  // Тип по коду MBTI: «ENTP», «entp», «ENTP-A» (хвост 16Personalities отбрасываем)
+  function typeByMbti(code) {
+    const c = String(code == null ? '' : code).trim().toUpperCase().replace(/-[AT]$/, '');
+    return S.data.types.find(t => mbti(t) === c) || null;
+  }
+
+  // Тип по id соционики (ile) или по коду MBTI (entp)
+  const find = x => type(String(x == null ? '' : x).toLowerCase()) || typeByMbti(x);
+
+  // Код MBTI — производное поле для шаблонов, считается здесь же
+  if (S.data && S.data.types) S.data.types.forEach(t => { t.mbti = mbti(t); });
+
+  core.modelA = { modelA, isValidEgo, dichotomies, type, typeByEgo, typeByPoles, relationById, partner, relation, quadraOf, mbti, typeByMbti, find };
 })(typeof window !== 'undefined' ? window : globalThis);

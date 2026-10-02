@@ -144,6 +144,101 @@
       .forEach(b => ok(allowed.has(M().relation(a, b).id), a.code + ' → ' + b.code)));
   });
 
+  // ---------- коды MBTI ----------
+
+  // Эталон D1: буквы дихотомий, рационал → J
+  const MBTI = { ile: 'ENTP', sei: 'ISFP', ese: 'ESFJ', lii: 'INTJ', eie: 'ENFJ', lsi: 'ISTJ', sle: 'ESTP', iei: 'INFP', see: 'ESFP', ili: 'INTP', lie: 'ENTJ', esi: 'ISFJ', lse: 'ESTJ', eii: 'INFJ', iee: 'ENFP', sli: 'ISTP' };
+
+  test('код MBTI выводится из дихотомий и совпадает с эталоном; соответствие взаимно однозначное', () => {
+    Object.keys(MBTI).forEach(id => {
+      eq(M().mbti(T(id)), MBTI[id], T(id).code);
+      eq(T(id).mbti, MBTI[id], T(id).code + ': поле mbti');
+      eq(M().typeByMbti(MBTI[id]).id, id, MBTI[id]);
+    });
+    eq(new Set(S.data.types.map(t => t.mbti)).size, 16, 'уникальных кодов');
+  });
+
+  test('тип находится по id, по коду MBTI в любом регистре и с хвостом -A/-T 16Personalities', () => {
+    eq(M().find('ile').id, 'ile');
+    eq(M().find('entp').id, 'ile');
+    eq(M().find('INFJ-T').id, 'eii');
+    eq(M().find('isfj-a').id, 'esi');
+    [null, '', 'xxxx', 'ENTX', 'ile2'].forEach(x => eq(M().find(x), null, JSON.stringify(x)));
+  });
+
+  // Названия 16Personalities и их группы: свои названия не должны с ними путаться
+  const P16 = { INTJ: 'Стратег', INTP: 'Учёный', ENTJ: 'Командир', ENTP: 'Полемист', INFJ: 'Активист', INFP: 'Посредник', ENFJ: 'Тренер', ENFP: 'Борец',
+    ISTJ: 'Администратор', ISFJ: 'Защитник', ESTJ: 'Менеджер', ESFJ: 'Консул', ISTP: 'Виртуоз', ISFP: 'Артист', ESTP: 'Делец', ESFP: 'Развлекатель' };
+  const P16_GROUPS = { 'Аналитик': /^.NT.$/, 'Дипломат': /^.NF.$/, 'Хранитель': /^.S.J$/, 'Искатель': /^.S.P$/ };
+
+  test('русские названия типов уникальны и не совпадают с названиями 16Personalities у других кодов', () => {
+    eq(new Set(S.data.types.map(t => t.title)).size, 16, 'уникальных названий');
+    const theirs = Object.values(P16);
+    S.data.types.forEach(t => {
+      ok(!theirs.includes(t.title), `${t.mbti} «${t.title}» — так у 16Personalities зовут другой тип`);
+      const g = P16_GROUPS[t.title];
+      ok(!g || g.test(t.mbti), `${t.mbti} «${t.title}» — у 16Personalities так называется группа других кодов`);
+    });
+  });
+
+  // ---------- пара: карта общих функций ----------
+
+  const PR = () => S.core.pair;
+  // Эталон из промпта: набор видов взаимодействия по восьми сферам для каждой позиции отношений
+  const PAIR_KINDS = {
+    dual: { complement: 4, cover: 4 }, activation: { complement: 4, cover: 4 },
+    identity: { shared: 2, need: 2, background: 2, blind: 2 }, mirror: { shared: 2, need: 2, background: 2, blind: 2 },
+    semidual: { complement: 2, cover: 2, values: 2, unanswered: 2 }, mirage: { complement: 2, cover: 2, values: 2, unanswered: 2 },
+    benefactor: { complement: 2, cover: 2, values: 2, unanswered: 2 }, beneficiary: { complement: 2, cover: 2, values: 2, unanswered: 2 },
+    kindred: { press: 2, ask: 2, shared: 1, need: 1, background: 1, blind: 1 }, business: { press: 2, ask: 2, shared: 1, need: 1, background: 1, blind: 1 },
+    supervisor: { press: 2, ask: 2, shared: 1, need: 1, background: 1, blind: 1 }, supervisee: { press: 2, ask: 2, shared: 1, need: 1, background: 1, blind: 1 },
+    quasi: { values: 4, unanswered: 4 }, extinguish: { values: 4, unanswered: 4 },
+    conflict: { press: 4, ask: 4 }, superego: { press: 4, ask: 4 }
+  };
+  const countKinds = zones => {
+    const c = {};
+    zones.forEach(z => { c[z.kind] = (c[z.kind] || 0) + 1; });
+    return Object.keys(c).sort().reduce((o, k) => { o[k] = c[k]; return o; }, {});
+  };
+  const sorted = o => Object.keys(o).sort().reduce((x, k) => { x[k] = o[k]; return x; }, {});
+
+  test('карта пары: для всех 256 пар набор взаимодействий совпадает с эталоном своего вида отношений', () => {
+    S.data.types.forEach(a => S.data.types.forEach(b => {
+      const r = M().relation(a, b), zones = PR().map(a, b);
+      eq(zones.length, 8, a.code + ' → ' + b.code + ': сфер');
+      eq(zones.map(z => z.aspect), PR().ORDER, 'порядок сфер');
+      eq(countKinds(zones), sorted(PAIR_KINDS[r.id]), a.code + ' → ' + b.code + ' (' + r.id + ')');
+    }));
+  });
+
+  test('карта пары: глазами партнёра виды те же, стороны меняются местами', () => {
+    const flip = { me: 'partner', partner: 'me', both: 'both' };
+    S.data.types.forEach(a => S.data.types.forEach(b => {
+      const ab = PR().map(a, b), ba = PR().map(b, a);
+      ab.forEach((z, i) => {
+        eq(ba[i].kind, z.kind, a.code + ' ↔ ' + b.code + ' · ' + z.aspect);
+        eq(ba[i].side, flip[z.side], a.code + ' ↔ ' + b.code + ' · ' + z.aspect + ': сторона');
+      });
+    }));
+  });
+
+  test('карта пары: у дуалов ИЛЭ и СЭИ ты даёшь идеи и порядок, партнёр — уют и настроение', () => {
+    const z = {};
+    PR().map(T('ile'), T('sei')).forEach(x => { z[x.aspect] = x.kind + ':' + x.side; });
+    eq(z, { Fi: 'cover:partner', Fe: 'complement:partner', Ne: 'complement:me', Ni: 'cover:me', Ti: 'complement:me', Te: 'cover:me', Se: 'cover:partner', Si: 'complement:partner' });
+  });
+
+  test('группы зон: пять, покрывают все виды; ни у одной пары карта не состоит из одних трудных зон', () => {
+    eq(PR().GROUPS.length, 5, 'групп');
+    eq(PR().GROUPS.reduce((n, g) => n + g.kinds.length, 0), PR().KINDS.length, 'видов в группах');
+    PR().KINDS.forEach(k => ok(PR().GROUP_OF[k], k + ': без группы'));
+    S.data.types.forEach(a => S.data.types.forEach(b => {
+      const s = PR().summary(a, b);
+      eq(Object.values(s).reduce((x, y) => x + y, 0), 8, a.code + ' → ' + b.code + ': сумма');
+      ok(s.fit + s.common + s.ask > 0, a.code + ' → ' + b.code + ': нет ни одной ресурсной зоны');
+    }));
+  });
+
   // ---------- подсчёт ----------
 
   // Ответы, которые тянут к полюсам типа t с силой strength (1 или 2)

@@ -63,7 +63,7 @@
     ctx.fillText('SOCIO-NIK', W / 2, L.brand);
     ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.font = font(600, 40);
-    ctx.fillText('Мой соционический тип', W / 2, L.title);
+    ctx.fillText('Мой тип личности', W / 2, L.title);
 
     // эмблема
     ctx.save();
@@ -75,11 +75,11 @@
     // код и имя
     ctx.fillStyle = '#fff';
     ctx.font = font(800, L.codePx);
-    ctx.fillText(t.code, W / 2, L.code);
+    ctx.fillText(t.mbti, W / 2, L.code);
     ctx.fillStyle = 'rgba(255,255,255,0.86)';
-    fit(ctx, t.name, W - 160, 600, 46);
-    ctx.fillText(t.name, W / 2, L.name);
-    const sub = `«${t.alias}» · ${t.role} · квадра ${q.name}`;
+    fit(ctx, t.title, W - 160, 600, 52);
+    ctx.fillText(t.title, W / 2, L.name);
+    const sub = `${t.code} «${t.alias}» в соционике · квадра ${q.name}`;
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
     fit(ctx, sub, W - 160, 500, 38);
     ctx.fillText(sub, W / 2, L.alias);
@@ -108,7 +108,7 @@
         ctx.textAlign = 'left';
         ctx.fillStyle = 'rgba(255,255,255,0.92)';
         ctx.font = font(700, 34);
-        ctx.fillText(tt.code, x0, yy + 12);
+        ctx.fillText(tt.mbti, x0, yy + 12);
         ctx.textAlign = 'right';
         ctx.font = font(600, 32);
         ctx.fillText(row.pct + ' %', x1, yy + 12);
@@ -121,7 +121,7 @@
     }
 
     // 4 шкалы
-    const AX = [['EI', 'Экстраверсия', 'Интроверсия'], ['NS', 'Интуиция', 'Сенсорика'], ['TF', 'Логика', 'Этика'], ['RP', 'Рациональность', 'Иррациональность']];
+    const AX = S.ui && S.ui.AXES ? S.ui.AXES : [['EI', 'Экстраверсия', 'Интроверсия'], ['NS', 'Интуиция', 'Ощущения'], ['TF', 'Логика', 'Чувства'], ['RP', 'План', 'Импровизация']];
     AX.forEach(([ax, a, b], i) => {
       const v = res.axes[ax], yy = L.axes + i * L.axRow;
       ctx.font = font(600, 29);
@@ -143,7 +143,7 @@
     ctx.fillStyle = 'rgba(255,255,255,0.72)';
     ctx.font = font(600, 34);
     const site = S.config && S.config.SITE_URL ? S.config.SITE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '') : 'Socio-Nik';
-    ctx.fillText(`Узнай свой тип — ${site}`, W / 2, L.foot);
+    ctx.fillText(`Узнай свой тип и проверь пару — ${site}`, W / 2, L.foot);
     return canvas;
   }
 
@@ -156,7 +156,7 @@
   function text(axes, { withUrl = true } = {}) {
     const res = S.core.scoring.result(axes), t = S.core.modelA.type(res.top.id);
     const link = withUrl && url(axes) ? ' ' + url(axes) : '';
-    return `Мой соционический тип — ${t.code}, «${t.alias}» (${res.top.pct} %). Узнай свой на Socio-Nik${link}`;
+    return `Мой тип личности — ${t.mbti} «${t.title}» (${res.top.pct} %). Узнай свой и проверь вашу пару на Socio-Nik${link}`;
   }
 
   const toBlob = canvas => new Promise((ok, fail) => canvas.toBlob(b => (b ? ok(b) : fail(new Error('PNG не собрался'))), 'image/png'));
@@ -202,8 +202,8 @@
   async function share(canvas, axes, format) {
     const blob = await toBlob(canvas);
     const id = S.core.scoring.result(axes).top.id;
-    const file = new File([blob], `socio-nik-${id}-${format}.png`, { type: 'image/png' });
-    await navigator.share({ files: [file], text: text(axes), title: 'Мой соционический тип' });
+    const file = new File([blob], `socio-nik-${S.core.modelA.type(id).mbti.toLowerCase()}-${format}.png`, { type: 'image/png' });
+    await navigator.share({ files: [file], text: text(axes), title: 'Мой тип личности' });
   }
 
   // Перенос текста по словам под ширину
@@ -253,8 +253,8 @@
       ctx.restore();
       ctx.fillStyle = '#fff';
       ctx.font = font(800, 170);
-      ctx.fillText(t.code, W / 2, 860);
-      const sub = `«${t.alias}» · ${t.role}`;
+      ctx.fillText(t.mbti, W / 2, 860);
+      const sub = `«${t.title}» · ${t.code} в соционике`;
       ctx.fillStyle = 'rgba(255,255,255,0.7)';
       fit(ctx, sub, W - 160, 500, 42);
       ctx.fillText(sub, W / 2, 924);
@@ -321,20 +321,21 @@
     ctx.fillText('Socio-Nik', W / 2, 196);
     ctx.fillStyle = '#fff';
     ctx.font = font(800, 80);
-    ctx.fillText('Узнай свой', W / 2, 298);
+    ctx.fillText('Как устроена', W / 2, 298);
     const g = ctx.createLinearGradient(W / 2 - 390, 0, W / 2 + 390, 0);
     g.addColorStop(0, Q('alpha'));
     g.addColorStop(0.52, Q('gamma'));
     g.addColorStop(1, Q('beta'));
     ctx.fillStyle = g;
-    ctx.fillText('соционический тип', W / 2, 392);
+    ctx.fillText('ваша пара', W / 2, 392);
     ctx.fillStyle = 'rgba(255,255,255,0.72)';
-    ctx.font = font(500, 30);
-    ctx.fillText('20 вопросов · 4 минуты · 16 типов и их отношения', W / 2, 462);
+    const tagline = 'Тест для двоих · совместимость бесплатно';
+    fit(ctx, tagline, 720, 500, 30);
+    ctx.fillText(tagline, W / 2, 462);
     return canvas;
   }
 
   const factImage = fact => toBlob(renderFact(document.createElement('canvas'), fact));
 
-  S.share = { render, renderFact, factImage, renderOG, url, text, toBlob, download, copy, canShareFiles, share };
+  S.share = { render, renderFact, factImage, renderOG, url, text, toBlob, download, copy, canShareFiles, share, util: { FONT, font, fit, blob, roundRect, wrap } };
 })(window);

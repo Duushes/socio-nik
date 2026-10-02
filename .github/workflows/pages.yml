@@ -26,6 +26,8 @@ jobs:
         run: node tools/run-tests.js
       - name: Проверка текстов
         run: node tools/check-content.js
+      - name: Разбор пары для всех 256 пар
+        run: node tools/check-pairs.js
 
   deploy:
     needs: test

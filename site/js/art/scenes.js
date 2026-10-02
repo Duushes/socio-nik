@@ -83,7 +83,7 @@
         break;
     }
 
-    const lab = labels || [left.code, right.code];
+    const lab = labels || [left.mbti, right.mbti];
     const text = kind === 'supervision'
       ? [{ t: 'text', x: 92, y: 124, text: lab[0], cls: 'sc-lab' }, { t: 'text', x: 228, y: 156, text: lab[1], cls: 'sc-lab' }]
       : [{ t: 'text', x: LX, y: 164, text: lab[0], cls: 'sc-lab' }, { t: 'text', x: RX, y: 164, text: lab[1], cls: 'sc-lab' }];
@@ -101,9 +101,9 @@
       { t: 'g', tf: { x: LX, y: Y, s: 0.56 }, children: [{ t: 'g', cls: 'sf sa', children: art.glyphOf(t.ego[0], c, th) }] },
       { t: 'g', tf: { x: RX, y: Y, s: 0.56 }, children: [{ t: 'g', cls: 'sf sb', children: art.glyph('S', 'i', acc, th) }] },
       { t: 'text', x: RX, y: Y + 12, text: '?', cls: 'sc-q' },
-      { t: 'text', x: LX, y: 164, text: t.code, cls: 'sc-lab' },
+      { t: 'text', x: LX, y: 164, text: t.mbti, cls: 'sc-lab' },
       { t: 'text', x: RX, y: 164, text: 'ты', cls: 'sc-lab' }
     ];
-    return art.svg(nodes, { viewBox: '0 0 320 180', cls: `scene sc-mystery ${cls}`, label: `${t.code} и ты: отношения пока неизвестны` });
+    return art.svg(nodes, { viewBox: '0 0 320 180', cls: `scene sc-mystery ${cls}`, label: `${t.mbti} и ты: отношения пока неизвестны` });
   };
 })(typeof window !== 'undefined' ? window : globalThis);

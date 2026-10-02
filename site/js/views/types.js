@@ -1,4 +1,4 @@
-/* Socio-Nik · все типы (#/types) и страница типа (#/types/ile) */
+/* Socio-Nik · все типы (#/types) и страница типа (#/types/entp или #/types/ile — одна и та же) */
 (function (root) {
   const S = root.Socio;
   const V = S.views = S.views || {};
@@ -14,7 +14,7 @@
           <div class="wrap-inner">
             <p class="eyebrow reveal">Типы</p>
             <h1 class="title reveal">16 типов</h1>
-            <p class="lead reveal">Нажми на тип — там описание, модель А и отношения со всеми остальными. Эмблема: крупный знак — базовая функция, маленький на орбите — творческая.</p>
+            <p class="lead reveal">Нажми на тип — там описание, модель А и отношения со всеми остальными. Код — как в MBTI, ниже — соционическое название. Эмблема: крупный знак — главная функция, маленький на орбите — творческая.</p>
           </div>
           ${ui.typesGrid()}
         </div>
@@ -40,10 +40,10 @@
   }
 
   V.type = {
-    valid: id => Boolean(M().type(id)),
-    title: id => { const t = M().type(id); return `${t.code} «${t.alias}»`; },
+    valid: id => Boolean(M().find(id)),
+    title: id => { const t = M().find(id); return `${t.mbti} «${t.title}»`; },
     render(id) {
-      const t = M().type(id), q = ui.quadra(t.quadra), c = ui.content(t.id);
+      const t = M().find(id), q = ui.quadra(t.quadra), c = ui.content(t.id);
       const i = S.data.types.indexOf(t);
       const prev = S.data.types[(i + 15) % 16], next = S.data.types[(i + 1) % 16];
       const dual = M().partner(t, 'dual');
@@ -53,9 +53,9 @@
           <div class="wrap type-top">
             <a class="crumb reveal" href="#/types">‹ Все типы</a>
             <div class="type-emblem reveal" style="--i:1">${ui.emblem(t, { live: true, cls: 'em-big' })}</div>
-            <p class="eyebrow reveal" style="--i:2"><i class="qdot" aria-hidden="true"></i>${q.name} · ${esc(t.role)}</p>
-            <h1 class="res-code reveal" style="--i:2">${t.code}</h1>
-            <p class="res-name reveal" style="--i:3">${esc(t.name)} · «${esc(t.alias)}»</p>
+            <p class="eyebrow reveal" style="--i:2"><i class="qdot" aria-hidden="true"></i>${q.name} · ${t.code} «${esc(t.alias)}»</p>
+            <h1 class="res-code reveal" style="--i:2">${t.mbti}</h1>
+            <p class="res-name reveal" style="--i:3">${esc(t.title)} · ${esc(t.name.toLowerCase())}</p>
             <p class="lead reveal" style="--i:4">${esc(c.tagline || '')}</p>
           </div>
         </section>
@@ -79,7 +79,7 @@
             <div class="card wide reveal" style="${ui.qStyle(dual.quadra)}">
               <span class="wide-art">${ui.emblem(dual, { label: false })}</span>
               <div><h3 class="card-title">В отношениях</h3><p>${esc(c.inRelations || '')}</p>
-              <a class="link" href="#/relations/${t.id}/${dual.id}">${t.code} и ${dual.code}: дуальные отношения</a></div>
+              <a class="link" href="#/pair/${t.mbti.toLowerCase()}/${dual.mbti.toLowerCase()}">${t.mbti} и ${dual.mbti}: полное дополнение</a></div>
             </div>
           </div>
         </section>
@@ -87,7 +87,7 @@
         <section class="sec">
           <div class="wrap">
             <h2 class="title-sm reveal">Модель А</h2>
-            <p class="sub reveal">Восемь функций: какие аспекты информации тип обрабатывает легко и уверенно, а какие — с трудом или с помощью других. Нажми на функцию — расскажем, как она проявляется у ${t.code}.</p>
+            <p class="sub reveal">Восемь функций: какие аспекты информации тип обрабатывает легко и уверенно, а какие — с трудом или с помощью других. Нажми на функцию — расскажем, как она проявляется у ${t.mbti}.</p>
             ${modelA(t)}
           </div>
         </section>
@@ -102,18 +102,18 @@
 
         <section class="sec">
           <div class="wrap">
-            <h2 class="title-sm reveal">Mystery box про ${t.code}</h2>
+            <h2 class="title-sm reveal">Mystery box про ${t.mbti}</h2>
             <div class="reveal">${ui.box({ typeId: t.id, compact: true })}</div>
           </div>
         </section>
 
         <nav class="wrap type-nav" aria-label="Соседние типы">
-          <a href="#/types/${prev.id}" style="${ui.qStyle(prev.quadra)}"><span>‹ ${prev.code}</span><small>${esc(prev.alias)}</small></a>
-          <a href="#/types/${next.id}" style="${ui.qStyle(next.quadra)}"><span>${next.code} ›</span><small>${esc(next.alias)}</small></a>
+          <a href="#/types/${prev.id}" style="${ui.qStyle(prev.quadra)}"><span>‹ ${prev.mbti}</span><small>${esc(prev.title)}</small></a>
+          <a href="#/types/${next.id}" style="${ui.qStyle(next.quadra)}"><span>${next.mbti} ›</span><small>${esc(next.title)}</small></a>
         </nav>`;
     },
     mount(root, id) {
-      const t = M().type(id);
+      const t = M().find(id);
       const onClick = e => {
         const cell = e.target.closest('[data-fn]');
         if (cell && root.contains(cell)) ui.openFunction(t, Number(cell.dataset.fn), cell);

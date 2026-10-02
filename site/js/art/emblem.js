@@ -30,7 +30,7 @@
   art.emblem = (t, { cls = '', theme, label } = {}) =>
     art.svg(emblemNodes(t, theme || S.theme.resolved()), {
       cls: 'emblem ' + cls,
-      label: label === false ? '' : (label || `Эмблема ${t.code}: базовая функция — ${S.data.aspects[t.ego[0]].name.toLowerCase()}, творческая — ${S.data.aspects[t.ego[1]].name.toLowerCase()}`)
+      label: label === false ? '' : (label || `Эмблема ${t.mbti}: базовая функция — ${S.data.aspects[t.ego[0]].name.toLowerCase()}, творческая — ${S.data.aspects[t.ego[1]].name.toLowerCase()}`)
     });
 
   // Живая орбита для крупных эмблем: спутник обходит базовый знак и уходит за него

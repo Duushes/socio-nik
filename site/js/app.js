@@ -41,7 +41,7 @@
 
   // Ответы, которые ведут к типу: «точно» в 2 из 3 вопросов, «скорее» в остальных
   function demoAxes(typeId) {
-    const t = S.core.modelA.type(typeId);
+    const t = S.core.modelA.find(typeId);
     if (!t) return null;
     const d = S.core.modelA.dichotomies(t.ego), answers = {};
     S.data.questions.forEach((q, i) => {
@@ -52,20 +52,32 @@
   }
 
   // ---------- роутер ----------
+  // Сторона пары в адресе — код результата (1-72-64-58-19) или тип (entp / ile)
+  const SIDE = '([0-9a-z-]{3,18})';
   const ROUTES = [
     [/^\/?$/, 'home'],
+    [/^\/pair$/, 'couple'],
+    [new RegExp(`^/pair/${SIDE}/${SIDE}$`), 'pair'],
+    [/^\/duo$/, 'duo'],
+    [/^\/i\/([0-9-]{9,18})$/, 'invite'],
     [/^\/test$/, 'test'],
     [/^\/result$/, 'result'],
     [/^\/r\/([0-9-]{9,18})$/, 'shared'],
+    [/^\/library$/, 'library'],
     [/^\/types$/, 'types'],
-    [/^\/types\/([a-z]{3})$/, 'type'],
+    [/^\/types\/([a-z]{3,4})$/, 'type'],
     [/^\/quadras$/, 'quadras'],
     [/^\/relations$/, 'relations'],
-    [/^\/relations\/([a-z]{3})\/([a-z]{3})$/, 'pair'],
-    [/^\/box(?:\/([a-z]{3}))?$/, 'box'],
+    [/^\/relations\/([a-z]{3,4})\/([a-z]{3,4})$/, 'pair'],
+    [/^\/box(?:\/([a-z]{3,4}))?$/, 'box'],
     [/^\/about$/, 'about']
   ];
-  const NAV = { test: 'test', result: 'test', types: 'types', type: 'types', quadras: 'quadras', relations: 'relations', pair: 'relations', box: 'box', about: 'about' };
+  const NAV = {
+    couple: 'pair', pair: 'pair', duo: 'pair', invite: 'pair',
+    test: 'test', result: 'test', shared: 'test',
+    library: 'library', types: 'library', type: 'library', quadras: 'library', relations: 'library', box: 'library',
+    about: 'about'
+  };
 
   function parse() {
     const raw = decodeURIComponent(location.hash.replace(/^#/, '')) || '/';
@@ -168,6 +180,7 @@
     state: () => ({ route: parse(), result: S.state.result(), test: S.store.get('test', null) }),
     demo(typeId) { S.state.demo = demoAxes(typeId); render({ instant: true }); return S.state.demo; },
     answerAll(typeId) { const axes = demoAxes(typeId); S.state.saveResult(axes); location.hash = '#/result'; return axes; },
+    axesOf: typeId => demoAxes(typeId),
     render: opts => render(opts)
   };
 

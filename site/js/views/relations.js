@@ -1,4 +1,5 @@
-/* Socio-Nik · отношения (#/relations): калькулятор, 14 видов со сценами, матрица 16×16; экран пары (#/relations/ile/sei) */
+/* Socio-Nik · отношения (#/relations): калькулятор, 14 видов со сценами, матрица 16×16.
+   Экран пары (#/pair/<a>/<b>, старые #/relations/<a>/<b>) — в views/pair.js */
 (function (root) {
   const S = root.Socio;
   const V = S.views = S.views || {};
@@ -19,11 +20,11 @@
       <div class="matrix-wrap reveal">
         <table class="matrix">
           <caption class="sr">Отношения всех пар типов: строка — ты, столбец — партнёр</caption>
-          <thead><tr><th scope="col"><span class="sr">Ты \\ партнёр</span></th>${ts.map(t => `<th scope="col">${t.code}</th>`).join('')}</tr></thead>
-          <tbody>${ts.map(a => `<tr><th scope="row">${a.code}</th>${ts.map((b, j) => {
+          <thead><tr><th scope="col"><span class="sr">Ты \\ партнёр</span></th>${ts.map(t => `<th scope="col">${t.mbti}</th>`).join('')}</tr></thead>
+          <tbody>${ts.map(a => `<tr><th scope="row">${a.mbti}</th>${ts.map((b, j) => {
             const r = M().relation(a, b);
             const name = r.role ? `${r.name} · ${r.role}` : r.name;
-            return `<td><a class="mx t-${r.tone}${a === b ? ' self' : ''}" data-col="${j}" href="#/relations/${a.id}/${b.id}" data-tip="${esc(name)}|${a.code} → ${b.code}" aria-label="${a.code} и ${b.code}: ${esc(name)}"></a></td>`;
+            return `<td><a class="mx t-${r.tone}${a === b ? ' self' : ''}" data-col="${j}" href="#/pair/${a.mbti.toLowerCase()}/${b.mbti.toLowerCase()}" data-tip="${esc(name)}|${a.mbti} → ${b.mbti}" aria-label="${a.mbti} и ${b.mbti}: ${esc(name)}"></a></td>`;
           }).join('')}</tr>`).join('')}</tbody>
         </table>
       </div>
@@ -50,7 +51,7 @@
           <div class="wrap-wide">
             <div class="wrap-inner">
               <h2 class="title-sm reveal">14 видов отношений</h2>
-              <p class="sub reveal">Сцены показаны на примере ИЛЭ «Дон Кихот».</p>
+              <p class="sub reveal">Сцены показаны на примере ENTP «Изобретатель» — в соционике это ИЛЭ «Дон Кихот».</p>
             </div>
             <div class="kinds">
               ${KINDS.map(([kind, pos], i) => {
@@ -59,6 +60,7 @@
                   <div class="kind-scene">${ui.pairScene(ile, partner)}</div>
                   <div class="kind-copy">
                     <h3>${ui.kindTitle(kind)}</h3>
+                    <p class="kind-human">${esc(((S.content.pair || {}).titles || {})[pos] || '')}</p>
                     ${ui.toneChip(r.tone)}
                     <p>${esc(txt.line || '')}</p>
                     <details><summary>Подробнее</summary><p>${esc(txt.about || '')}</p><p class="tip-line"><b>Как ладить.</b> ${esc(txt.tip || '')}</p></details>
@@ -104,51 +106,4 @@
     }
   };
 
-  V.pair = {
-    valid: (a, b) => Boolean(M().type(a) && M().type(b)),
-    title: (a, b) => `${M().type(a).code} и ${M().type(b).code}`,
-    render(aId, bId) {
-      const a = M().type(aId), b = M().type(bId), r = M().relation(a, b), txt = ui.relText(r.kind);
-      const role = txt.roles && txt.roles[r.id];
-      // Подсветка идёт за фигурами: у заказа и ревизии сцена ставит заказчика / ревизора слева
-      const flip = r.id === 'benefactor' || r.id === 'supervisor';
-      const [lq, rq] = flip ? [b.quadra, a.quadra] : [a.quadra, b.quadra];
-      return `
-        <section class="pair-hero" data-anim>
-          <div class="pair-glow" aria-hidden="true" style="--qa:var(--q-${lq});--qb:var(--q-${rq})"></div>
-          <div class="wrap center">
-            <a class="crumb reveal" href="#/relations">‹ Отношения</a>
-            <div class="pair-scene reveal" style="--i:1">${ui.pairScene(a, b)}</div>
-            <p class="eyebrow reveal" style="--i:2">${a.code} «${esc(a.alias)}» и ${b.code} «${esc(b.alias)}»</p>
-            <h1 class="title reveal" style="--i:2">${esc(ui.relTitle(r, a, b))}</h1>
-            <p class="reveal" style="--i:3">${ui.toneChip(r.tone)}</p>
-            <p class="lead reveal" style="--i:3">${esc(txt.line || '')}</p>
-          </div>
-        </section>
-        <section class="sec">
-          <div class="wrap narrow">
-            <p class="body reveal">${esc(txt.about || '')}</p>
-            ${role ? `<div class="card soft reveal"><h3 class="card-title">С позиции ${a.code}</h3><p>${esc(role)}</p></div>` : ''}
-            <div class="card tip-card reveal"><h3 class="card-title">Как ладить</h3><p>${esc(txt.tip || '')}</p></div>
-            <div class="pair-links reveal">
-              <a class="link" href="#/relations/${b.id}/${a.id}">Посмотреть глазами ${b.code}</a>
-              <a class="link" href="#/relations">Выбрать другую пару</a>
-            </div>
-          </div>
-        </section>
-        <section class="sec sec-alt">
-          <div class="wrap">
-            <div class="grid2">
-              ${[a, b].map((t, i) => `<a class="card link-card tilt reveal" style="${ui.qStyle(t.quadra)};--i:${i}" href="#/types/${t.id}">
-                <span class="lc-art">${ui.emblem(t, { label: false })}</span>
-                <span class="lc-kicker">${ui.quadra(t.quadra).name} · ${esc(t.role)}</span>
-                <span class="lc-title">${t.code} «${esc(t.alias)}»</span>
-                <span class="lc-text">${esc(ui.content(t.id).tagline || '')}</span>
-                <span class="glare" aria-hidden="true"></span>
-              </a>`).join('')}
-            </div>
-          </div>
-        </section>`;
-    }
-  };
 })(window);

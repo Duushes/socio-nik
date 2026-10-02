@@ -40,7 +40,7 @@
         ${modes ? `
           <div class="seg box-modes" role="group" aria-label="Про какой тип факты">
             <button type="button" data-m="any" aria-pressed="true">Любой тип</button>
-            <button type="button" data-m="mine"${mine ? '' : ' disabled title="Сначала пройди тест"'}>Мой тип${mine ? ' · ' + S.core.modelA.type(mine).code : ''}</button>
+            <button type="button" data-m="mine"${mine ? '' : ' disabled title="Сначала пройди тест"'}>Мой тип${mine ? ' · ' + S.core.modelA.type(mine).mbti : ''}</button>
             <button type="button" data-m="pick">Выбрать тип</button>
           </div>
           <div class="box-pick" hidden>${ui.typeSelect('boxtype', target, 'Тип')}</div>` : ''}
@@ -65,7 +65,7 @@
   // Текст и ссылка факта для шера: ссылка ведёт на страницу типа (или в коробку для общих фактов)
   const factText = f => {
     const t = f.type ? S.core.modelA.type(f.type) : null;
-    return `${t ? t.code + ' «' + t.alias + '»: ' : ''}${f.text} — факт из mystery box Socio-Nik`;
+    return `${t ? t.mbti + ' «' + t.title + '»: ' : ''}${f.text} — факт из mystery box Socio-Nik`;
   };
   const factUrl = f => {
     const base = S.config && S.config.SITE_URL;
@@ -77,14 +77,14 @@
     return `
       <div class="bx-card-in"${t ? ` style="${ui.qStyle(t.quadra)}"` : ''}>
         <header>
-          ${t ? `<span class="bx-em">${S.art.emblem(t, { cls: 'em-mini', label: false })}</span><span class="chip">${t.code} · ${esc(t.alias)}</span>` : '<span class="chip">Соционика</span>'}
+          ${t ? `<span class="bx-em">${S.art.emblem(t, { cls: 'em-mini', label: false })}</span><span class="chip">${t.mbti} · ${esc(t.title)}</span>` : '<span class="chip">Соционика</span>'}
           <span class="bx-cat">${esc(S.factCats[f.cat] || '')}</span>
         </header>
         <p class="bx-text">${esc(f.text)}</p>
         ${reset ? '<p class="bx-reset">Все факты этой колоды уже открыты — перемешали заново.</p>' : ''}
         <footer>
           <button class="btn btn-sm" type="button" data-more>Ещё факт</button>
-          ${t ? `<a class="link" href="#/types/${t.id}">Открыть ${t.code}</a>` : ''}
+          ${t ? `<a class="link" href="#/types/${t.id}">Открыть ${t.mbti}</a>` : ''}
         </footer>
         <div class="bx-share">
           <span class="bx-share-lab">Поделиться</span>
