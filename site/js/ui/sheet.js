@@ -41,39 +41,55 @@
         document.documentElement.classList.remove('sheet-open');
         if (from && document.body.contains(from)) from.focus({ preventScroll: true });
         resolve();
-      }, reducedMotion() ? 0 : 340));
+      }, reducedMotion() ? 150 : 340));
       return closing;
     };
     dlg.addEventListener('cancel', e => { e.preventDefault(); close(); });
     dlg.addEventListener('click', e => { if (e.target.closest('[data-close]')) close(); });
     if (onKey) dlg.addEventListener('keydown', onKey);
 
-    // свайп вниз за ручку или шапку — закрыть
-    let startY = null, dy = 0;
+    // свайп вниз за ручку или шапку — закрыть. Решает скорость, а не только расстояние: быстрый короткий
+    // жест тоже закрывает, и шторка докатывается с той же скоростью. Вверх — с сопротивлением
+    let startY = null, dy = 0, lastY = 0, lastT = 0, v = 0;
     panel.addEventListener('pointerdown', e => {
       if (!e.target.closest('.sheet-grab, .sheet-drag') || panel.scrollTop > 0 || innerWidth > 734) return;
-      startY = e.clientY;
+      startY = lastY = e.clientY;
+      lastT = performance.now();
       dy = 0;
+      v = 0;
       dlg.classList.add('dragging');
       panel.setPointerCapture(e.pointerId);
     });
     panel.addEventListener('pointermove', e => {
       if (startY == null) return;
-      dy = Math.max(0, e.clientY - startY);
+      const now = performance.now(), raw = e.clientY - startY;
+      dy = raw < 0 ? raw * 0.2 : raw;
+      v = (e.clientY - lastY) / Math.max(1, now - lastT);
+      lastY = e.clientY;
+      lastT = now;
       panel.style.setProperty('--drag', dy + 'px');
     });
     const end = () => {
       if (startY == null) return;
       startY = null;
       dlg.classList.remove('dragging');
-      if (dy > 110) close(); else panel.style.setProperty('--drag', '0px');
+      if (dy > 110 || (v > 0.4 && dy > 12)) {
+        const rest = Math.max(0, panel.offsetHeight - dy), dur = Math.round(Math.min(320, Math.max(180, rest / Math.max(v, 0.5))));
+        panel.style.transition = `transform ${dur}ms cubic-bezier(0.32, 0.72, 0, 1)`;
+        close();
+      } else panel.style.setProperty('--drag', '0px');
     };
     panel.addEventListener('pointerup', end);
     panel.addEventListener('pointercancel', end);
 
-    // смена содержимого по очереди: старое гаснет, новое въезжает — без наложения.
-    // Фокус не теряется: если он был на кнопке листания, встаёт на ту же по счёту кнопку в новом содержимом
-    const swap = (html, dir = 1) => {
+    // смена содержимого по очереди: старое гаснет, новое въезжает — без наложения, даже при быстрых нажатиях.
+    // Фокус не теряется: если он был на кнопке листания, встаёт на ту же по счёту кнопку в новом содержимом.
+    // С клавиатуры (instant) — без анимации: стрелки должны отвечать сразу
+    let t1 = 0, t2 = 0;
+    const swap = (html, dir = 1, instant = false) => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      body.classList.remove('sw-out-l', 'sw-out-r', 'sw-in-r', 'sw-in-l');
       const act = document.activeElement;
       const navBtns = () => Array.from(body.querySelectorAll('[data-fn-go]'));
       const at = act && body.contains(act) ? navBtns().indexOf(act) : -2;
@@ -83,14 +99,14 @@
         const target = at >= 0 ? navBtns()[at] : null;
         (target || panel).focus({ preventScroll: true });
       };
-      if (reducedMotion()) { put(); return; }
+      if (instant || reducedMotion()) { put(); panel.scrollTop = 0; return; }
       body.classList.add(dir > 0 ? 'sw-out-l' : 'sw-out-r');
-      setTimeout(() => {
+      t1 = setTimeout(() => {
         body.classList.remove('sw-out-l', 'sw-out-r');
         put();
         panel.scrollTop = 0;
         body.classList.add(dir > 0 ? 'sw-in-r' : 'sw-in-l');
-        setTimeout(() => body.classList.remove('sw-in-r', 'sw-in-l'), 380);
+        t2 = setTimeout(() => body.classList.remove('sw-in-r', 'sw-in-l'), 380);
       }, 160);
     };
     return { dlg, body, swap, close };
@@ -164,14 +180,14 @@
       from,
       render: () => fnHTML(t, cur),
       onKey: e => {
-        if (e.key === 'ArrowRight') go(cur === 8 ? 1 : cur + 1, 1);
-        if (e.key === 'ArrowLeft') go(cur === 1 ? 8 : cur - 1, -1);
+        if (e.key === 'ArrowRight') go(cur === 8 ? 1 : cur + 1, 1, true);
+        if (e.key === 'ArrowLeft') go(cur === 1 ? 8 : cur - 1, -1, true);
       }
     });
-    function go(k, dir) {
+    function go(k, dir, instant = false) {
       cur = k;
       sheet.dlg.setAttribute('aria-label', `${t.mbti}: ${S.data.functions[k - 1].name.toLowerCase()} функция`);
-      sheet.swap(fnHTML(t, k), dir);
+      sheet.swap(fnHTML(t, k), dir, instant);
     }
     sheet.dlg.addEventListener('click', e => {
       const b = e.target.closest('[data-fn-go]');

@@ -87,7 +87,7 @@
   text-decoration: none !important; overflow: hidden;
 }
 .qcard-art { width: 172px; height: 172px; transition: transform 0.6s var(--spring); }
-.qcard:hover .qcard-art { transform: scale(1.06); }
+@media (hover: hover) { .qcard:hover .qcard-art { transform: scale(1.03); } }
 .qemblem { width: 100%; height: 100%; overflow: visible; }
 .qcard-name { margin-top: 6px; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
 .qcard-motto { min-height: 44px; margin-top: 6px; color: var(--muted); font-size: 15px; }
@@ -123,7 +123,7 @@
 .sec-alt .calc .pick select { background: var(--bg-alt); }
 .pick-box::after { content: ""; position: absolute; right: 18px; top: 50%; width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: translateY(-70%) rotate(45deg); pointer-events: none; }
 .swap { width: 46px; height: 46px; display: grid; place-items: center; padding: 0; margin-bottom: 2px; border: 0; border-radius: 50%; background: var(--chip); color: var(--text); cursor: pointer; transition: transform 0.5s var(--spring), background 0.2s; }
-.swap:hover { transform: rotate(180deg); }
+@media (hover: hover) { .swap:hover { transform: rotate(180deg); } }
 .swap svg { width: 20px; height: 20px; }
 .calc-out { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: 28px; margin-top: 22px; }
 .calc-scene .scene, .kind-scene .scene, .pair-scene .scene { width: 100%; height: auto; }
@@ -141,7 +141,7 @@
 /* ================= ТЕСТ ================= */
 .test { position: relative; isolation: isolate; overflow: hidden; min-height: 100svh; padding: calc(var(--nav-h) + 28px) 0 60px; }
 .test-progress { position: fixed; top: var(--nav-h); left: 0; right: 0; z-index: 40; height: 3px; background: var(--hair); }
-.test-progress i { display: block; width: var(--p, 0%); height: 100%; border-radius: 0 2px 2px 0; background: linear-gradient(90deg, var(--q-alpha), var(--q-gamma), var(--q-beta)); transition: width 0.7s var(--out); }
+.test-progress i { display: block; height: 100%; transform-origin: 0 50%; transform: scaleX(var(--p, 0)); background: linear-gradient(90deg, var(--q-alpha), var(--q-gamma), var(--q-beta)); transition: transform 0.5s var(--out); }
 .test-aurora { position: absolute; inset: -10% -10% auto -10%; height: 75%; z-index: -1; pointer-events: none; background: radial-gradient(45% 55% at 18% 18%, color-mix(in srgb, var(--q-alpha) 15%, transparent), transparent), radial-gradient(40% 50% at 86% 26%, color-mix(in srgb, var(--q-gamma) 13%, transparent), transparent); }
 .test-wrap { max-width: 880px; }
 .test-head { display: flex; justify-content: space-between; margin-bottom: 4px; }
@@ -221,7 +221,10 @@
 .axis-labs .on { color: var(--text); font-weight: 600; }
 .axis-labs b { font-weight: 600; font-variant-numeric: tabular-nums; }
 .axis-track { display: flex; gap: 2px; height: 12px; }
-.axis-track .seg { display: block; flex: none; height: 100%; width: max(0px, calc(var(--w, 0%) - 1px)); background: var(--seg-off); transition: width 1.2s var(--out); }
+/* ширина полосы известна сразу; при появлении она открывается от краёв к точке встречи (clip-path, без пересчёта вёрстки) */
+.axis-track .seg { display: block; flex: none; height: 100%; background: var(--seg-off); clip-path: inset(0 0 0 0); transition: clip-path 0.9s var(--out) 0.1s; }
+.js .reveal:not(.in) .axis-track .seg:first-child { clip-path: inset(0 100% 0 0); }
+.js .reveal:not(.in) .axis-track .seg:last-child { clip-path: inset(0 0 0 100%); }
 .axis-track .seg:first-child { border-radius: 4px 0 0 4px; }
 .axis-track .seg:last-child { border-radius: 0 4px 4px 0; }
 .axis-track .seg.on { background: var(--btn); }
@@ -237,8 +240,9 @@
 .dist-row { display: grid; grid-template-columns: 46px 1fr 50px; align-items: center; gap: 12px; margin: 0 -6px; padding: 8px 6px; border-radius: 10px; color: var(--text); text-decoration: none !important; transition: background 0.2s; }
 .dist-row:hover, .dist-row:focus-visible { background: var(--chip); }
 .dist-code { font-size: 15px; font-weight: 600; }
-.dist-track { position: relative; height: 10px; border-radius: 0 4px 4px 0; background: var(--track); }
-.dist-bar { display: block; height: 100%; width: var(--w, 0%); border-radius: 0 4px 4px 0; background: var(--q); transition: width 1.2s var(--out); }
+.dist-track { position: relative; height: 10px; }   /* без серой дорожки: только сами доли */
+.dist-bar { display: block; height: 100%; border-radius: 0 4px 4px 0; background: var(--q); clip-path: inset(0 0 0 0); transition: clip-path 0.9s var(--out) 0.1s; }
+.js .reveal:not(.in) .dist-bar { clip-path: inset(0 100% 0 0); }
 .dist-val { text-align: right; color: var(--muted); font-size: 15px; font-variant-numeric: tabular-nums; }
 .dist-row.top .dist-code, .dist-row.top .dist-val { color: var(--text); font-weight: 800; }
 .table-view { margin-top: 20px; }
@@ -313,10 +317,10 @@
 .ma-block b { font-size: 19px; letter-spacing: -0.02em; }
 .ma-block span { color: var(--muted); font-size: 13px; }
 .ma-cell { position: relative; display: grid; grid-template-columns: 58px 1fr; grid-template-rows: auto auto; align-items: center; column-gap: 12px; padding: 12px 34px 12px 16px; border: 0; border-radius: 18px; background: var(--card); color: var(--text); font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: box-shadow 0.25s, transform 0.3s var(--out), background 0.25s; }
-.ma-cell:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+@media (hover: hover) { .ma-cell:hover { box-shadow: var(--shadow); transform: translateY(-2px); } }
 .ma-cell:active { transform: scale(0.98); }
 .ma-more { position: absolute; right: 14px; bottom: 10px; color: var(--faint); font-size: 22px; line-height: 1; transition: transform 0.3s var(--out), color 0.2s; }
-.ma-cell:hover .ma-more { transform: translateX(3px); color: var(--q); }
+@media (hover: hover) { .ma-cell:hover .ma-more { transform: translateX(3px); color: var(--q); } }
 .ma-cell.ego { background: color-mix(in srgb, var(--q) 13%, var(--card)); }
 .ma-n { position: absolute; top: 9px; right: 14px; color: var(--muted); font-size: 13px; font-weight: 700; }
 .ma-glyph { grid-row: 1 / 3; width: 58px; height: 58px; }
@@ -364,7 +368,8 @@
 .mx.t-work { background: var(--tone-work); }
 .mx.t-tense { background: var(--tone-tense); box-shadow: inset 0 0 0 1px var(--line); }
 .mx.self { background-image: radial-gradient(circle, var(--bg) 3px, transparent 3.5px); }
-.mx:hover, .mx:focus-visible { transform: scale(1.18); box-shadow: 0 0 0 2px var(--btn); }
+.mx:focus-visible { transform: scale(1.18); box-shadow: 0 0 0 2px var(--btn); }
+@media (hover: hover) { .mx:hover { transform: scale(1.18); box-shadow: 0 0 0 2px var(--btn); } }
 .matrix:hover .mx { opacity: 0.5; }
 .matrix tr.hl .mx, .matrix td.hl .mx { opacity: 1; }
 .matrix tr.hl > th { color: var(--text); }
@@ -388,7 +393,7 @@
 .box-compact .box-stage { min-height: 420px; }
 .box-stage > .bx, .box-stage > .bx-card { grid-area: 1 / 1; }
 .box-stage.is-open { padding: 20px 0 36px; }
-.bx-glow { position: absolute; width: 360px; height: 360px; border-radius: 50%; opacity: 0.3; filter: blur(60px); background: conic-gradient(from 0deg, var(--q-alpha), var(--q-gamma), var(--q-beta), var(--q-delta), var(--q-alpha)); will-change: transform; }
+.bx-glow { display: none; }   /* без вращающегося конического свечения: коробка — игрушка, а не прожектор */
 .bx { position: relative; width: 170px; height: 170px; padding: 0; border: 0; background: none; cursor: pointer; transition: transform 0.7s var(--out), opacity 0.5s; -webkit-tap-highlight-color: transparent; }
 .bx:focus-visible { outline-offset: 30px; border-radius: 30px; }
 .bx-scene { position: absolute; inset: 0; perspective: 800px; }
@@ -417,7 +422,8 @@
 [data-theme="dark"] .bx-shadow { background: radial-gradient(closest-side, rgba(0, 0, 0, 0.85), transparent); }
 .is-lid .bx-lid, .is-open .bx-lid { transform: translateY(-34px) rotateX(106deg); }
 .is-open .bx { transform: translateY(70px) scale(0.72); opacity: 0.35; }
-.bx-hint { position: absolute; left: 0; right: 0; bottom: 14px; margin: 0; color: var(--muted); font-size: 14px; }
+.bx-hint { position: absolute; left: 0; right: 0; bottom: 14px; margin: 0; color: var(--muted); font-size: 14px; transition: opacity 0.16s ease, visibility 0s; }
+.bx-hint.is-gone { opacity: 0; visibility: hidden; transition: opacity 0.16s ease, visibility 0s 0.16s; }
 .bx-card { position: relative; z-index: 3; width: min(460px, calc(100% - 20px)); perspective: 1200px; }
 .bx-card-in { position: relative; overflow: hidden; padding: 24px 24px 20px; border-radius: 26px; background: var(--elev); text-align: left; box-shadow: var(--shadow-lg); transform-origin: 50% 90%; }
 .bx-card-in::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--q, linear-gradient(90deg, var(--q-alpha), var(--q-gamma), var(--q-beta), var(--q-delta))); }
@@ -483,7 +489,7 @@
   .calc { padding: 20px 16px 22px; border-radius: 26px; }
   .calc-pick { grid-template-columns: 1fr; }
   .swap { justify-self: center; transform: rotate(90deg); }
-  .swap:hover { transform: rotate(270deg); }
+  @media (hover: hover) { .swap:hover { transform: rotate(270deg); } }
   .q-cards { grid-template-columns: 1fr; gap: 12px; }
   .q-st { padding: 16px 18px 18px; }
   .q-st p { font-size: 17px; }
@@ -504,7 +510,6 @@
   .aspect-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
   .aspect { padding: 18px 16px; }
   .box-stage { min-height: 440px; }
-  .bx-glow { width: 260px; height: 260px; }
   .type-nav a { padding: 14px 16px; }
 }
 
@@ -546,7 +551,7 @@ html.sheet-open { overflow: hidden; }
 
 .fn-head { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 16px; padding: 6px 36px 16px 0; }
 .fn-art { position: relative; width: 96px; height: 96px; border-radius: 24px; background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--q) 22%, transparent), transparent 70%); }
-.fn-float { display: block; width: 100%; height: 100%; animation: float 6s ease-in-out infinite; }
+.fn-float { display: block; width: 100%; height: 100%; animation: float 3s ease-in-out 1; }   /* знак функции один раз «вздыхает» при открытии шторки и замирает */
 .fn-svg { width: 100%; height: 100%; overflow: visible; }
 .sheet.in .fn-art { animation: fn-pop 0.7s var(--spring) both; }
 @keyframes fn-pop { from { transform: scale(0.6) rotate(-12deg); opacity: 0; } }
@@ -616,7 +621,7 @@ html.sheet-open { overflow: hidden; }
 }
 .celeb-ava.fic::after { content: ""; position: absolute; inset: 3px 3px 52%; border-radius: 14px 14px 40% 40%; background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), transparent); pointer-events: none; }
 :root[data-theme="dark"] .celeb-ava.fic::after { background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent); }
-.celeb:hover .celeb-ava { transform: rotate(-6deg) scale(1.06); }
+@media (hover: hover) { .celeb:hover .celeb-ava { transform: rotate(-6deg) scale(1.06); } }
 .celeb-ic { width: 60%; height: 60%; overflow: visible; }
 .celeb-ava:not(.fic) .celeb-ic { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.18)); }
 .celeb-ava.fic .celeb-ic { position: relative; z-index: 1; }
@@ -637,13 +642,13 @@ html.sheet-open { overflow: hidden; }
 .celeb-ava.sm.fic { border-radius: 13px; box-shadow: 0 0 0 2px var(--lb), inset 0 0 0 1.5px color-mix(in srgb, var(--q) 40%, transparent); }
 .celeb-ava.sm.fic::after { border-radius: 10px 10px 40% 40%; }
 .celeb-stack .celeb-ava + .celeb-ava { margin-left: -8px; }
-.celeb-line:hover .celeb-ava:nth-child(2) { transform: translateX(5px); }
-.celeb-line:hover .celeb-ava:nth-child(3) { transform: translateX(10px); }
+@media (hover: hover) { .celeb-line:hover .celeb-ava:nth-child(2) { transform: translateX(5px); } }
+@media (hover: hover) { .celeb-line:hover .celeb-ava:nth-child(3) { transform: translateX(10px); } }
 .celeb-line-txt { flex: 1; min-width: 0; font-size: 16px; line-height: 1.35; }
 .celeb-line-txt b { font-weight: 600; }
 .celeb-line-k { display: block; margin-bottom: 2px; color: var(--muted); font-size: 13px; font-weight: 600; }
 .celeb-go { flex: none; color: var(--faint); font-size: 24px; line-height: 1; transition: transform 0.3s var(--out); }
-.celeb-line:hover .celeb-go { transform: translateX(3px); }
+@media (hover: hover) { .celeb-line:hover .celeb-go { transform: translateX(3px); } }
 
 @media (max-width: 734px) {
   .celebs { margin-top: 56px; }

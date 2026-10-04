@@ -111,7 +111,7 @@
       busy = true;
       const { fact, reset } = draw(mode() === 'any' ? 'any' : 'type', typeFor());
       current = fact;
-      hint.hidden = true;
+      hint.classList.add('is-gone');
       stage.classList.remove('is-open');
       card.hidden = true;
       btn.classList.remove('shake');
@@ -122,11 +122,7 @@
         card.innerHTML = cardHTML(fact, reset);
         card.hidden = false;
         stage.classList.add('is-open');
-        const t = fact.type ? S.core.modelA.type(fact.type) : null;
-        const colors = t ? [S.theme.quadraColor(t.quadra), '#ffffff', S.color.tone(S.theme.quadraColor(t.quadra), 0.4)]
-          : S.data.quadras.map(q => S.theme.quadraColor(q.id));
-        const r = stage.getBoundingClientRect();
-        S.fx.confetti(colors, { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height * 0.45) / innerHeight, n: 70 });
+        // конфетти — только у двух пиков сайта (раскрытие типа и открытие разбора); у коробки свой жест — крышка и переворот карточки
         count.innerHTML = counter();
         const more = card.querySelector('[data-more]');
         if (more && document.documentElement.classList.contains('kbd')) more.focus({ preventScroll: true });
@@ -134,9 +130,16 @@
       }, 900);
     }
 
+    // карточка уходит так же, как пришла, только быстрее; потом закрывается крышка
     function close(then) {
-      stage.classList.remove('is-open', 'is-lid');
-      later(() => { card.hidden = true; if (then) then(); }, 320);
+      if (card.hidden) { stage.classList.remove('is-open', 'is-lid'); if (then) then(); return; }
+      card.classList.add('leaving');
+      later(() => {
+        card.hidden = true;
+        card.classList.remove('leaving');
+        stage.classList.remove('is-open', 'is-lid');
+        if (then) later(then, 320);
+      }, 180);
     }
 
     btn.addEventListener('click', open);
@@ -160,9 +163,9 @@
         if (pick) pick.hidden = m !== 'pick';
         if (m === 'pick') box.dataset.type = pick.querySelector('select').value;
         close();
-        hint.hidden = false;
+        hint.classList.remove('is-gone');
       });
-      if (pick) pick.querySelector('select').addEventListener('change', e => { box.dataset.type = e.target.value; close(); hint.hidden = false; });
+      if (pick) pick.querySelector('select').addEventListener('change', e => { box.dataset.type = e.target.value; close(); hint.classList.remove('is-gone'); });
     }
     return () => { timers.forEach(clearTimeout); offSocial(); };
   };

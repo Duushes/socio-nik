@@ -22,12 +22,11 @@
     S.art.emblem(t, { cls: (live ? 'em-live ' : 'em-float ') + cls, label });
 
   ui.tile = (t, i = 0) => `
-    <a class="tile tilt reveal" href="#/types/${t.id}" style="${ui.qStyle(t.quadra)};--i:${i % 4}">
+    <a class="tile reveal" href="#/types/${t.id}" style="${ui.qStyle(t.quadra)};--i:${i % 4}">
       <span class="tile-art">${ui.emblem(t, { label: false })}</span>
       <span class="tile-code">${t.mbti}</span>
       <span class="tile-alias">${esc(t.title)}</span>
       <span class="tile-role">${t.code} · ${esc(t.alias)}</span>
-      <span class="glare" aria-hidden="true"></span>
     </a>`;
 
   ui.typesGrid = () => `
@@ -155,7 +154,7 @@
     return `<div class="axis reveal" style="--i:${i}">
       <div class="axis-labs"><span class="${first ? 'on' : ''}">${a} <b>${v} %</b></span><span class="${first ? '' : 'on'}"><b>${100 - v} %</b> ${b}</span></div>
       <div class="axis-track" role="img" aria-label="${a} ${v} %, ${b.toLowerCase()} ${100 - v} %">
-        <i class="seg ${first ? 'on' : ''}" data-w="${v}"></i><i class="seg ${first ? '' : 'on'}" data-w="${100 - v}"></i>
+        <i class="seg ${first ? 'on' : ''}" style="width:max(0px, calc(${v}% - 1px))"></i><i class="seg ${first ? '' : 'on'}" style="width:max(0px, calc(${100 - v}% - 1px))"></i>
       </div>
     </div>`;
   }).join('')}</div>`;
@@ -172,7 +171,7 @@
             const v = byId[t.id].pct;
             return `<a class="dist-row${t.id === res.top.id ? ' top' : ''}" href="#/types/${t.id}" data-tip="${v} %|${t.mbti} «${esc(t.title)}» · ${t.code}" aria-label="${t.mbti}: ${v} %">
               <span class="dist-code">${t.mbti}</span>
-              <span class="dist-track"><i class="dist-bar" data-w="${v}"></i></span>
+              <span class="dist-track"><i class="dist-bar" style="width:${v}%"></i></span>
               <span class="dist-val">${v} %</span>
             </a>`;
           }).join('')}

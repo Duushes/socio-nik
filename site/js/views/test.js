@@ -52,7 +52,7 @@
       const who = duo ? (duo.step === 2 ? '<p class="duo-chip on">Отвечает партнёр</p>' : '<p class="duo-chip">Отвечаешь ты · потом партнёр</p>') : '';
       return `
         <section class="test">
-          <div class="test-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${qs.length}" aria-valuenow="${i}"><i style="--p:${(i / qs.length) * 100}%"></i></div>
+          <div class="test-progress" role="progressbar" aria-label="Прогресс теста" aria-valuemin="0" aria-valuemax="${qs.length}" aria-valuenow="${i}" aria-valuetext="Отвечено ${i} из ${qs.length}"><i style="--p:${i / qs.length}"></i></div>
           <div class="test-aurora" aria-hidden="true"></div>
           <div class="wrap test-wrap">
             <div class="test-head">
@@ -73,7 +73,10 @@
       const stage = root.querySelector('.q-stage'), bar = root.querySelector('.test-progress'), back = root.querySelector('[data-back]');
       const restart = root.querySelector('[data-restart]');
       const timers = [];
-      let locked = false, pendingQ = null;
+      let locked = false, pendingQ = null, alive = true;
+      // тексты экрана результата грузим в паузе между вопросами, а не после последнего ответа
+      const idle = root.requestIdleCallback || (f => setTimeout(f, 1500));
+      idle(() => { if (alive) S.app.preload('#/result').catch(() => {}); });
 
       const save = () => S.store.set('test', st);
       // Знак над вопросом не крутится сам: он склоняется к тому полюсу, на который смотришь или который выбрал
@@ -85,8 +88,9 @@
       // с клавиатуры — только мягкая смена прозрачности
       function paint(dir, viaKey = false) {
         const i = st.index, q = qs[i];
-        bar.querySelector('i').style.setProperty('--p', (i / qs.length) * 100 + '%');
+        bar.querySelector('i').style.setProperty('--p', i / qs.length);
         bar.setAttribute('aria-valuenow', i);
+        bar.setAttribute('aria-valuetext', `Отвечено ${i} из ${qs.length}`);
         back.disabled = i === 0;
         restart.disabled = i === 0 && !Object.keys(st.answers).length;
         const old = stage.querySelector('.q');
@@ -134,7 +138,7 @@
           locked = false;
           pendingQ = null;
           st.index < qs.length - 1 ? go(1, viaKey) : finish();
-        }, S.dom.reducedMotion() ? 60 : viaKey ? 120 : 180));
+        }, S.dom.reducedMotion() ? 240 : viaKey ? 120 : 180));   // в щадящем режиме вопрос меняется без движения — дадим увидеть отмеченный ответ
       }
 
       // Карточка утверждения — тоже ответ: нажатие — «скорее А / Б», второе нажатие, пока вопрос не сменился, — «точно»
@@ -180,10 +184,20 @@
             S.track('partner_test_done', { mode: 'invite' });
           }
         }
-        bar.querySelector('i').style.setProperty('--p', '100%');
+        bar.querySelector('i').style.setProperty('--p', 1);
+        bar.setAttribute('aria-valuenow', qs.length);
+        bar.setAttribute('aria-valuetext', `Отвечено ${qs.length} из ${qs.length}`);
+        // Переходим, когда тексты следующего экрана на месте (обычно они уже подгружены за время теста) —
+        // тогда экран подсчёта сменяется результатом без скелета, и переход успевает сыграть.
+        // В щадящем режиме — без экрана подсчёта. Иначе шарики подсчёта получают имя эмблемы:
+        // при переходе они перетекают в эмблему типа (View Transition)
+        const ready = S.app.preload(next).catch(() => {});
+        const leave = () => { if (alive) location.hash = next; };
+        if (S.dom.reducedMotion()) { ready.then(leave); return; }
         const ov = root.querySelector('.counting');
         ov.hidden = false;
-        timers.push(setTimeout(() => { location.hash = next; }, S.dom.reducedMotion() ? 50 : 1300));
+        if (next === '#/result') ov.querySelector('.counting-orbs').style.viewTransitionName = 'type-emblem';
+        Promise.all([ready, new Promise(ok => timers.push(setTimeout(ok, 1300)))]).then(leave);
       }
 
       const leaving = el => Boolean(el.closest('.q-out-l, .q-out-r, .q-fade-out'));
@@ -240,6 +254,7 @@
         stage.removeEventListener('pointerleave', onLeave);
         document.removeEventListener('keydown', onKey);
         timers.forEach(clearTimeout);
+        alive = false;
       };
     }
   };

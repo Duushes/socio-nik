@@ -814,6 +814,42 @@ html.vt-unveil::view-transition-new(${name(i)}) { animation: pv-vt-in 380ms var(
     afterUnveil(box, sd);
   }
 
+  // ---------- «Глазами партнёра»: экран тот же, вы меняетесь местами ----------
+  // Тихая перерисовка, а поверх — FLIP за 400 мс: круги переезжают навстречу друг другу, фишки перелетают
+  // к тому, кто теперь «ты» или «партнёр», карта плавно уступает место пояснению. В щадящем режиме — сразу на месте
+  async function swapPerspective(root, swapped) {
+    const fig0 = root.querySelector('[data-report] [data-pv]');
+    const st0 = fig0 && fig0.querySelector('.pv-stage').getBoundingClientRect();
+    const first = {};
+    if (fig0) fig0.querySelectorAll('.pv-chip[data-aspect]').forEach(c => { first[c.dataset.aspect] = c.getBoundingClientRect(); });
+    persp.swapped = swapped;
+    S.app.render({ instant: true, keepScroll: true });
+    const box = await reportShown;
+    const fig = box && box.querySelector('[data-pv]');
+    if (!fig || !st0 || S.dom.reducedMotion() || !document.body.animate) return;
+    const st = fig.querySelector('.pv-stage').getBoundingClientRect();
+    const opts = { duration: 400, easing: FLIP_EASE };
+    const from = (el, tf) => { if (el) el.animate([{ transform: tf }, { transform: 'none' }], opts); };
+    const shift = st0.top - st.top;
+    if (Math.abs(shift) > 0.5) from(fig.closest('.pv-wrap') || fig, `translateY(${shift.toFixed(1)}px)`);
+    fig.querySelectorAll('.pv-chip[data-aspect]').forEach(c => {
+      const was = first[c.dataset.aspect];
+      if (!was) return;
+      const now = c.getBoundingClientRect();
+      const dx = (was.left - st0.left) - (now.left - st.left), dy = (was.top - st0.top) - (now.top - st.top);
+      if (Math.abs(dx) + Math.abs(dy) > 0.5) from(c, `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`);
+    });
+    // круги и коды — в единицах SVG: новый левый круг приезжает справа, правый — слева
+    const d = S.art.pairVenn.CX[1] - S.art.pairVenn.CX[0], codes = fig.querySelectorAll('.pv-code');
+    from(fig.querySelector('.pv-c-me'), `translateX(${d}px)`);
+    from(fig.querySelector('.pv-c-partner'), `translateX(${-d}px)`);
+    from(codes[0], `translateX(${d + 124}px)`);
+    from(codes[1], `translateX(${-(d + 124)}px)`);
+    const aura = fig.querySelector('.pv-aura'), note = box.querySelector('.persp-note');
+    if (aura) aura.animate([{ opacity: 0.25 }, { opacity: 1 }], opts);
+    if (note) note.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 240, easing: 'ease-out' });
+  }
+
   V.pair = {
     needs: ['types', 'relations', 'functions', 'modelA'],
     valid: (x, y) => Boolean(CP().side(x) && CP().side(y)),
@@ -850,10 +886,7 @@ html.vt-unveil::view-transition-new(${name(i)}) { animation: pv-vt-in 380ms var(
         const asp = e.target.closest('[data-aspect]') || (card && !e.target.closest('a, button') ? card.querySelector('[data-aspect]') : null);
         if (asp && root.querySelector('[data-report].ready')) zoneSheet(view, asp.dataset.aspect, asp);
         const p = e.target.closest('[data-persp]');
-        if (p && (p.dataset.persp === '1') !== view.swapped) {
-          persp.swapped = p.dataset.persp === '1';
-          S.app.render({ instant: true, keepScroll: true });
-        }
+        if (p && (p.dataset.persp === '1') !== view.swapped) swapPerspective(root, p.dataset.persp === '1');
         if (e.target.closest('[data-name]')) nameSheet(sd.partner.code, e.target.closest('[data-name]'));
         const forgetBtn = e.target.closest('[data-forget]');
         if (forgetBtn) {

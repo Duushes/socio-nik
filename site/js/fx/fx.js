@@ -1,15 +1,15 @@
-/* Socio-Nik · эффекты: появление при прокрутке, счёт чисел, рост столбиков, наклон карточек,
+/* Socio-Nik · эффекты: появление при прокрутке, счёт чисел, наклон карточек,
    морфинг дихотомий, пауза анимаций вне экрана, конфетти, переходы между экранами. */
 (function (root) {
   const S = root.Socio = root.Socio || {};
   const { reducedMotion } = S.dom;
 
-  // ---------- счёт чисел и рост столбиков ----------
+  // ---------- счёт чисел ----------
   function countUp(el) {
     if (el.dataset.done) return;
     el.dataset.done = '1';
     const to = Number(el.dataset.count);
-    if (reducedMotion()) { el.textContent = to; return; }
+    if (reducedMotion() || (S.app && S.app.quiet)) { el.textContent = to; return; }
     const t0 = performance.now(), dur = 1200;
     const step = now => {
       const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
@@ -24,8 +24,6 @@
     el.classList.add('in');
     const counters = el.matches('[data-count]') ? [el] : [];
     counters.concat(Array.from(el.querySelectorAll('[data-count]'))).forEach(countUp);
-    const bars = el.matches('[data-w]') ? [el] : [];
-    bars.concat(Array.from(el.querySelectorAll('[data-w]'))).forEach(b => { b.style.setProperty('--w', b.dataset.w + '%'); });
   }
 
   function reveal(scope) {
@@ -39,8 +37,9 @@
   }
 
   // ---------- пауза петель вне экрана ----------
+  // Смотрим на каждую секцию экрана (и на помеченное data-anim): всё, что ушло за край, стоит на паузе
   function pauseOffscreen(scope) {
-    const els = scope.querySelectorAll('[data-anim]');
+    const els = scope.querySelectorAll('section, [data-anim]');
     if (!els.length || !('IntersectionObserver' in root)) return () => {};
     const io = new IntersectionObserver(entries => entries.forEach(e => e.target.classList.toggle('is-off', !e.isIntersecting)));
     els.forEach(el => io.observe(el));
@@ -75,43 +74,33 @@
   }
 
   // ---------- морфинг «А ↔ Б» у карточек дихотомий ----------
+  // Не по таймеру: знак меняется, когда на карточку смотрят (наведение) или нажимают на неё
   function morph(scope) {
     const cards = Array.from(scope.querySelectorAll('[data-morph]'));
     if (!cards.length) return () => {};
-    const visible = new Set();
-    const io = 'IntersectionObserver' in root ? new IntersectionObserver(es => es.forEach(e => (e.isIntersecting ? visible.add(e.target) : visible.delete(e.target)))) : null;
-    cards.forEach(c => {
-      if (io) io.observe(c); else visible.add(c);
-      c.addEventListener('pointerenter', () => c.classList.add('hover'));
-      c.addEventListener('pointerleave', () => c.classList.remove('hover'));
+    const offs = cards.map(c => {
+      const on = () => c.classList.add('hover'), off = () => c.classList.remove('hover');
+      const tap = e => { if (e.pointerType !== 'mouse') c.classList.toggle('is-b'); };
+      c.addEventListener('pointerenter', on);
+      c.addEventListener('pointerleave', off);
+      c.addEventListener('pointerup', tap);
+      return () => { c.removeEventListener('pointerenter', on); c.removeEventListener('pointerleave', off); c.removeEventListener('pointerup', tap); };
     });
-    const timer = reducedMotion() ? 0 : setInterval(() => cards.forEach(c => {
-      if (visible.has(c) && !c.classList.contains('hover')) c.classList.toggle('is-b');
-    }), 2600);
-    return () => { clearInterval(timer); if (io) io.disconnect(); };
+    return () => offs.forEach(f => f());
   }
 
-  // ---------- параллакс героя ----------
-  function parallax(scope) {
-    const hero = scope.querySelector('[data-parallax]');
-    if (!hero || reducedMotion()) return () => {};
-    let raf = 0, px = 0, py = 0;
-    const onMove = e => {
-      if (e.pointerType === 'touch') return;
-      px = e.clientX / innerWidth - 0.5;
-      py = e.clientY / innerHeight - 0.5;
-      if (!raf) raf = requestAnimationFrame(apply);
+  // ---------- сцены отношений: история один раз, повтор — по наведению или нажатию ----------
+  function scenes(scope) {
+    const replay = svg => {
+      if (reducedMotion() || !svg.getAnimations) return;
+      svg.getAnimations({ subtree: true }).forEach(a => { a.cancel(); a.play(); });
     };
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(apply); };
-    const apply = () => {
-      raf = 0;
-      hero.style.setProperty('--px', px.toFixed(3));
-      hero.style.setProperty('--py', py.toFixed(3));
-      hero.style.setProperty('--sy', Math.min(1, scrollY / innerHeight).toFixed(3));
-    };
-    addEventListener('pointermove', onMove);
-    addEventListener('scroll', onScroll, { passive: true });
-    return () => { removeEventListener('pointermove', onMove); removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); };
+    const pick = e => e.target.closest && e.target.closest('svg.scene');
+    const onEnter = e => { const sc = pick(e); if (sc && e.pointerType === 'mouse' && !sc.contains(e.relatedTarget)) replay(sc); };
+    const onClick = e => { const sc = pick(e); if (sc) replay(sc); };
+    scope.addEventListener('pointerover', onEnter);
+    scope.addEventListener('click', onClick);
+    return () => { scope.removeEventListener('pointerover', onEnter); scope.removeEventListener('click', onClick); };
   }
 
   // ---------- конфетти ----------
@@ -141,16 +130,17 @@
   // ---------- переходы между экранами ----------
   let active = null;
   function transition(update, { theme = false, x = innerWidth / 2, y = 0 } = {}) {
-    // Без API, в щадящем режиме и поверх уже идущего перехода — просто обновляем экран
-    if (!document.startViewTransition || reducedMotion() || active || document.visibilityState !== 'visible') { update(); return; }
-    const de = document.documentElement;
-    if (theme) {
+    // Без API и поверх уже идущего перехода — просто обновляем экран; в щадящем режиме — мягкая смена прозрачности
+    if (!document.startViewTransition || active || document.visibilityState !== 'visible') { update(); return; }
+    const de = document.documentElement, gentle = reducedMotion();
+    if (gentle) de.classList.add('vt-gentle');
+    else if (theme) {
       de.style.setProperty('--vt-x', x + 'px');
       de.style.setProperty('--vt-y', y + 'px');
       de.classList.add('vt-theme');
     }
     const vt = active = document.startViewTransition(update);
-    const done = () => { active = null; de.classList.remove('vt-theme'); };
+    const done = () => { active = null; de.classList.remove('vt-theme', 'vt-gentle'); };
     vt.ready.catch(() => {});
     vt.updateCallbackDone.catch(() => {});
     vt.finished.then(done, done);
@@ -158,10 +148,10 @@
 
   // Подключить всё к только что отрисованному экрану; вернуть уборку
   function mountAll(scope) {
-    const offs = [reveal(scope), pauseOffscreen(scope), tilt(scope), morph(scope), parallax(scope)];
+    const offs = [reveal(scope), pauseOffscreen(scope), tilt(scope), morph(scope), scenes(scope)];
     scope.querySelectorAll('svg.em-live').forEach(svg => offs.push(S.art.animateOrbit(svg)));
     return () => offs.forEach(off => off && off());
   }
 
-  S.fx = { reveal, countUp, show, pauseOffscreen, tilt, morph, parallax, confetti, transition, mountAll };
+  S.fx = { reveal, countUp, show, pauseOffscreen, tilt, morph, scenes, confetti, transition, mountAll };
 })(window);

@@ -71,12 +71,11 @@
           <div class="qgrid">
             ${S.data.quadras.map((q, i) => {
               const c = (S.content.quadras || {})[q.id] || {};
-              return `<a class="qcard tilt reveal" style="${ui.qStyle(q.id)};--i:${i}" href="#/quadras#${q.id}">
+              return `<a class="qcard reveal" style="${ui.qStyle(q.id)};--i:${i}" href="#/quadras#${q.id}">
                 <span class="qcard-art" data-anim>${S.art.quadraEmblem(q)}</span>
                 <span class="qcard-name">${q.name}</span>
                 <span class="qcard-motto">${esc(c.motto || '')}</span>
                 <span class="qcard-types">${ui.typesOf(q.id).map(t => t.mbti).join(', ')}</span>
-                <span class="glare" aria-hidden="true"></span>
               </a>`;
             }).join('')}
           </div>

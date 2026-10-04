@@ -79,8 +79,8 @@
     about: 'about'
   };
 
-  function parse() {
-    const raw = decodeURIComponent(location.hash.replace(/^#/, '')) || '/';
+  function parse(hash = location.hash) {
+    const raw = decodeURIComponent(hash.replace(/^#/, '')) || '/';
     const [path, anchor] = raw.split('#');
     for (const [re, name] of ROUTES) {
       const m = path.match(re);
@@ -139,6 +139,11 @@
   };
   const PACK_ORDER = ['types', 'relations', 'functions', 'modelA', 'celebs', 'facts'];
   const missingFor = view => PACK_ORDER.filter(n => (view.needs || []).includes(n) && !READY[n]());
+  // Заранее подтянуть тексты экрана по адресу: пока идёт тест, грузим тексты результата — переход потом без скелета
+  const preload = hash => {
+    const view = S.views[parse(hash).name], missing = view ? missingFor(view) : [];
+    return missing.length ? S.lazy(missing.flatMap(n => PACKS[n])) : Promise.resolve();
+  };
 
   // Пока тексты едут — скелет той же ширины; если не доехали — честное сообщение и кнопка «Обновить»
   function showLoading() {
@@ -173,12 +178,13 @@
     const update = () => {
       if (cleanup) { try { cleanup(); } catch (e) { /* уже убрано */ } cleanup = null; }
       const el = app();
+      // quiet: экран тот же, поменялось состояние — входные анимации не повторяем, всё сразу на месте.
+      // Флаг ставим до отрисовки: по нему вид решает, играть ли свою сцену появления
+      S.app.quiet = keepScroll;
       el.innerHTML = view.render(...r.params);
       document.title = (view.title ? view.title(...r.params) + ' · ' : '') + 'Socio-Nik';
       document.body.setAttribute('data-view', r.name);
-      // quiet: экран тот же, поменялось состояние — входные анимации не повторяем, всё сразу на месте
       el.classList.toggle('quiet', keepScroll);
-      S.app.quiet = keepScroll;
       if (keepScroll) {
         scrollTo(0, y);
         el.querySelectorAll('.reveal').forEach(S.fx.show);
@@ -237,6 +243,25 @@
     document.documentElement.classList.add('js');
 
     document.querySelector('[data-theme-toggle]').addEventListener('click', e => toggleTheme(e.currentTarget));
+    // «Движение»: выключатель для тех, кому анимация мешает читать (WCAG 2.2.2) — то же, что системная настройка
+    const motionBtn = document.querySelector('[data-motion-toggle]');
+    const paintMotion = () => {
+      const off = document.documentElement.classList.contains('motion-off');
+      motionBtn.setAttribute('aria-pressed', String(off));
+      const label = off ? 'Включить анимацию' : 'Остановить анимацию';
+      motionBtn.setAttribute('aria-label', label);
+      motionBtn.title = label;
+    };
+    if (motionBtn) {
+      paintMotion();
+      motionBtn.addEventListener('click', () => {
+        const off = !document.documentElement.classList.contains('motion-off');
+        document.documentElement.classList.toggle('motion-off', off);
+        S.store.set('motion', off ? 'off' : 'on');
+        paintMotion();
+        S.dom.announce(off ? 'Анимация остановлена' : 'Анимация включена');
+      });
+    }
     document.querySelector('[data-menu]').addEventListener('click', () => setMenu(!document.querySelector('.nav').classList.contains('open')));
     addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('.nav.open')) setMenu(false); });
     // «К содержимому» — сразу к первому экрану, без смены адреса: хеш здесь занят роутером, а #app — не страница
@@ -251,7 +276,12 @@
     addEventListener('keydown', e => { if (e.key === 'Tab' || e.key.startsWith('Arrow') || /^[1-5]$/.test(e.key)) document.documentElement.classList.add('kbd'); }, true);
     addEventListener('pointerdown', () => document.documentElement.classList.remove('kbd'), true);
     addEventListener('hashchange', () => render());
-    addEventListener('scroll', () => document.body.classList.toggle('scrolled', scrollY > 8), { passive: true });
+    // граница шапки при прокрутке — по стороже в начале страницы, без слушателя scroll
+    const sentry = document.createElement('div');
+    sentry.setAttribute('aria-hidden', 'true');
+    sentry.style.cssText = 'position:absolute;top:0;left:0;width:1px;height:8px;pointer-events:none';
+    document.body.prepend(sentry);
+    if ('IntersectionObserver' in root) new IntersectionObserver(([e]) => document.body.classList.toggle('scrolled', !e.isIntersecting)).observe(sentry);
     render({ instant: true });
   }
 
@@ -264,6 +294,6 @@
     render: opts => render(opts)
   };
 
-  S.app = { render, restoreFocus, quiet: false };
+  S.app = { render, restoreFocus, preload, quiet: false };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })(window);

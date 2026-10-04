@@ -24,7 +24,8 @@
   // ---------- DOM ----------
   const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ESC[c]);
-  const reducedMotion = () => Boolean(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const reducedMotion = () => Boolean((root.document && root.document.documentElement.classList.contains('motion-off')) ||
+    (root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches));
   const pct = n => n + ' %';
   // Короткое сообщение для скринридера: что изменилось на экране (например, «разбор открыт»)
   let live = null;

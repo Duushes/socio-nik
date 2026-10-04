@@ -62,13 +62,15 @@
     const friendAxes = S.state.friend, friend = friendAxes ? M().type(S.core.scoring.result(friendAxes).top.id) : null;
     const link = S.share.url(axes), plain = S.share.text(axes, { withUrl: false });
     const saved = friend ? '' : savedPair(axes);
+    // Сразу после теста — сцена раскрытия: шарики подсчёта перетекают в эмблему, буквы встают по одной, потом проценты
+    const reveal = S.state.justFinished && !S.app.quiet;
 
     return `
-      <section class="res-hero" style="${ui.qStyle(t.quadra)}" data-anim>
+      <section class="res-hero${reveal ? ' just-finished' : ''}" style="${ui.qStyle(t.quadra)}" data-anim>
         <div class="res-glow" aria-hidden="true"></div>
         <div class="wrap res-top">
           <p class="eyebrow">Твой тип</p>
-          <div class="res-emblem" data-reveal-type>${ui.emblem(t, { live: true, cls: 'em-big' })}</div>
+          <div class="res-emblem${reveal && !S.dom.reducedMotion() ? ' is-landing' : ''}" data-reveal-type>${ui.emblem(t, { live: true, cls: 'em-big' })}</div>
           <h1 class="res-code" data-type-code aria-label="${t.mbti}, ${esc(t.title)}">${t.mbti.split('').map((ch, k) => `<span style="--k:${k}">${ch}</span>`).join('')}</h1>
           <p class="res-name">${esc(t.title)}</p>
           <div class="res-pct"><span class="big" data-count="${res.top.pct}">${res.top.pct}</span><span class="pc">%</span></div>
@@ -242,11 +244,21 @@
       const axes = S.state.result();
       if (!axes) return () => {};
       const offs = [ui.mountCalc(root), ui.mountBox(root), ui.mountTips(root), mountShare(root, axes), ui.mountInvite(root, axes)];
+      const timers = [];
       if (S.state.justFinished) {
         S.state.justFinished = false;
         const t = M().type(S.core.scoring.result(axes).top.id);
         const c = S.theme.quadraColor(t.quadra);
-        setTimeout(() => S.fx.confetti([c, S.color.tone(c, 0.35), S.color.tone(c, -0.2), '#ffffff'], { y: 0.3 }), 450);
+        const big = root.querySelector('.res-pct [data-count]'), code = root.querySelector('.res-code'), em = root.querySelector('.res-emblem.is-landing');
+        // проценты считаются, когда буквы уже встали; искры — из кода типа, когда встала последняя буква
+        if (big) timers.push(setTimeout(() => S.fx.countUp(big), 600));
+        timers.push(setTimeout(() => {
+          const r = code && code.getBoundingClientRect();
+          const at = r && r.bottom > 0 && r.top < innerHeight ? { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height / 2) / innerHeight } : { y: 0.3 };
+          S.fx.confetti([c, S.color.tone(c, 0.35), S.color.tone(c, -0.2), '#ffffff'], Object.assign({ n: 90 }, at));
+        }, 820));
+        // имя для перехода нужно только в момент приземления: иначе эмблема отдельно поплывёт и при смене темы
+        if (em) timers.push(setTimeout(() => em.classList.remove('is-landing'), 1200));
       }
       const again = root.querySelector('[data-restart-test]');
       if (again) again.addEventListener('click', () => S.store.del('test'));
@@ -261,7 +273,7 @@
       root.addEventListener('click', onGo);
       let timer = 0;
       if (S.store.get('intent', null) === 'invite') { S.store.del('intent'); timer = setTimeout(goInvite, 1600); }
-      offs.push(() => { root.removeEventListener('click', onGo); clearTimeout(timer); });
+      offs.push(() => { root.removeEventListener('click', onGo); clearTimeout(timer); timers.forEach(clearTimeout); });
       return () => offs.forEach(f => f && f());
     }
   };
