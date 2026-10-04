@@ -38,8 +38,7 @@
       return `
       <section class="sec page-head">
         <div class="wrap">
-          <p class="eyebrow reveal">Библиотека</p>
-          <h1 class="title reveal">Шестнадцать типов.<br>Четыре шкалы.</h1>
+          <h1 class="title">Шестнадцать типов, четыре шкалы.</h1>
           <p class="lead reveal">Всё о типах личности: шкалы, из которых складывается код, описания шестнадцати типов, квадры и отношения между типами. Коды — как в MBTI, глубина — из соционики.</p>
           <div class="dich-grid">
             ${DICH.map((d, i) => `
@@ -56,8 +55,7 @@
       <section class="sec sec-alt">
         <div class="wrap-wide">
           <div class="wrap-inner">
-            <p class="eyebrow reveal">16 типов</p>
-            <h2 class="title reveal">Шестнадцать типов.<br>Четыре квадры.</h2>
+            <h2 class="title">Все типы по квадрам.</h2>
             <p class="lead reveal">У каждого типа своя эмблема: крупный знак — главная функция, маленький на орбите — творческая. Цвет — квадра, то есть компания типов с общими ценностями.</p>
           </div>
           ${ui.typesGrid()}
@@ -68,7 +66,6 @@
       <section class="sec">
         <div class="wrap-wide">
           <div class="wrap-inner">
-            <p class="eyebrow reveal">Квадры</p>
             <h2 class="title reveal">Четыре компании<br>с общими ценностями.</h2>
           </div>
           <div class="qgrid">
@@ -78,7 +75,7 @@
                 <span class="qcard-art" data-anim>${S.art.quadraEmblem(q)}</span>
                 <span class="qcard-name">${q.name}</span>
                 <span class="qcard-motto">${esc(c.motto || '')}</span>
-                <span class="qcard-types">${ui.typesOf(q.id).map(t => t.mbti).join(' · ')}</span>
+                <span class="qcard-types">${ui.typesOf(q.id).map(t => t.mbti).join(', ')}</span>
                 <span class="glare" aria-hidden="true"></span>
               </a>`;
             }).join('')}
@@ -89,7 +86,6 @@
 
       <section class="sec sec-alt">
         <div class="wrap">
-          <p class="eyebrow reveal">Отношения</p>
           <h2 class="title reveal">Почему с одними легко,<br>а с другими — нет.</h2>
           <p class="lead reveal">Выбери два типа — покажем, как устроены отношения. Для своей пары лучше пройти тест вдвоём: так разбор будет по вашим настоящим ответам.</p>
           <div class="reveal">${ui.calc(a, b)}</div>
@@ -99,7 +95,6 @@
 
       <section class="sec">
         <div class="wrap">
-          <p class="eyebrow reveal">Mystery box</p>
           <h2 class="title reveal">Открой коробку.</h2>
           <p class="lead reveal">Внутри — случайный факт об одном из 16 типов или о соционике. Факты не повторяются, пока колода не кончится.</p>
           <div class="reveal">${ui.box()}</div>

@@ -13,9 +13,8 @@
       <section class="sec page-head">
         <div class="wrap-wide">
           <div class="wrap-inner">
-            <p class="eyebrow reveal">Типы</p>
             <h1 class="title reveal">16 типов</h1>
-            <p class="lead reveal">Нажми на тип — там описание, модель А и отношения со всеми остальными. Код — как в MBTI, ниже — соционическое название. Эмблема: крупный знак — главная функция, маленький на орбите — творческая.</p>
+            <p class="lead">Нажми на тип: внутри описание, модель А и отношения со всеми. Сверху код MBTI, под ним название в соционике. Крупный знак на эмблеме — главная функция, маленький на орбите — творческая.</p>
           </div>
           ${ui.typesGrid()}
         </div>
@@ -55,7 +54,7 @@
           <div class="wrap type-top">
             <a class="crumb reveal" href="#/types">‹ Все типы</a>
             <div class="type-emblem reveal" style="--i:1">${ui.emblem(t, { live: true, cls: 'em-big' })}</div>
-            <p class="eyebrow reveal" style="--i:2"><i class="qdot" aria-hidden="true"></i>${q.name} · ${t.code} «${esc(t.alias)}»</p>
+            <p class="eyebrow">Квадра ${q.name}, в соционике ${t.code} «${esc(t.alias)}»</p>
             <h1 class="res-code reveal" style="--i:2">${t.mbti}</h1>
             <p class="res-name reveal" style="--i:3">${esc(t.title)} · ${esc(t.name.toLowerCase())}</p>
             <p class="lead reveal" style="--i:4">${esc(c.tagline || '')}</p>

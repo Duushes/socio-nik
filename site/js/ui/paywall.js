@@ -13,10 +13,16 @@
 
   const paywall = {
     mode: () => (query().get('unlock') === '1' ? 'off' : conf().mode),
-    // В режиме проверки спроса цена случайная из списка, одна на устройство — чтобы не прыгала от визита к визиту
-    price() {
+    // В режиме проверки спроса цена — из списка. Для пары она одна и та же у обоих партнёров (выбирается по ключу пары),
+    // без пары — одна на устройство, чтобы не прыгала от визита к визиту
+    price(key) {
       const c = conf();
       if (paywall.mode() !== 'fakedoor') return c.price;
+      if (key) {
+        let h = 0;
+        for (const ch of String(key)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+        return c.prices[h % c.prices.length];
+      }
       let p = S.store.get('price', null);
       if (!c.prices.includes(p)) {
         p = c.prices[Math.floor(Math.random() * c.prices.length)];
@@ -47,8 +53,8 @@
   ];
   ui.offerInside = () => `<ul class="offer-list">${INSIDE.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
 
-  function sheetHTML({ gift }) {
-    const mode = paywall.mode(), price = paywall.price();
+  function sheetHTML({ gift, price }) {
+    const mode = paywall.mode();
     if (gift) {
       return `<div class="offer-sheet">
         <h2 class="title-sm">Подарок паре друзей скоро появится.</h2>
@@ -76,9 +82,9 @@
 
   // Открыть шторку предложения; onUnlock — что сделать после открытия разбора
   ui.openOffer = ({ gift = false, from, onUnlock, ctx = {} } = {}) => {
-    const price = paywall.price();
+    const price = paywall.price(ctx.pair);
     S.track('offer_click', Object.assign({ product: 'pair', price, gift, mode: paywall.mode() }, ctx));
-    const sheet = ui.openSheet({ label: gift ? 'Подарить разбор' : 'Разбор пары', from, render: () => sheetHTML({ gift }) });
+    const sheet = ui.openSheet({ label: gift ? 'Подарить разбор' : 'Разбор пары', from, render: () => sheetHTML({ gift, price }) });
     sheet.dlg.classList.add('offer');
     sheet.dlg.addEventListener('click', e => {
       if (!e.target.closest('[data-offer-yes]')) return;
@@ -106,8 +112,7 @@
 
   ui.priceSurvey = () => `
     <div class="card survey" data-survey>
-      <p class="eyebrow">Помоги с ценой</p>
-      <h3 class="card-title">Четыре вопроса — и мы поймём, сколько должен стоить разбор.</h3>
+      <h3 class="card-title">Помоги с ценой: четыре вопроса, и мы поймём, сколько должен стоить разбор.</h3>
       ${QS.map(([k, q]) => `<fieldset class="sv-q"><legend>${esc(q)}</legend><div class="sv-opts">${STEPS_LOW.map(v => `<button type="button" class="chip" data-sv="${k}" data-v="${v}" aria-pressed="false">${v ? rub(v) : 'бесплатно'}</button>`).join('')}</div></fieldset>`).join('')}
       <p><button class="btn" type="button" data-sv-send disabled>Отправить</button></p>
     </div>`;
@@ -126,7 +131,7 @@
       if (e.target.closest('[data-sv-send]')) {
         S.track('price_survey', Object.assign({ product: 'pair' }, ans));
         S.store.set('surveyDone', true);
-        box.innerHTML = '<p class="eyebrow">Спасибо</p><h3 class="card-title">Ответ записан — это очень помогает.</h3>';
+        box.innerHTML = '<h3 class="card-title">Спасибо, ответ записан. Это очень помогает.</h3>';
       }
     };
     box.addEventListener('click', onClick);

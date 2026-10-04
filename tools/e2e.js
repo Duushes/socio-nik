@@ -126,12 +126,12 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
       const soc = await b.eval(() => {
         const bar = document.querySelector('.share .socials');
         const href = n => (bar.querySelector(`[data-social="${n}"]`) || {}).href || '';
-        return { tg: href('telegram'), wa: href('whatsapp'), x: href('x'), vk: href('vk'), story: Boolean(bar.querySelector('[data-social="story"]')), meta: /instagram|инстаграм/i.test(document.body.innerHTML), copy: Boolean(bar.querySelector('[data-social="copy"]')) };
+        return { tg: href('telegram'), wa: href('whatsapp'), max: href('max'), vk: href('vk'), story: Boolean(bar.querySelector('[data-social="story"]')), meta: /instagram|инстаграм/i.test(document.body.innerHTML), copy: Boolean(bar.querySelector('[data-social="copy"]')) };
       });
       const enc = encodeURIComponent(await b.eval('Socio.share.url(Socio.state.result())'));
-      check('результат: Telegram, WhatsApp, X, ВКонтакте, «Картинка для сторис» и «Скопировать ссылку»; упоминаний Instagram нет',
+      check('результат: Telegram, WhatsApp, MAX, ВКонтакте, «Картинка для сторис» и «Скопировать ссылку»; упоминаний Instagram нет',
         soc.tg.startsWith('https://t.me/share/url?url=' + enc) && soc.wa.startsWith('https://wa.me/?text=') && soc.wa.includes(enc) &&
-        soc.x.startsWith('https://x.com/intent/tweet?text=') && soc.x.includes('&url=' + enc) && soc.vk.startsWith('https://vk.com/share.php?url=' + enc) && soc.story && soc.copy && !soc.meta,
+        soc.max.startsWith('https://max.ru/:share?text=') && soc.max.includes(enc) && soc.vk.startsWith('https://vk.com/share.php?url=' + enc) && soc.story && soc.copy && !soc.meta,
         JSON.stringify(soc));
     } else {
       check('текст шера без ссылки, пока нет SITE_URL', /^Мой тип личности — .+ Socio-Nik$/.test(share.text), share.text);
@@ -168,7 +168,7 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
       }
       return { nets, tg, png: png.size, canFiles, status, meta: /instagram|инстаграм/i.test(card.innerHTML) };
     });
-    check('факт: четыре сети, картинка для сторис и ссылка на тип; упоминаний Instagram нет', ['telegram', 'whatsapp', 'x', 'vk', 'story'].every(n => fsoc.nets.includes(n)) && !fsoc.meta && /%23%2Ftypes%2F[a-z]{3}|%23%2Fbox/.test(fsoc.tg), JSON.stringify(fsoc));
+    check('факт: четыре сети, картинка для сторис и ссылка на тип; упоминаний Instagram нет', ['telegram', 'whatsapp', 'max', 'vk', 'story'].every(n => fsoc.nets.includes(n)) && !fsoc.meta && /%23%2Ftypes%2F[a-z]{3}|%23%2Fbox/.test(fsoc.tg), JSON.stringify(fsoc));
     check('факт: картинка для сторис собирается', fsoc.png > 60000 && (fsoc.canFiles || /сохранена/.test(fsoc.status)), JSON.stringify(fsoc));
     await shot('d-box-open', '.box-stage', 140);
 
@@ -223,13 +223,13 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
         await sleep(560);
       }
       await sleep(2300);
-      const you = { view: document.body.dataset.view, title: (document.querySelector('.sh-you h2') || {}).textContent || '', rel: (document.querySelector('.sh-you .sh-rel') || {}).textContent || '' };
+      const you = { view: document.body.dataset.view, title: (document.querySelector('.sh-you h2') || {}).textContent || '', rel: ((document.querySelector('.sh-you h2') || {}).textContent || '').split(': ')[1] || '' };
       const goPair = (document.querySelector('[data-pair-go]') || { getAttribute: () => '' }).getAttribute('href');
       return { mine, mineCode, withMine, fresh, you, goPair };
     });
     check('ссылка на чужой результат: своя страница с плашкой и кнопкой к вашей паре', shared.withMine.badge && shared.withMine.cta === `#/pair/${shared.mineCode}/1-80-85-20-15` && shared.withMine.scene, JSON.stringify(shared));
     check('без своего результата: загадка «?» и кнопка «Узнать свой тип»', shared.fresh.code === 'ENFP' && shared.fresh.mystery && shared.fresh.cta === 'Узнать свой тип', JSON.stringify(shared.fresh));
-    check('после теста по ссылке — блок «Ты и тот, кто позвал» и кнопка к экрану пары', shared.you.view === 'result' && / и ENFP$/.test(shared.you.title) && shared.you.rel.length > 5 && /^#\/pair\/1-[\d-]+\/1-80-85-20-15$/.test(shared.goPair), JSON.stringify(shared));
+    check('после теста по ссылке — блок «Ты и тот, кто позвал» и кнопка к экрану пары', shared.you.view === 'result' && / и ENFP: /.test(shared.you.title) && shared.you.rel.length > 5 && /^#\/pair\/1-[\d-]+\/1-80-85-20-15$/.test(shared.goPair), JSON.stringify(shared));
     await shot('d-shared-you', '.sh-you', 60);
     await go('#/r/1-80-85-20-15', 1200);
     await shot('d-shared');
@@ -329,7 +329,7 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
 
     const rp = await b.eval(async () => {
       const sleep = ms => new Promise(r => setTimeout(r, ms));
-      document.querySelector('.zone-btn').click();
+      document.querySelector('.zone-more-btn').click();
       await sleep(900);
       const d = document.querySelector('dialog.sheet');
       const sheet = d ? { title: d.querySelector('.fn-title').textContent, secs: d.querySelectorAll('.fn-sec').length } : null;
@@ -384,7 +384,7 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
     const inv = await b.eval(`(async () => {
       const sleep = ms => new Promise(r => setTimeout(r, ms));
       const answer = ${answerFn};
-      const code = document.querySelector('.res-code').textContent;
+      const code = document.querySelector('.two-them').textContent;
       document.querySelector('[data-invite-go]').click();
       await sleep(1000);
       const e = await answer([4, 3, 1, 0, 2]);
@@ -557,7 +557,7 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
     await shot('m-pair-top');
     await shot('m-pair-offer', '#razbor', 30);
     await go('#/', 1400);
-    await shot('m-home-scenes', '.scenes', 120);
+    await shot('m-home-scenes', '.scene-list', 120);
 
     // ---------- однофайловая сборка: разбор открывается без подгрузки ----------
     execSync(`node "${path.join(__dirname, 'bundle.js')}" index.html && rm -rf /tmp/socionik-dist && mkdir -p /tmp/socionik-dist && cp "${path.join(__dirname, '..', 'dist', 'index.html')}" /tmp/socionik-dist/index.html`);

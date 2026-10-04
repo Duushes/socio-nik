@@ -132,11 +132,7 @@
 .calc-line { margin: 14px 0 8px; font-size: 19px; }
 .calc-role { margin: 0 0 14px; color: var(--muted); }
 
-.tone { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 8px; border-radius: var(--r-pill); background: var(--chip); color: var(--muted); font-size: 13px; font-weight: 600; }
-.tone i { width: 14px; height: 14px; border-radius: 4px; }
-.tone-support i { background: var(--tone-support); }
-.tone-work i { background: var(--tone-work); }
-.tone-tense i { background: var(--tone-tense); box-shadow: inset 0 0 0 1px var(--line); }
+.tone { display: inline-flex; align-items: center; padding: 5px 12px; border-radius: var(--r-pill); background: var(--chip); color: var(--muted); font-size: 13px; font-weight: 600; }
 
 /* ================= СЦЕНЫ ================= */
 .scene { overflow: visible; }
@@ -192,11 +188,12 @@
 .res-emblem, .type-emblem { width: min(300px, 72vw); aspect-ratio: 1; margin: 0 auto -6px; }
 .em-big { width: 100%; height: 100%; overflow: visible; }
 .res-code {
-  margin: 0; font-size: clamp(90px, 16vw, 170px); line-height: 0.95; letter-spacing: -0.05em; font-weight: 800;
-  /* от 92 % цвета квадры: даже зелёная Дельта на белом держит 3:1 для крупного текста */
-  background: linear-gradient(180deg, color-mix(in srgb, var(--q) 92%, var(--text)) 5%, color-mix(in srgb, var(--q) 84%, var(--text)) 45%, color-mix(in srgb, var(--q) 62%, var(--text)));
-  -webkit-background-clip: text; background-clip: text; color: transparent; padding-bottom: 0.04em;
+  /* сплошной цвет квадры, смешанный с цветом текста: и Дельта на белом держит 3:1 для крупного текста; без градиента */
+  margin: 0; font-size: clamp(76px, 11vw, 120px); line-height: 0.95; letter-spacing: -0.045em; font-weight: 800;
+  color: color-mix(in srgb, var(--q) 84%, var(--text)); padding-bottom: 0.04em;
 }
+.res-code span { display: inline-block; }
+.res-cta { margin-top: 26px; }
 .res-name { margin: 12px 0 4px; font-size: clamp(21px, 2.6vw, 28px); font-weight: 600; letter-spacing: -0.02em; }
 .res-alias { margin: 0 0 26px; color: var(--muted); }
 .res-pct { display: inline-flex; align-items: flex-start; gap: 4px; line-height: 1; }
@@ -283,7 +280,7 @@
 .soc-telegram { --brand: #2aabee; }
 .soc-story { --brand: var(--link); }
 .soc-whatsapp { --brand: #25d366; }
-.soc-x { --brand: var(--text); }
+.soc-max { --brand: #6a4cff; }
 .soc-vk { --brand: #0077ff; }
 .socials-compact { gap: 6px; margin: 0; }
 .soc-icon { width: 40px; height: 40px; padding: 0; justify-content: center; }
@@ -581,9 +578,8 @@ html.sheet-open { overflow: hidden; }
 
 /* ================= РЕЗУЛЬТАТ ПО ССЫЛКЕ ================= */
 .sh-badge { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 6px; padding: 8px 16px; border-radius: var(--r-pill); background: var(--glass); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: inset 0 0 0 1px var(--hair); font-size: 15px; font-weight: 600; }
-.sh-badge i { width: 8px; height: 8px; border-radius: 50%; background: var(--q); }
 .sh-motto { max-width: 640px; margin: 18px auto 30px; font-size: clamp(19px, 2.2vw, 23px); line-height: 1.42; color: var(--text); letter-spacing: -0.014em; }
-.sh-motto span { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.sh-motto span { display: block; margin-bottom: 6px; color: var(--muted); font-size: 14px; font-weight: 600; }
 .sh-note { margin: 18px 0 0; color: var(--muted); font-size: 14px; }
 .sh-pair { max-width: 560px; margin: 6px auto 18px; }
 .sh-pair .scene { width: 100%; height: auto; }

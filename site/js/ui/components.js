@@ -45,12 +45,12 @@
     <label class="pick"><span class="pick-lab">${esc(label)}</span>
       <span class="pick-box"><select name="${name}" data-${name}>
         ${S.data.quadras.map(q => `<optgroup label="${q.name}">${typesOf(q.id).map(t =>
-          `<option value="${t.id}"${t.id === selected ? ' selected' : ''}>${t.mbti} — ${esc(t.title)}</option>`).join('')}</optgroup>`).join('')}
+          `<option value="${t.id}"${t.id === selected ? ' selected' : ''}>${t.mbti}, ${esc(t.title)}</option>`).join('')}</optgroup>`).join('')}
       </select></span>
     </label>`;
 
   ui.toneName = tone => S.data.tones[tone];
-  ui.toneChip = tone => `<span class="tone tone-${tone}"><i aria-hidden="true"></i>${ui.toneName(tone)}</span>`;
+  ui.toneChip = tone => `<span class="tone tone-${tone}">${ui.toneName(tone)}</span>`;
 
   // Полное название вида; для заказа и ревизии с парой — кто кому заказчик / ревизор
   const TITLES = {

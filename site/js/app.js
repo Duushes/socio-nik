@@ -91,7 +91,7 @@
         return { name, params, anchor };
       }
     }
-    return { name: 'notfound', params: [], anchor: null };
+    return { name: 'notfound', params: [path], anchor: null };
   }
 
   let cleanup = null, lastPath = null, pendingFocus = null;

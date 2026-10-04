@@ -12,7 +12,6 @@
     render: id => `
       <section class="sec page-head box-page">
         <div class="wrap center">
-          <p class="eyebrow reveal">Mystery box</p>
           <h1 class="title reveal">Открой коробку.</h1>
           <p class="lead reveal">Случайный факт об одном из 16 типов — или о соционике вообще. Факты не повторяются, пока колода не кончится.</p>
           <div class="reveal">${ui.box({ modes: !id, typeId: id ? S.core.modelA.find(id).id : null })}</div>
@@ -41,8 +40,7 @@
       return `
         <section class="sec page-head">
           <div class="wrap narrow">
-            <p class="eyebrow reveal">О методике</p>
-            <h1 class="title reveal">Коды — как в MBTI.<br>Глубина — из соционики.</h1>
+            <h1 class="title">Коды из MBTI, глубина из соционики.</h1>
             <p class="lead reveal">Шестнадцать типов личности мы показываем привычными кодами из четырёх букв, а совместимость пары считаем по соционике — у неё есть подробная теория отношений между типами.</p>
           </div>
         </section>
@@ -52,7 +50,7 @@
             <p class="body reveal">MBTI — опросник Изабель Майерс и Кэтрин Бриггс по типологии Карла Юнга, он появился в 1940-х. Четыре шкалы — E/I, N/S, T/F, J/P — дают 16 типов с кодом вроде ENFP. Соционика выросла из того же Юнга в 1970-х: типов тоже 16, но к ним добавлена модель А — восемь функций — и теория шестнадцати видов отношений между типами. В MBTI такой теории почти нет, поэтому совместимость пары мы считаем по соционике.</p>
             <h2 class="title-sm reveal gap-top">Как коды соответствуют друг другу</h2>
             <p class="body reveal">Код MBTI мы получаем по буквам шкал. Тест меряет поведение: кто планирует заранее, получает букву J, кто действует по ситуации — P. В соционике это рациональность и иррациональность.</p>
-            <div class="card soft reveal"><h3 class="card-title">Честная сноска про интровертов</h3>
+            <div class="card soft reveal"><h3 class="card-title">Про интровертов</h3>
               <p>У интровертов соответствие спорное. Одни школы сопоставляют типы по буквам, как мы, другие — по ведущей функции. Поэтому, например, ЛИИ «Робеспьер» у нас INTJ, а в части источников — INTP. Мы выбрали буквы, потому что тест спрашивает именно о поведении.</p></div>
             <div class="reveal gap-top">${mapTable()}</div>
             <h2 class="title-sm reveal gap-top">Откуда взялась соционика</h2>
@@ -83,7 +81,7 @@
             <p class="body reveal">Двадцать вопросов — по пять на каждую пару признаков. Каждый ответ сдвигает свою шкалу; из шкал получаются вероятности полюсов, а вероятность типа — их произведение, поэтому по 16 типам всегда выходит 100 %. Ответы хранятся только на твоём устройстве.</p>
             <h2 class="title-sm reveal gap-top">Как считается совместимость пары</h2>
             <p class="body reveal">Для пары мы раскладываем восемь аспектов на сферы жизни — от денег до близости — и смотрим, на какой позиции модели А стоит каждая сфера у каждого из вас. Если одному это легко и важно, а другому очень нужно, — вы дополняете друг друга. Если одному важно, а другому больно, — здесь нужна бережность. Набор таких зон зависит от вида отношений, а конкретика — от ваших типов.</p>
-            <div class="card soft reveal gap-top"><h3 class="card-title">Честно о точности</h3>
+            <div class="card soft reveal gap-top"><h3 class="card-title">Насколько это точно</h3>
               <p>И MBTI, и соционика — популярные типологии, а не проверенные научные методы: академическая психология их не признаёт. Относись к результату как к поводу поговорить и понаблюдать за собой, а не как к диагнозу отношениям.</p></div>
             <div class="card soft reveal"><h3 class="card-title">Товарный знак</h3>
               <p>MBTI и Myers-Briggs Type Indicator — товарные знаки The Myers-Briggs Company. Socio-Nik с ней не связан и упоминает коды MBTI только для описания типов. Названия типов и тексты на сайте — наши.</p></div>
@@ -93,14 +91,22 @@
     }
   };
 
+  // Битая ссылка на пару, приглашение или результат — чаще всего её обрезал мессенджер: даём понятные выходы
+  const PAIR_LINK = /^\/(pair|i|r|relations)\//;
   V.notfound = {
-    title: () => 'Страница не найдена',
-    render: () => `
+    title: (path = '') => (PAIR_LINK.test(path) ? 'Ссылка не открылась' : 'Страница не найдена'),
+    render: (path = '') => PAIR_LINK.test(path) ? `
       <section class="sec empty"><div class="wrap center">
         <div class="lost" aria-hidden="true">${S.art.glyphSVG('Fi', S.theme.quadraColor('delta'), 'lost-svg')}</div>
-        <h1 class="title">Такой страницы нет</h1>
+        <h1 class="title">Ссылка не открылась.</h1>
+        <p class="lead">Похоже, мессенджер обрезал её по дороге. Попроси прислать ссылку ещё раз или откройте пару по кодам.</p>
+        <div class="cta"><a class="btn btn-lg" href="#/pair#codes">Ввести коды</a><a class="btn btn-lg btn-ghost" href="#/test">Узнать свой тип</a></div>
+      </div></section>` : `
+      <section class="sec empty"><div class="wrap center">
+        <div class="lost" aria-hidden="true">${S.art.glyphSVG('Fi', S.theme.quadraColor('delta'), 'lost-svg')}</div>
+        <h1 class="title">Такой страницы нет.</h1>
         <p class="lead">Похоже, этот знак потерялся. Вернёмся туда, где всё на своих местах.</p>
-        <p><a class="btn btn-lg" href="#/">На главную</a></p>
+        <div class="cta"><a class="btn btn-lg" href="#/">На главную</a><a class="btn btn-lg btn-ghost" href="#/pair">Проверить пару</a></div>
       </div></section>`
   };
 })(window);

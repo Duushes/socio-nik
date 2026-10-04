@@ -68,22 +68,23 @@
     codes: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="8" height="12" rx="2.4" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="13" y="6" width="8" height="12" rx="2.4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5.6 10.5h2.8M15.6 10.5h2.8M5.6 13.5h2.8M15.6 13.5h2.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
   };
 
-  // Выбор кода MBTI: нативный select
+  // Выбор кода MBTI: нативный select. Без своего кода — пустой пункт-подсказка: чужую пару не подставляем
   ui.mbtiSelect = (name, selected, label) => `
     <label class="pick"><span class="pick-lab">${esc(label)}</span>
       <span class="pick-box"><select name="${name}" data-${name}>
+        ${selected ? '' : '<option value="" selected disabled>Выбери код</option>'}
         ${S.data.types.slice().sort((x, y) => (x.mbti < y.mbti ? -1 : 1)).map(t =>
-          `<option value="${codeOfType(t)}"${t.id === selected ? ' selected' : ''}>${t.mbti} — ${esc(t.title)}</option>`).join('')}
+          `<option value="${codeOfType(t)}"${t.id === selected ? ' selected' : ''}>${t.mbti}, ${esc(t.title)}</option>`).join('')}
       </select></span>
     </label>`;
 
   // Приглашение партнёра: кнопки сетей, ссылка, «на этом телефоне»
   ui.inviteBox = axes => {
     const t = M().type(S.core.scoring.result(axes).top.id), url = inviteUrl(axes);
-    const text = `Мой тип — ${t.mbti} «${t.title}». Пройди тест на 16 типов, это 4 минуты, — посмотрим, как мы устроены вместе.`;
+    const text = `Мой тип — ${t.mbti} «${t.title}». Пройди тест на 16 типов, это 4 минуты, и посмотрим, как мы устроены вместе.`;
     return `<div class="invite" data-invite-box>
       ${url ? S.social.bar({ text, url, label: 'Позвать партнёра' }) : '<p class="sub">Ссылки появятся, когда сайт выложен.</p>'}
-      <p class="invite-alt"><a class="btn btn-ghost" href="#/duo" data-duo-now>Пройти на этом телефоне</a><a class="link" href="#/pair#codes">Знаю код партнёра</a></p>
+      <p class="invite-alt"><a class="btn btn-ghost" href="#/duo" data-duo-now>Пройти вдвоём</a><a class="link" href="#/pair#codes">Ввести коды</a></p>
       <p class="share-status" aria-live="polite"></p>
     </div>`;
   };
@@ -92,7 +93,7 @@
     if (!box) return () => {};
     const t = M().type(S.core.scoring.result(axes).top.id);
     const off = S.social.mount(box, {
-      text: () => `Мой тип — ${t.mbti} «${t.title}». Пройди тест на 16 типов, это 4 минуты, — посмотрим, как мы устроены вместе.`,
+      text: () => `Мой тип — ${t.mbti} «${t.title}». Пройди тест на 16 типов, это 4 минуты, и посмотрим, как мы устроены вместе.`,
       url: () => inviteUrl(axes),
       image: () => { const c = document.createElement('canvas'); S.share.render(c, axes, 'story'); return S.share.toBlob(c); },
       status: () => box.querySelector('.share-status')
@@ -109,42 +110,41 @@
     title: () => 'Совместимость',
     render() {
       const my = S.state.result(), myType = S.state.myType(), p = CP().partner();
-      const a = myType || 'iee', b = M().partner(M().type(a), 'dual').id;
       const saved = my && p ? sides(enc(my), p.code) : null;
       return `
         <section class="sec page-head couple-head">
           <div class="wrap center">
-            <p class="eyebrow reveal">Совместимость</p>
-            <h1 class="title reveal">Как устроена<br>ваша пара.</h1>
-            <p class="lead reveal">Каждый из вас проходит тест на 16 типов личности — 20 вопросов, около 4 минут. Совместимость покажем сразу и бесплатно.</p>
-            ${saved ? `<p class="reveal"><a class="mine" href="#/pair/${saved.path[0]}/${saved.path[1]}"><i class="qdot" aria-hidden="true" style="--q:var(--q-${saved.partner.type.quadra})"></i>Ваша пара — ${saved.me.type.mbti} и ${saved.partner.type.mbti}</a></p>` : ''}
+            <h1 class="title">Три способа увидеть вашу пару.</h1>
+            <p class="lead">Каждый из вас проходит тест на 16 типов: 20 вопросов, около 4 минут. Совместимость покажем сразу и бесплатно.</p>
+            ${saved ? `<p><a class="mine" href="#/pair/${saved.path[0]}/${saved.path[1]}">Ваша пара: ${saved.me.type.mbti} и ${saved.partner.type.mbti} ›</a></p>` : ''}
           </div>
           <div class="wrap">
             <div class="ways">
-              <article class="card way reveal" id="duo">
+              <article class="card way" id="duo">
                 <span class="way-ic">${ICON.duo}</span>
                 <h2 class="way-title">Вдвоём на одном телефоне</h2>
-                <p>Сначала отвечаешь ты, потом партнёр. Ответы сохранятся отдельно — твой результат никуда не денется.</p>
-                <p class="way-cta"><a class="btn" href="#/duo">Начать вдвоём</a></p>
+                <p>Сначала отвечаешь ты, потом партнёр. Ответы сохранятся отдельно, твой результат никуда не денется.</p>
+                <p class="way-cta"><a class="btn" href="#/duo">Пройти вдвоём</a></p>
               </article>
-              <article class="card way reveal" id="invite" style="--i:1">
+              <article class="card way" id="invite">
                 <span class="way-ic">${ICON.link}</span>
                 <h2 class="way-title">Позвать по ссылке</h2>
-                ${my ? `<p>Отправь ссылку — партнёр пройдёт тест у себя, и вы увидите совместимость.</p>${ui.inviteBox(my)}`
-                     : `<p>Сначала пройди тест, потом отправишь партнёру ссылку-приглашение.</p><p class="way-cta"><a class="btn" href="#/test">Пройти тест</a></p>`}
+                ${my ? `<p>Отправь ссылку: партнёр пройдёт тест у себя, и вы увидите совместимость.</p>${ui.inviteBox(my)}`
+                     : `<p>Сначала пройди тест, потом отправишь партнёру ссылку-приглашение.</p><p class="way-cta"><a class="btn" href="#/test" data-intent="invite">Узнать свой тип</a></p>`}
               </article>
-              <article class="card way reveal" id="codes" style="--i:2">
+              <article class="card way" id="codes">
                 <span class="way-ic">${ICON.codes}</span>
                 <h2 class="way-title">Мы знаем свои коды</h2>
-                <p>Уже проходили тест на 16 типов? Выберите коды — сразу покажем вашу пару.</p>
-                <form class="codes" data-codes>
-                  ${ui.mbtiSelect('ca', a, 'Ты')}
-                  ${ui.mbtiSelect('cb', b, 'Партнёр')}
+                <p>Уже проходили тест на 16 типов? Выберите коды, и сразу покажем вашу пару.</p>
+                <form class="codes" data-codes novalidate>
+                  ${ui.mbtiSelect('ca', myType || null, 'Ты')}
+                  ${ui.mbtiSelect('cb', null, 'Партнёр')}
+                  <p class="form-err" role="alert" hidden>Выбери коды обоих: свой и партнёра.</p>
                   <button class="btn" type="submit">Показать пару</button>
                 </form>
               </article>
             </div>
-            <p class="couple-note reveal">Без регистрации. Ответы остаются на этом устройстве, а в ссылках — только коды результатов, без имён.</p>
+            <p class="couple-note">Без регистрации. Ответы остаются на этом устройстве, а в ссылках только коды результатов, без имён.</p>
           </div>
         </section>`;
     },
@@ -153,13 +153,23 @@
       const onSubmit = e => {
         e.preventDefault();
         const x = form.querySelector('[data-ca]').value, y = form.querySelector('[data-cb]').value;
+        const err = form.querySelector('.form-err');
+        if (!x || !y) {
+          err.hidden = false;
+          (x ? form.querySelector('[data-cb]') : form.querySelector('[data-ca]')).focus();
+          return;
+        }
+        err.hidden = true;
         S.track('pair_start', { mode: 'codes' });
         location.hash = `#/pair/${x}/${y}`;
       };
-      if (form) form.addEventListener('submit', onSubmit);
+      const onChange = () => { const err = form.querySelector('.form-err'); if (err) err.hidden = true; };
+      if (form) { form.addEventListener('submit', onSubmit); form.addEventListener('change', onChange); }
+      const onIntent = e => { if (e.target.closest('[data-intent="invite"]')) S.store.set('intent', 'invite'); };
+      root.addEventListener('click', onIntent);
       const my = S.state.result();
       const offs = [my ? ui.mountInvite(root, my) : null];
-      return () => { if (form) form.removeEventListener('submit', onSubmit); offs.forEach(f => f && f()); };
+      return () => { if (form) { form.removeEventListener('submit', onSubmit); form.removeEventListener('change', onChange); } root.removeEventListener('click', onIntent); offs.forEach(f => f && f()); };
     }
   };
 
@@ -170,28 +180,29 @@
       const d = CP().duo(), my = S.state.result();
       const t = my ? M().type(S.core.scoring.result(my).top.id) : null;
       if (d && d.step === 2 && t) {
+        // передача хода — ритуал теста вдвоём: телефон один раз переезжает из руки в руку, без вечного парения
         return `
           <section class="sec page-head duo-page" style="${ui.qStyle(t.quadra)}">
             <div class="wrap center narrow">
-              <div class="duo-hand reveal" aria-hidden="true">${ICON.duo}</div>
-              <p class="eyebrow reveal">Твой тип — ${t.mbti} «${esc(t.title)}»</p>
-              <h1 class="title reveal">Теперь передай<br>телефон партнёру.</h1>
-              <p class="lead reveal">Партнёру — те же 20 вопросов и около 4 минут. Ответы сохранятся отдельно: твой результат останется на месте.</p>
-              <p class="reveal"><a class="btn btn-lg" href="#/test" data-duo-go>Партнёр готов — начать</a></p>
-              <p class="reveal"><button class="ghost-btn" type="button" data-duo-cancel>Отменить тест вдвоём</button></p>
+              <div class="duo-hand handoff" aria-hidden="true">${ICON.duo}</div>
+              <p class="duo-you"><span class="duo-you-em" aria-hidden="true">${ui.emblem(t, { label: false, cls: 'em-mini' })}</span>Твой тип: ${t.mbti}, ${esc(t.title)}</p>
+              <h1 class="title">Теперь передай телефон партнёру.</h1>
+              <p class="lead">Партнёру те же 20 вопросов и около 4 минут. Ответы сохранятся отдельно: твой результат останется на месте.</p>
+              <p><a class="btn btn-lg" href="#/test" data-duo-go>Начать тест партнёра</a></p>
+              <p><button class="ghost-btn subtle" type="button" data-duo-cancel>Отменить тест вдвоём</button></p>
             </div>
           </section>`;
       }
       return `
         <section class="sec page-head duo-page">
           <div class="wrap center narrow">
-            <div class="duo-hand reveal" aria-hidden="true">${ICON.duo}</div>
-            <p class="eyebrow reveal">Тест вдвоём</p>
-            <h1 class="title reveal">Один телефон,<br>двое.</h1>
-            <p class="lead reveal">Сначала отвечаешь ты, потом передаёшь телефон партнёру. После второго теста сразу откроется ваша совместимость.</p>
-            ${t ? `<div class="cta reveal"><button class="btn btn-lg" type="button" data-duo-reuse>Мой тип ${t.mbti} — сразу к партнёру</button><button class="ghost-btn" type="button" data-duo-start>Пройти мой тест заново</button></div>`
-                : `<p class="reveal"><button class="btn btn-lg" type="button" data-duo-start>Начать с меня</button></p>`}
-            <p class="sh-note reveal">20 вопросов на каждого · около 4 минут · без регистрации</p>
+            <div class="duo-hand" aria-hidden="true">${ICON.duo}</div>
+            <h1 class="title">Один телефон, двое.</h1>
+            <p class="lead">Сначала отвечаешь ты, потом передаёшь телефон партнёру. После второго теста сразу откроется ваша совместимость.</p>
+            ${t ? `<p class="duo-you"><span class="duo-you-em" aria-hidden="true">${ui.emblem(t, { label: false, cls: 'em-mini' })}</span>Твой тип уже есть: ${t.mbti}, ${esc(t.title)}</p>
+                  <div class="cta"><button class="btn btn-lg" type="button" data-duo-reuse>Сразу к тесту партнёра</button><button class="ghost-btn" type="button" data-duo-start>Пройти мой тест заново</button></div>`
+                : `<p><button class="btn btn-lg" type="button" data-duo-start>Начать с меня</button></p>`}
+            <p class="sh-note">20 вопросов на каждого, около 4 минут, без регистрации</p>
           </div>
         </section>`;
     },
@@ -216,29 +227,34 @@
       const axes = S.core.payload.decode(code), t = M().type(S.core.scoring.result(axes).top.id), c = ui.content(t.id);
       const my = S.state.result();
       return `
-        <section class="res-hero sh-hero" style="${ui.qStyle(t.quadra)}" data-anim>
-          <div class="res-glow" aria-hidden="true"></div>
-          <div class="wrap res-top">
-            <p class="sh-badge reveal"><i aria-hidden="true"></i>Половина пары уже здесь</p>
-            <div class="res-emblem reveal" style="--i:1">${ui.emblem(t, { live: true, cls: 'em-big' })}</div>
-            <h1 class="res-code reveal" style="--i:2">${t.mbti}</h1>
-            <p class="res-name reveal" style="--i:3">${esc(t.title)}</p>
-            <p class="sh-motto reveal" style="--i:4"><span>Коротко о типе</span>«${esc(c.tagline || '')}»</p>
-            <div class="cta reveal" style="--i:5">
+        <section class="sec page-head invite-hero" style="${ui.qStyle(t.quadra)}">
+          <div class="wrap center narrow">
+            <div class="two" aria-hidden="true"><span class="two-c two-them">${t.mbti}</span><span class="two-c two-you">ты?</span></div>
+            <h1 class="title">Тебя позвали проверить вашу пару.</h1>
+            <p class="lead">${my ? 'Твой тип уже есть, поэтому совместимость откроется сразу.' : 'Пройди тест на 16 типов: 20 вопросов, около 4 минут. Потом вы оба увидите вашу совместимость.'}</p>
+            <div class="cta">
               ${my ? `<a class="btn btn-lg" href="#/pair/${enc(my)}/${code}" data-invite-pair>Смотреть нашу совместимость</a>`
-                   : '<a class="btn btn-lg" href="#/test" data-invite-go>Пройти тест — 4 минуты</a>'}
+                   : '<a class="btn btn-lg" href="#/test" data-invite-go>Узнать свой тип</a>'}
             </div>
-            <p class="sh-note reveal" style="--i:5">20 вопросов · без регистрации · ответы остаются на твоём телефоне</p>
+            <p class="sh-note">Без регистрации, ответы остаются на твоём телефоне</p>
           </div>
         </section>
         <section class="sec sec-alt">
-          <div class="wrap center">
-            <h2 class="title reveal">Что будет дальше.</h2>
-            <div class="steps">
-              <div class="step card reveal"><b>1</b><h3>Твой тип</h3><p>Сначала — твой результат: код, название и пара фраз, в которых легко узнать себя.</p></div>
-              <div class="step card reveal" style="--i:1"><b>2</b><h3>Ваша пара</h3><p>Как вы устроены вдвоём: вид отношений, где дополняете друг друга и где нужна бережность.</p></div>
-              <div class="step card reveal" style="--i:2"><b>3</b><h3>Ссылка обратно</h3><p>Отправишь ссылку на вашу пару — и совместимость увидите оба.</p></div>
+          <div class="wrap">
+            <div class="inviter" style="${ui.qStyle(t.quadra)}">
+              <span class="inviter-em" aria-hidden="true">${ui.emblem(t, { label: false })}</span>
+              <div>
+                <p class="inviter-k">Кто тебя позвал</p>
+                <h2 class="title-sm">${t.mbti}, ${esc(t.title)}</h2>
+                <p class="body">${esc(c.tagline || '')}</p>
+              </div>
             </div>
+            <h2 class="title-sm gap-top">Что будет дальше</h2>
+            <ol class="plan-steps">
+              <li><h3>Узнать свой тип</h3><p>Код, название и пара фраз, в которых легко узнать себя.</p></li>
+              <li><h3>Увидеть вашу пару</h3><p>Вид отношений, где вы дополняете друг друга и где нужна бережность.</p></li>
+              <li><h3>Отправить ссылку обратно</h3><p>Совместимость увидите оба.</p></li>
+            </ol>
           </div>
         </section>`;
     },
@@ -257,19 +273,17 @@
   // ---------- экран пары ----------
   function personCard(t, who, i) {
     const c = ui.content(t.id);
-    return `<a class="card link-card tilt reveal person" style="${ui.qStyle(t.quadra)};--i:${i}" href="#/types/${t.id}">
+    return `<a class="card link-card person" style="${ui.qStyle(t.quadra)};--i:${i}" href="#/types/${t.id}">
       <span class="lc-art">${ui.emblem(t, { label: false })}</span>
       <span class="lc-kicker">${esc(who)}</span>
-      <span class="lc-title">${t.mbti} · ${esc(t.title)}</span>
+      <span class="lc-title">${t.mbti}, ${esc(t.title)}</span>
       <span class="lc-text">${esc(c.tagline || '')}</span>
-      <span class="lc-socio">${esc(socio(t))}</span>
-      <span class="glare" aria-hidden="true"></span>
     </a>`;
   }
 
   function teaser(sd) {
     const a = sd.me.type, b = sd.partner.type, zones = PR().map(a, b), sum = PR().summary(a, b), G = P().groups || {}, D = P().domains;
-    const price = S.paywall.price(), sample = sampleOf(zones);
+    const price = S.paywall.price(pairKey(sd)), sample = sampleOf(zones);
     return `
       <section class="sec offer-sec" id="razbor">
         <div class="wrap">
@@ -287,36 +301,48 @@
                 <p class="sample-text" data-sample-text>${esc((G[sample.group] || {}).about || '')}</p>
               </div>
               <div class="offer-cta reveal">
-                <button class="btn btn-lg btn-shine" type="button" data-offer>Открыть все 8 сфер — ${S.paywall.rub(price)}</button>
+                <button class="btn btn-lg" type="button" data-offer>Открыть все 8 сфер за ${S.paywall.rub(price)}</button>
                 <button class="ghost-btn" type="button" data-offer-gift>Подарить разбор</button>
               </div>
             </div>
           </div>
-          <div class="reveal">${ui.offerInside()}</div>
+          ${ui.offerInside()}
         </div>
       </section>`;
   }
 
+  // Ключ пары для цены: одинаковый у обоих партнёров, в каком бы порядке ни стояли стороны в ссылке
+  const pairKey = sd => sd.path.slice().sort().join('|');
+
   function reportShell(sd) {
+    // скелет в раскладке разбора: два круга карты и две карточки сфер — понятно, что сейчас появится
     return `<section class="sec report" id="razbor" data-report="${esc(sd.path.join('/'))}">
-      <div class="wrap"><div class="report-loading" aria-live="polite"><span class="spin" aria-hidden="true"></span>Собираем разбор…</div></div>
+      <div class="wrap"><div class="report-loading" aria-busy="true">
+        <p class="sr" aria-live="polite">Собираем разбор…</p>
+        <div class="sk sk-title"></div>
+        <div class="sk-map" aria-hidden="true"><i></i><i></i></div>
+        <div class="sk-zones" aria-hidden="true"><i></i><i></i></div>
+      </div></div>
     </section>`;
   }
 
   // Подпись стороны: «ты — главная сила»
   const chip = (who, pos) => `<span class="who"><b>${esc(who)}</b> — ${POS[pos]}</span>`;
 
+  // Сфера в разборе — коротко: кто где силён и одна фраза «вместе». Подробности (как у тебя, как у партнёра,
+  // что сделать на неделе) — в шторке по кнопке «Подробнее»; карточку можно нажать целиком
   function zoneItem(z, sd) {
     const D = P().domains[z.aspect], copy = z.copy || {};
+    const gist = copy.text ? PR().firstSentence(copy.text, 170) : '';
+    const ink = S.theme.resolved() === 'dark' ? '#a1a1a6' : '#636366';
     return `<li class="zone">
-      <button type="button" class="zone-btn" data-aspect="${z.aspect}" aria-haspopup="dialog">
-        <span class="zone-head"><span class="zone-glyph">${S.art.glyphSVG(z.aspect, S.theme.resolved() === 'dark' ? '#a1a1a6' : '#6e6e73', 'zone-svg')}</span>
-          <span class="zone-name"><b>${esc(D.short)}</b><small>${esc(D.long)}</small></span><span class="zone-more" aria-hidden="true">›</span></span>
+      <article class="zone-card" aria-labelledby="zn-${z.aspect}">
+        <span class="zone-head"><span class="zone-glyph" aria-hidden="true">${S.art.glyphSVG(z.aspect, ink, 'zone-svg')}</span>
+          <span class="zone-name"><h5 id="zn-${z.aspect}">${esc(D.short)}</h5><small>${esc(D.long)}</small></span></span>
         <span class="zone-who">${chip(meLabel(sd), z.posA)}${chip(partnerLabel(sd), z.posB)}</span>
-        ${z.own ? `<span class="zone-own"><i>У тебя</i>${esc(z.own)}</span>` : ''}
-        ${z.theirs ? `<span class="zone-own theirs"><i>У партнёра</i>${esc(z.theirs)}</span>` : ''}
-        ${copy.text ? `<span class="zone-text">${esc(copy.text)}</span>` : ''}
-      </button>
+        ${gist ? `<p class="zone-text">${esc(gist)}</p>` : ''}
+        <button type="button" class="zone-more-btn" data-aspect="${z.aspect}" aria-haspopup="dialog" aria-label="${esc(D.short)}: подробнее">Подробнее</button>
+      </article>
     </li>`;
   }
 
@@ -389,12 +415,19 @@
         out.textContent = '';
         if (!ch) { out.textContent = def; return; }
         ch.classList.add('on');
-        if (ch.classList.contains('locked')) { out.textContent = 'Закрытая сфера — откроется в разборе'; return; }
-        const b = document.createElement('b');
+        if (ch.classList.contains('locked')) { out.textContent = 'Закрытая сфера откроется в разборе'; return; }
+        const b = document.createElement('b'), g = document.createElement('small');
         b.textContent = ch.dataset.sphere;
-        out.append(b, ` — ${ch.dataset.who} · ${ch.dataset.gtitle}`);
+        g.textContent = ch.dataset.gtitle;
+        out.append(b, `: ${ch.dataset.who}`, document.createElement('br'), g);
       };
-      const over = e => { const ch = e.target.closest && e.target.closest('.pv-chip'); if (ch && fig.contains(ch)) set(ch); };
+      // при фокусе с клавиатуры имя фишки и так прозвучит — подпись под картой озвучиваем только для мыши
+      const over = e => {
+        const ch = e.target.closest && e.target.closest('.pv-chip');
+        if (!ch || !fig.contains(ch)) return;
+        out.setAttribute('aria-live', e.type === 'focusin' ? 'off' : 'polite');
+        set(ch);
+      };
       const leave = e => { if (!e.relatedTarget || !fig.contains(e.relatedTarget)) set(null); };
       fig.addEventListener('pointerover', over);
       fig.addEventListener('focusin', over);
@@ -429,72 +462,78 @@
       [rep.cares.partner, 'Партнёру это важнее', 'здесь последнее слово — за партнёром'],
       [rep.split, 'Делите договорённостью', 'роли сами не делятся — распределите их явно']
     ].filter(([list]) => list.length);
+    // Порядок — по тому, что паре важнее: карта → что делать на этой неделе → как мириться → сферы подробно →
+    // кто за что → как устроена пара → когда звать третьего → тёплый финал «вечер вдвоём» с картинкой карты
+    const nav = [['rp-map', 'Карта'], ['rp-deals', 'Что делать'], rel.repair ? ['rp-repair', 'Как мириться'] : null, ['rp-spheres', 'Сферы'], ['rp-evening', 'Вечер вдвоём']].filter(Boolean);
     return `
       <div class="wrap">
-        <h2 class="title reveal" tabindex="-1" data-report-title>Карта вашей пары.</h2>
-        <div class="persp seg reveal" role="group" aria-label="Чьими глазами читать разбор">
+        <h2 class="title" tabindex="-1" data-report-title>Карта вашей пары.</h2>
+        <div class="persp seg" role="group" aria-label="Чьими глазами читать разбор">
           <button type="button" data-persp="0" aria-pressed="${!sd.swapped}">С твоей стороны</button>
           <button type="button" data-persp="1" aria-pressed="${sd.swapped}">Глазами партнёра</button>
         </div>
-        ${sd.swapped ? `<p class="persp-note reveal">Теперь «ты» в тексте — это ${a.mbti}, а «партнёр» — ${b.mbti}. Так партнёр прочитает разбор о вас.</p>` : ''}
-        <div class="reveal">${mapBlock(sd, rep.zones)}</div>
+        ${sd.swapped ? `<p class="persp-note">Теперь «ты» в тексте — это ${a.mbti}, а «партнёр» — ${b.mbti}. Так партнёр прочитает разбор о вас.</p>` : ''}
+        <nav class="rp-nav" aria-label="Разделы разбора">${nav.map(([id, label], k) => `<button type="button" data-goto="${id}"${k === 0 ? ' aria-current="true"' : ''}>${label}</button>`).join('')}</nav>
+        <div class="rp-anchor" id="rp-map">${mapBlock(sd, rep.zones)}</div>
 
-        <div class="zone-groups">
-          ${groups.map(g => `<section class="zg reveal">
-            <h3 class="zg-title">${S.art.groupIcon(g.id)}<span>${esc(G[g.id].title)}</span><b>${rep.summary[g.id]}</b></h3>
-            <p class="zg-about">${esc(G[g.id].about)}</p>
-            <ul class="zones">${rep.zones.filter(z => z.group === g.id).map(z => zoneItem(z, sd)).join('')}</ul>
-          </section>`).join('')}
-        </div>
+        <section class="rp" id="rp-deals">
+          <h3 class="rp-title">Пять договорённостей на эту неделю</h3>
+          <ol class="deals">${rep.deals.map(d => `<li><span class="deal-dom">${S.art.groupIcon(d.group)}${esc(D[d.aspect].short)}</span>${esc(d.text)}</li>`).join('')}</ol>
+        </section>
 
-        <section class="rp reveal">
+        ${rel.repair ? `<section class="rp" id="rp-repair">
+          <h3 class="rp-title">Как мириться</h3>
+          <p class="body">${esc(rel.repair)}</p>
+          <ul class="scripts">${(rel.scripts || []).map(s => `<li><span class="sc-no"><i>Вместо</i>«${esc(s.instead.replace(/^«|»$/g, ''))}»</span><span class="sc-yes"><i>Скажи</i>«${esc(s.say.replace(/^«|»$/g, ''))}»</span></li>`).join('')}</ul>
+        </section>` : ''}
+
+        <section class="rp" id="rp-spheres">
+          <h3 class="rp-title">Восемь сфер</h3>
+          <div class="zone-groups">
+            ${groups.map(g => `<section class="zg">
+              <h4 class="zg-title">${S.art.groupIcon(g.id)}<span>${esc(G[g.id].title)}</span><b>${rep.summary[g.id]}</b></h4>
+              <p class="zg-about">${esc(G[g.id].about)}</p>
+              <ul class="zones">${rep.zones.filter(z => z.group === g.id).map(z => zoneItem(z, sd)).join('')}</ul>
+            </section>`).join('')}
+          </div>
+        </section>
+
+        <section class="rp">
           <h3 class="rp-title">Кто за что в паре</h3>
           <div class="grid2 lead-grid">
             ${roles.map(([list, title, hint]) => `<div class="card"><p class="lc-kicker">${esc(title)}</p><p class="role-hint">${esc(hint)}</p><ul>${leadList(list)}</ul></div>`).join('')}
           </div>
         </section>
 
-        <section class="rp reveal">
-          <h3 class="rp-title">Пять договорённостей</h3>
-          <ol class="deals">${rep.deals.map(d => `<li><span class="deal-dom">${S.art.groupIcon(d.group)}${esc(D[d.aspect].short)}</span>${esc(d.text)}</li>`).join('')}</ol>
-        </section>
-
-        ${rel.story ? `<section class="rp reveal">
+        ${rel.story ? `<section class="rp">
           <h3 class="rp-title">Как устроена ваша пара</h3>
           ${rel.story.map(p => `<p class="body">${esc(p)}</p>`).join('')}
         </section>` : ''}
 
-        ${rel.repair ? `<section class="rp reveal">
-          <h3 class="rp-title">Как мириться</h3>
-          <p class="body">${esc(rel.repair)}</p>
-          <ul class="scripts">${(rel.scripts || []).map(s => `<li><span class="sc-no"><i>Вместо</i>«${esc(s.instead.replace(/^«|»$/g, ''))}»</span><span class="sc-yes"><i>Скажи</i>«${esc(s.say.replace(/^«|»$/g, ''))}»</span></li>`).join('')}</ul>
-        </section>` : ''}
-
-        ${rel.ritual ? `<section class="rp reveal"><h3 class="rp-title">Ритуал на неделю</h3><div class="card ritual"><p>${esc(rel.ritual)}</p></div></section>` : ''}
-
-        <section class="rp reveal">
-          <h3 class="rp-title">Вопросы для вечера вдвоём</h3>
-          <ol class="questions">${rep.questions.map(q => `<li>${esc(q.text)}</li>`).join('')}</ol>
-        </section>
-
-        <section class="rp reveal">
+        <section class="rp">
           <h3 class="rp-title">Когда звать третьего</h3>
           <p class="body">${esc(T.third || '')}</p>
           <p class="safety">${esc(T.safety || '')}</p>
         </section>
 
-        <div class="rp-export reveal" data-export>
-          <button class="btn" type="button" data-map-story>Картинка карты для сторис</button>
-          <button class="btn btn-ghost" type="button" data-print>Сохранить в PDF</button>
-          <p class="share-status" aria-live="polite"></p>
-        </div>
-        ${S.paywall.inSurvey() ? `<div class="reveal">${ui.priceSurvey()}</div>` : ''}
+        <section class="rp rp-evening" id="rp-evening">
+          <h3 class="rp-title">Вечер вдвоём</h3>
+          ${rel.ritual ? `<div class="card ritual"><h4 class="ritual-k">Ритуал на неделю</h4><p>${esc(rel.ritual)}</p></div>` : ''}
+          <h4 class="rp-sub">Вопросы, которые стоит задать друг другу</h4>
+          <ol class="questions">${rep.questions.map(q => `<li>${esc(q.text)}</li>`).join('')}</ol>
+          <div class="rp-export" data-export>
+            <button class="btn" type="button" data-map-story>Сохранить карту картинкой</button>
+            <button class="btn btn-ghost" type="button" data-print>Сохранить в PDF</button>
+            <p class="share-status" aria-live="polite"></p>
+          </div>
+        </section>
+        ${S.paywall.inSurvey() ? ui.priceSurvey() : ''}
         <p class="rp-disc">${esc(T.disclaimer || '')}</p>
       </div>`;
   }
 
   // Шторка сферы: как это у тебя (свой текст модели А), что у партнёра, что вместе
-  function zoneSheet(sd, aspect) {
+  function zoneSheet(sd, aspect, from) {
     const a = sd.me.type, b = sd.partner.type;
     const rep = PR().report(a, b, P(), S.content.modelA), z = rep.zones.find(x => x.aspect === aspect);
     const D = P().domains[aspect], G = P().groups[z.group], F = S.data.functions, C = S.content;
@@ -510,13 +549,11 @@
       </header>
       ${z.copy ? `<section class="fn-sec fn-main"><h3>Вместе</h3><p>${esc(z.copy.text)}</p><p class="fn-tip"><b>На этой неделе.</b> ${esc(z.copy.deal)}</p></section>` : ''}
       <section class="fn-sec"><h3>У тебя, ${a.mbti}: ${POS[z.posA]}</h3>
-        <p>${esc(own ? own.text : C.positions[z.posA])}</p>
-        <p class="fn-pos">${F[z.posA - 1].name} функция в модели А</p></section>
+        <p>${esc(own ? own.text : C.positions[z.posA])}</p></section>
       <section class="fn-sec"><h3>У партнёра, ${b.mbti}: ${POS[z.posB]}</h3>
-        <p>${esc(z.theirs || C.positions[z.posB])}</p>
-        <p class="fn-pos">${F[z.posB - 1].name} функция в модели А</p></section>
+        <p>${esc(z.theirs || C.positions[z.posB])}</p></section>
     </article>`;
-    return ui.openSheet({ label: `${D.short}: разбор сферы`, render: () => html });
+    return ui.openSheet({ label: `${D.short}: разбор сферы`, from, render: () => html });
   }
 
   // base — кто есть кто для этого устройства (шапка, бесплатная часть, шер); view — с чьей стороны читается разбор
@@ -529,7 +566,8 @@
     const pName = CP().nameFor(sd.partner.code);
     const flip = r.id === 'benefactor' || r.id === 'supervisor';
     const [lq, rq] = flip ? [b.quadra, a.quadra] : [a.quadra, b.quadra];
-    const labels = [meLabel(sd), pName || b.mbti];
+    // коды типов — подписями под фигурами: «ты · ENTP», «партнёр · ISFJ» (или имя) — отдельная строка кодов не нужна
+    const labels = [`${meLabel(sd)} · ${a.mbti}`, `${pName || 'партнёр'} · ${b.mbti}`];
     const mine = S.state.result(), isMyPair = mine && (sd.me.code === enc(mine) || sd.partner.code === enc(mine));
     const unlocked = S.paywall.unlocked();
     return `
@@ -537,26 +575,23 @@
         <div class="pair-glow" aria-hidden="true" style="--qa:var(--q-${lq});--qb:var(--q-${rq})"></div>
         <div class="wrap center">
           <div class="pair-scene reveal">${ui.pairScene(a, b, { labels })}</div>
-          <p class="pair-codes reveal" style="--i:1"><span>${a.mbti} «${esc(a.title)}»</span><span><span class="amp">и</span> ${b.mbti} «${esc(b.title)}»</span></p>
-          <h1 class="title reveal" style="--i:2">${esc(title)}</h1>
-          <p class="lead reveal" style="--i:3">${esc(line)}</p>
-          ${helps.length ? `<div class="help-card reveal" style="--i:3"><h2 class="help-title">Таким парам помогает</h2><ul class="help-list">${helps.map(h => `<li>${esc(h)}</li>`).join('')}</ul></div>` : ''}
-          <p class="pair-name reveal" style="--i:4">
-            <button class="ghost-btn" type="button" data-name>${pName ? `Партнёр: ${esc(pName)} · изменить` : 'Как зовут партнёра?'}</button>
-          </p>
+          <h1 class="title">${esc(title)}</h1>
+          <p class="lead">${esc(line)}</p>
+          ${helps.length ? `<div class="help-card"><h2 class="help-title">Таким парам помогает</h2><ul class="help-list">${helps.map(h => `<li>${esc(h)}</li>`).join('')}</ul></div>` : ''}
         </div>
       </section>
 
       <section class="sec">
         <div class="wrap narrow">
-          <h2 class="title-sm reveal">Как вы устроены</h2>
-          <p class="body reveal">${esc(txt.about || '')}</p>
-          ${role ? `<div class="card soft reveal"><h3 class="card-title">С твоей позиции</h3><p>${esc(role)}</p></div>` : ''}
-          <div class="card tip-card reveal"><h3 class="card-title">Один совет</h3><p>${esc(txt.tip || '')}</p></div>
-          <details class="term-more reveal"><summary>Как это называется в соционике</summary><p class="pair-term">${esc(ui.relTitle(r, a, b))} ${ui.toneChip(r.tone)}</p></details>
+          <h2 class="title-sm">Как вы устроены</h2>
+          <p class="body">${esc(txt.about || '')}</p>
+          ${role ? `<div class="card soft"><h3 class="card-title">С твоей позиции</h3><p>${esc(role)}</p></div>` : ''}
+          <div class="card tip-card"><h3 class="card-title">Один совет</h3><p>${esc(txt.tip || '')}</p></div>
+          <details class="term-more"><summary>Как это называется в соционике</summary><p class="pair-term">${esc(ui.relTitle(r, a, b))} ${ui.toneChip(r.tone)}</p></details>
         </div>
         <div class="wrap gap-top">
           <div class="grid2">${personCard(a, 'Ты', 0)}${personCard(b, pName || 'Партнёр', 1)}</div>
+          <p class="pair-name"><button class="ghost-btn" type="button" data-name>${pName ? `Партнёр: <span class="nm" title="${esc(pName)}">${esc(pName)}</span>, изменить имя` : 'Как зовут партнёра?'}</button></p>
         </div>
       </section>
 
@@ -639,7 +674,7 @@
     const box = root.querySelector('[data-report]');
     if (!box) { reportShown = Promise.resolve(null); return () => {}; }
     const quiet = S.app.quiet;
-    let alive = true, offSurvey = null, offReveal = null, offVenn = null;
+    let alive = true, offSurvey = null, offReveal = null, offVenn = null, offNav = null;
     reportShown = loadReport().then(() => {
       if (!alive) return null;
       box.innerHTML = reportHTML(sd);
@@ -648,13 +683,38 @@
       else offReveal = S.fx.reveal(box);
       offVenn = ui.mountVenn(box);
       offSurvey = ui.mountSurvey(box);
+      offNav = mountReportNav(box);
       S.app.restoreFocus(box);
       return box;
     }).catch(() => {
       if (alive) box.querySelector('.report-loading').textContent = 'Не получилось загрузить разбор — обнови страницу.';
       return null;
     });
-    return () => { alive = false; [offSurvey, offReveal, offVenn].forEach(f => f && f()); };
+    return () => { alive = false; [offSurvey, offReveal, offVenn, offNav].forEach(f => f && f()); };
+  }
+
+  function mountReportNav(box) {
+    const nav = box.querySelector('.rp-nav');
+    if (!nav) return () => {};
+    const btns = Array.from(nav.querySelectorAll('[data-goto]'));
+    const onClick = e => {
+      const b = e.target.closest('[data-goto]');
+      const t = b && box.querySelector('#' + b.dataset.goto);
+      if (!t) return;
+      t.setAttribute('tabindex', '-1');
+      t.scrollIntoView({ behavior: S.dom.reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+      t.focus({ preventScroll: true });
+    };
+    nav.addEventListener('click', onClick);
+    if (!('IntersectionObserver' in window)) return () => nav.removeEventListener('click', onClick);
+    const seen = new Map();
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(en => seen.set(en.target.id, en.isIntersecting));
+      const cur = btns.find(b => seen.get(b.dataset.goto)) || null;
+      if (cur) btns.forEach(b => (b === cur ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
+    }, { rootMargin: '-120px 0px -55% 0px' });
+    btns.forEach(b => { const t = box.querySelector('#' + b.dataset.goto); if (t) io.observe(t); });
+    return () => { nav.removeEventListener('click', onClick); io.disconnect(); };
   }
 
   // ---------- открытие разбора — пик продукта ----------
@@ -764,7 +824,7 @@ html.vt-unveil::view-transition-new(${name(i)}) { animation: pv-vt-in 380ms var(
       const a = sd.me.type, b = sd.partner.type;
       const title = (P().titles || {})[M().relation(a, b).id] || '';
       S.track('pair_view', { relation: M().relation(a, b).id, unlocked: S.paywall.unlocked() });
-      if (!S.paywall.unlocked()) S.track('offer_view', { product: 'pair', price: S.paywall.price(), mode: S.paywall.mode() });
+      if (!S.paywall.unlocked()) S.track('offer_view', { product: 'pair', price: S.paywall.price(pairKey(sd)), mode: S.paywall.mode() });
       const offs = [mountReport(root, view), ui.mountVenn(root), mountSample(root, sd)];
 
       // картинка пары
@@ -783,10 +843,12 @@ html.vt-unveil::view-transition-new(${name(i)}) { animation: pv-vt-in 380ms var(
       const onClick = async e => {
         const unlocked = () => unveil(root, sd);
         const offerFrom = e.target.closest('[data-offer]');
-        if (offerFrom) ui.openOffer({ from: offerFrom, ctx: { relation: M().relation(a, b).id, from: offerFrom.classList.contains('pv-chip') ? 'map' : 'button' }, onUnlock: unlocked });
-        if (e.target.closest('[data-offer-gift]')) ui.openOffer({ gift: true, from: e.target.closest('[data-offer-gift]'), ctx: { relation: M().relation(a, b).id }, onUnlock: unlocked });
-        const asp = e.target.closest('[data-aspect]');
-        if (asp && root.querySelector('[data-report].ready')) zoneSheet(view, asp.dataset.aspect);
+        if (offerFrom) ui.openOffer({ from: offerFrom, ctx: { relation: M().relation(a, b).id, pair: pairKey(sd), from: offerFrom.classList.contains('pv-chip') ? 'map' : 'button' }, onUnlock: unlocked });
+        if (e.target.closest('[data-offer-gift]')) ui.openOffer({ gift: true, from: e.target.closest('[data-offer-gift]'), ctx: { relation: M().relation(a, b).id, pair: pairKey(sd) }, onUnlock: unlocked });
+        // сфера: фишка на карте, кнопка «Подробнее» или сама карточка
+        const card = e.target.closest('.zone-card');
+        const asp = e.target.closest('[data-aspect]') || (card && !e.target.closest('a, button') ? card.querySelector('[data-aspect]') : null);
+        if (asp && root.querySelector('[data-report].ready')) zoneSheet(view, asp.dataset.aspect, asp);
         const p = e.target.closest('[data-persp]');
         if (p && (p.dataset.persp === '1') !== view.swapped) {
           persp.swapped = p.dataset.persp === '1';

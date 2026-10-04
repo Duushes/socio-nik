@@ -73,6 +73,24 @@
 .saved-pair .scene { width: 100%; height: auto; }
 
 /* ================= ТЕСТ ВДВОЁМ ================= */
+.duo-you { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 14px; padding: 6px 14px 6px 6px; border-radius: var(--r-pill); background: var(--chip); font-size: 15px; font-weight: 600; }
+.duo-you-em { display: block; width: 30px; height: 30px; }
+.duo-you-em svg { width: 100%; height: 100%; }
+.form-err { margin: 0 !important; color: #c4001a; font-size: 14px; font-weight: 600; }
+:root[data-theme="dark"] .form-err { color: #ff6961; }
+@media (hover: hover) { .on-touch { display: none; } }
+@media (hover: none) { .on-hover { display: none; } }
+
+/* приглашение: «вас двое» — заполненный круг того, кто позвал, и пунктирный «ты?» */
+.two { display: flex; justify-content: center; margin: 0 auto 26px; }
+.two-c { display: grid; place-items: center; width: clamp(108px, 22vw, 140px); aspect-ratio: 1; border-radius: 50%; font-size: clamp(22px, 4vw, 28px); font-weight: 800; letter-spacing: -0.02em; }
+.two-them { position: relative; z-index: 1; background: color-mix(in srgb, var(--q) 82%, #000); color: #fff; }
+.two-you { margin-left: -30px; background: color-mix(in srgb, var(--bg) 70%, transparent); box-shadow: inset 0 0 0 2px var(--muted); color: var(--muted); border: 0; }
+.inviter { display: grid; grid-template-columns: 104px 1fr; gap: 20px; align-items: center; }
+.inviter-em { width: 104px; height: 104px; }
+.inviter-em svg { width: 100%; height: 100%; }
+.inviter-k { margin: 0 0 4px; color: var(--muted); font-size: 14px; font-weight: 600; }
+.inviter .title-sm { margin-bottom: 6px; }
 .duo-page { min-height: 72vh; }
 .duo-hand { display: grid; place-items: center; width: 92px; height: 92px; margin: 0 auto 22px; border-radius: 28px; background: color-mix(in srgb, var(--q, var(--btn)) 14%, var(--card)); color: var(--q, var(--link)); animation: float 6s ease-in-out infinite; }
 .duo-hand svg { width: 50px; height: 50px; }
@@ -82,10 +100,9 @@
 .duo-chip.on { background: var(--accent-soft); color: var(--link); }
 
 /* ================= ЭКРАН ПАРЫ ================= */
-.pair-codes { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 6px 12px; margin: 0 0 6px; font-size: 17px; font-weight: 600; }
-.pair-codes .amp { color: var(--muted); font-weight: 500; }
 .pair-term { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 12px; margin: 0 0 16px; color: var(--muted); font-size: 15px; }
-.pair-name { margin: -12px 0 0; }
+.pair-name { margin: 18px 0 0; text-align: center; }
+.pair-name .nm { display: inline-block; max-width: 16ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
 .pair-name .ghost-btn { font-size: 15px; }
 /* трудным видам отношений — сразу под заголовком то, что помогает: тёплая подложка, без вердикта */
 .help-card { max-width: 560px; margin: 4px auto 22px; padding: 18px 22px 16px; border-radius: 20px; background: var(--warm-bg); box-shadow: inset 0 0 0 1px var(--warm-line); text-align: left; }
@@ -103,7 +120,6 @@
 .term-more[open] > :not(summary) { animation: term-in 0.24s var(--out); }
 @keyframes term-in { from { opacity: 0; transform: translateY(-4px); } }
 .person { grid-template-rows: auto auto auto 1fr; }
-.lc-socio { margin-top: 6px; color: var(--muted); font-size: 13px; font-weight: 600; }
 .pair-more .links-row { margin: 18px 0; }
 .rp-disc { max-width: 680px; margin: 28px auto 0; color: var(--muted); font-size: 14px; text-align: center; }
 
@@ -162,7 +178,15 @@
 .report { scroll-margin-top: 60px; }
 /* фокус после открытия разбора — для скринридера; рамку видят только те, кто ходит с клавиатуры */
 html:not(.kbd) [data-report-title]:focus { outline: none; }
-.report-loading { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 260px; color: var(--muted); }
+/* скелет разбора в его же раскладке: заголовок, два круга карты, две карточки сфер */
+.report-loading { min-height: 420px; }
+.sk-map { position: relative; width: min(560px, 100%); aspect-ratio: 3 / 2; margin: 18px auto 30px; }
+.sk-map i { position: absolute; top: 6%; width: 58%; aspect-ratio: 1; border-radius: 50%; background: var(--chip); }
+.sk-map i:first-child { left: 4%; }
+.sk-map i:last-child { right: 4%; }
+.sk-zones { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.sk-zones i { height: 150px; border-radius: var(--r-card); background: var(--chip); }
+@media (max-width: 734px) { .sk-zones { grid-template-columns: 1fr; } }
 .spin { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--line); border-top-color: var(--btn); animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .persp { margin: 4px 0 8px; }
@@ -175,18 +199,32 @@ html:not(.kbd) [data-report-title]:focus { outline: none; }
 .zg-title { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; font-size: clamp(24px, 3vw, 30px); letter-spacing: -0.024em; }
 .zg-title .gi { width: 24px; height: 24px; }
 .zg-title b { margin-left: auto; color: var(--muted); font-size: 17px; font-weight: 600; }
-.zg-about { margin: 0 0 16px; color: var(--muted); max-width: 720px; }
+.zg-about { margin: 0 0 16px; color: var(--muted); max-width: 68ch; }
+/* мера строки в разборе — до 68 знаков: длинные строки на десктопе читались тяжело */
+.report .body, .report .zone-text, .report .rp p { max-width: 68ch; }
+/* навигация по разбору: прилипает под шапкой; кнопки, а не якоря — хеш занят роутером */
+.rp-nav { position: sticky; top: calc(var(--nav-h) + 8px); z-index: 5; display: flex; gap: 4px; width: max-content; max-width: 100%; margin: 6px 0 14px; padding: 4px; overflow-x: auto; scrollbar-width: none;
+  border-radius: var(--r-pill); background: var(--glass); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); box-shadow: inset 0 0 0 1px var(--hair); }
+.rp-nav::-webkit-scrollbar { display: none; }
+.rp-nav button { flex: none; min-height: 36px; padding: 0 14px; border: 0; border-radius: var(--r-pill); background: transparent; color: var(--muted); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.2s ease, color 0.2s ease; }
+.rp-nav button[aria-current="true"] { background: var(--text); color: var(--bg); }
+.rp, .rp-anchor { scroll-margin-top: calc(var(--nav-h) + 64px); }
+/* фокус при переходе по разделам — для скринридера; рамку видят только те, кто ходит с клавиатуры */
+html:not(.kbd) .rp:focus, html:not(.kbd) .rp-anchor:focus, html:not(.kbd) .invite-sec:focus { outline: none; }
+.rp-sub { margin: 26px 0 10px; font-size: 19px; letter-spacing: -0.015em; }
+.ritual-k { margin: 0 0 6px; color: var(--warm-ink); font-size: 15px; font-weight: 700; }
 .zones { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .zones > * { min-width: 0; }
-.zone-btn { display: grid; gap: 10px; width: 100%; height: 100%; padding: 20px 22px; border: 0; border-radius: var(--r-lg); background: var(--card); color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: box-shadow 0.25s, transform 0.25s var(--out); }
-.sec-alt .zone-btn { background: var(--card-alt); }
-.zone-btn:hover { box-shadow: var(--shadow); }
-.zone-head { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 12px; }
+.zone-card { display: grid; gap: 10px; align-content: start; height: 100%; padding: 20px 22px 18px; border-radius: var(--r-card); background: var(--card); cursor: pointer; transition: box-shadow 0.2s ease; }
+.sec-alt .zone-card { background: var(--card-alt); }
+@media (hover: hover) { .zone-card:hover { box-shadow: var(--shadow); } }
+.zone-more-btn { justify-self: start; min-height: 44px; margin: -6px 0 -10px -2px; padding: 0 2px; border: 0; background: none; color: var(--link); font: inherit; font-size: 15px; font-weight: 500; cursor: pointer; }
+.zone-more-btn::after { content: "\00a0›"; }
+.zone-head { display: grid; grid-template-columns: 40px 1fr; align-items: center; gap: 12px; }
 .zone-glyph { width: 40px; height: 40px; }
 .zone-svg { width: 100%; height: 100%; overflow: visible; }
-.zone-name b { display: block; font-size: 19px; letter-spacing: -0.02em; }
+.zone-name h5 { margin: 0; font-size: 19px; letter-spacing: -0.02em; }
 .zone-name small { color: var(--muted); font-size: 13px; }
-.zone-more { color: var(--faint); font-size: 22px; }
 .zone-who { display: flex; flex-wrap: wrap; gap: 6px; }
 .who { padding: 4px 10px; border-radius: var(--r-pill); background: var(--chip); color: var(--muted); font-size: 13px; }
 .who b { color: var(--text); font-weight: 600; }
@@ -216,7 +254,7 @@ html:not(.kbd) [data-report-title]:focus { outline: none; }
 .sc-no i { color: var(--muted); }
 .sc-yes { background: var(--warm-bg); }
 .sc-yes i { color: var(--warm-ink); }
-.ritual { background: var(--warm-bg); box-shadow: inset 0 0 0 1px var(--warm-line); font-size: 19px; line-height: 1.5; }
+.ritual { margin-bottom: 4px; background: var(--warm-bg); box-shadow: inset 0 0 0 1px var(--warm-line); font-size: 19px; line-height: 1.5; }
 .questions { margin: 0; padding-left: 22px; display: grid; gap: 10px; font-size: 19px; line-height: 1.45; }
 .safety { margin: 14px 0 0; padding: 14px 16px; border-radius: 16px; background: var(--chip); color: var(--muted); font-size: 15px; }
 .rp-export { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 56px; }
@@ -289,6 +327,7 @@ span.pv-chip { cursor: default; }
 .pv-readout { min-height: 1.5em; margin: 16px auto 0; max-width: 560px; text-align: center; color: var(--muted); font-size: 15px; text-wrap: balance; }
 .sample-title, .pv-gap-cap { text-wrap: balance; }
 .pv-readout b { color: var(--text); }
+.pv-readout small { font-size: 14px; }
 
 /* тизер: имена закрытых сфер мерцают, одна сфера открыта бесплатно */
 .pv-blur { font-style: normal; letter-spacing: 2px; background: linear-gradient(90deg, var(--faint) 0%, var(--faint) 38%, var(--text) 50%, var(--faint) 62%, var(--faint) 100%);
@@ -396,7 +435,8 @@ html.vt-unveil::view-transition-group(pv-stage) { animation-duration: 420ms; ani
   .pv *, .pv-chip { animation: none !important; opacity: 1 !important; }
   .pv-aura, .pv-flash { display: none !important; }
   .pv-chip { box-shadow: none !important; border: 1px solid #c7c7cc; background: #fff !important; color: #1d1d1f !important; }
-  .zone-btn, .deals li, .scripts li, .card { break-inside: avoid; box-shadow: none !important; }
+  .zone-card, .deals li, .scripts li, .card { break-inside: avoid; box-shadow: none !important; }
+  .rp-nav, .zone-more-btn { display: none !important; }
   .rp, .zg { break-inside: avoid-page; }
   .pv { max-width: 14cm; }
   a { color: inherit; }

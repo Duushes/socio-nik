@@ -41,7 +41,6 @@
       return `
         <section class="sec page-head">
           <div class="wrap">
-            <p class="eyebrow reveal">Отношения</p>
             <h1 class="title reveal">Как типы<br>ладят друг с другом.</h1>
             <p class="lead reveal">Соционика различает 14 видов отношений. Они описывают, насколько легко двум людям понимать и дополнять друг друга, — а не то, кто кому подходит навсегда.</p>
             <div class="reveal">${ui.calc(a, b)}</div>
