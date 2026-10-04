@@ -118,12 +118,12 @@
 
       <section class="sec sec-alt">
         <div class="wrap">
-          <h2 class="title-sm reveal">Ещё похоже на</h2>
+          <h2 class="title-sm">Ещё похоже на</h2>
           <div class="next-grid">${nextCards(res)}</div>
-          <h2 class="title-sm reveal gap-top">Четыре шкалы</h2>
-          <p class="sub reveal">Какой полюс каждой шкалы тебе ближе. Из них и складывается код из четырёх букв.</p>
+          <h2 class="title-sm gap-top">Четыре шкалы</h2>
+          <p class="sub">Какой полюс каждой шкалы тебе ближе. Из них и складывается код из четырёх букв.</p>
           ${ui.axisBars(res.axes)}
-          <h2 class="title-sm reveal gap-top">Все 16 типов</h2>
+          <h2 class="title-sm gap-top">Все 16 типов</h2>
           <p class="sub">Вероятности по всем типам складываются в 100 %. <span class="on-hover">Наведи на строку, чтобы увидеть подробности.</span><span class="on-touch">Нажми на строку, чтобы увидеть подробности.</span></p>
           ${ui.distribution(res)}
         </div>
@@ -131,8 +131,8 @@
 
       <section class="sec">
         <div class="wrap">
-          <h2 class="title-sm reveal">Сравни с кем угодно</h2>
-          <p class="sub reveal">${friend ? `Тебя позвал ${friend.mbti} «${esc(friend.title)}». А вот как ты ладишь с другими типами.` : 'Знаешь тип друга, мамы или коллеги? Выбери — покажем, как устроены ваши отношения.'}</p>
+          <h2 class="title-sm">Сравни с кем угодно</h2>
+          <p class="sub">${friend ? `Тебя позвал ${friend.mbti} «${esc(friend.title)}». А вот как ты ладишь с другими типами.` : 'Знаешь тип друга, мамы или коллеги? Выбери — покажем, как устроены ваши отношения.'}</p>
           <div class="reveal">${ui.calc(t.id, friend ? friend.id : dual.id)}</div>
         </div>
       </section>
@@ -165,15 +165,15 @@
 
       <section class="sec">
         <div class="wrap">
-          <h2 class="title-sm reveal">Mystery box про ${t.mbti}</h2>
-          <p class="sub reveal">Случайный факт о твоём типе.</p>
+          <h2 class="title-sm">Mystery box про ${t.mbti}</h2>
+          <p class="sub">Случайный факт о твоём типе.</p>
           <div class="reveal">${ui.box({ typeId: t.id, compact: true })}</div>
         </div>
       </section>
 
       <section class="sec sec-alt">
         <div class="wrap center">
-          <p class="reveal"><a class="btn btn-ghost" href="#/test" data-restart-test>Пройти тест заново</a></p>
+          <p><a class="btn btn-ghost" href="#/test" data-restart-test>Пройти тест заново</a></p>
           <details class="how reveal">
             <summary>Как это считается</summary>
             <p>Каждый ответ сдвигает одну из четырёх шкал. Из суммы по шкале получается вероятность каждого полюса, а вероятность типа — произведение вероятностей его четырёх полюсов, поэтому по 16 типам всегда выходит 100 %.</p>
@@ -314,10 +314,10 @@
 
       <section class="sec">
         <div class="wrap">
-          <h2 class="title-sm reveal">Как распределились ответы</h2>
-          <p class="sub reveal">Какой полюс каждой шкалы ближе тому, кто прислал ссылку.</p>
+          <h2 class="title-sm">Как распределились ответы</h2>
+          <p class="sub">Какой полюс каждой шкалы ближе тому, кто прислал ссылку.</p>
           ${ui.axisBars(res.axes)}
-          <h2 class="title-sm reveal gap-top">Ещё похоже на</h2>
+          <h2 class="title-sm gap-top">Ещё похоже на</h2>
           <div class="next-grid">${nextCards(res)}</div>
         </div>
       </section>
@@ -326,16 +326,16 @@
         <div class="wrap narrow">
           <h2 class="title-sm">Про ${t.mbti}</h2>
           <p class="sub">Отрывок из описания, оно написано для человека этого типа. В соционике этот тип называют ${t.code} «${esc(t.alias)}», квадра ${q.name}; совпадение с ним — ${res.top.pct} %.</p>
-          <p class="body reveal">${esc((c.about || [])[0] || '')}</p>
-          <ul class="checks reveal" style="${ui.qStyle(t.quadra)}">${(c.strengths || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+          <p class="body">${esc((c.about || [])[0] || '')}</p>
+          <ul class="checks" style="${ui.qStyle(t.quadra)}">${(c.strengths || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
           ${ui.celebLine(t)}
-          <p class="reveal gap-top"><a class="link" href="#/types/${t.id}">Всё о ${t.mbti}: описание, модель А, отношения</a></p>
+          <p class="gap-top"><a class="link" href="#/types/${t.id}">Всё о ${t.mbti}: описание, модель А, отношения</a></p>
         </div>
       </section>
 
       <section class="sec final">
         <div class="wrap center">
-          <h2 class="title reveal">${mine ? 'Сравни и с другими.' : 'Твоя очередь.'}</h2>
+          <h2 class="title">${mine ? 'Сравни и с другими.' : 'Твоя очередь.'}</h2>
           <p class="lead">${mine ? 'Калькулятор покажет отношения с любым из 16 типов.' : 'Узнай свой тип и как вы с этим человеком дополняете друг друга.'}</p>
           <p>${mine ? '<a class="btn btn-lg" href="#/relations">Открыть калькулятор</a>' : test('Узнать свой тип')}</p>
         </div>

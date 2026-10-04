@@ -1,5 +1,7 @@
-/* Socio-Nik · дизайн-токены. База — Apple-кит ya_report; цвета квадр продублированы в js/data/quadras.js */
-:root {
+/* Socio-Nik · дизайн-токены. База — Apple-кит ya_report. Единственное место, где живут цвета:
+   SVG и canvas берут их через S.theme.token() (js/lib/base.js). Скрытый .theme-probe с нужным data-theme
+   отдаёт значения другой темы — например, тёмную палитру для картинок в сторис */
+:root, .theme-probe[data-theme="light"] {
   color-scheme: light;
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif;
 
@@ -25,6 +27,7 @@
   --link: #0066cc;
   --accent-soft: rgba(0, 113, 227, 0.1);
   --focus: #0071e3;
+  --art-accent: #0071e3;     /* знаки, которые не привязаны к типу: шкалы теста, аспекты в «О методике» */
 
   /* Тёплый второй акцент — для советов и поддержки (совет, «таким парам помогает», ритуал, договорённости).
      Это подложка и подписи, а не цвет данных: на карте и в квадрах он не встречается */
@@ -32,6 +35,7 @@
   --warm-line: #f3d2bc;
   --warm-ink: #9b3c0d;
 
+  /* Квадры — набор, проверенный валидатором dataviz на все пары сразу (--pairs all) в обеих темах */
   --q-alpha: #2a78d6;
   --q-beta: #e2571f;
   --q-gamma: #b8479c;
@@ -70,7 +74,7 @@
   --nav-h: 44px;
 }
 
-:root[data-theme="dark"] {
+:root[data-theme="dark"], .theme-probe[data-theme="dark"] {
   color-scheme: dark;
   --bg: #000000;
   --bg-alt: #0c0c0d;
@@ -94,6 +98,7 @@
   --link: #2997ff;
   --accent-soft: rgba(41, 151, 255, 0.14);
   --focus: #2997ff;
+  --art-accent: #2997ff;
 
   --warm-bg: #241914;
   --warm-line: #4a2f20;

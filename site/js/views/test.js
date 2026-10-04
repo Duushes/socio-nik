@@ -16,7 +16,7 @@
   };
 
   function axisGlyph(axis) {
-    const c = S.theme.resolved() === 'dark' ? '#2997ff' : '#0071e3';
+    const c = S.theme.token('--art-accent');
     const pair = AXIS_PAIR[axis];
     if (!pair) {
       return `<svg class="morph" viewBox="-70 -70 140 140" aria-hidden="true">
@@ -36,7 +36,7 @@
           <div class="q-st q-a${value < 0 ? ' lean' : ''}" data-pick="-1"><span class="q-tag">А</span><p>${esc(q.a)}</p></div>
           <div class="q-st q-b${value > 0 ? ' lean' : ''}" data-pick="1"><span class="q-tag">Б</span><p>${esc(q.b)}</p></div>
         </div>
-        <div class="q-scale" role="radiogroup" aria-label="Что тебе ближе: А или Б">
+        <div class="q-scale" role="radiogroup" aria-label="Что тебе ближе: А или Б" aria-describedby="q-keys">
           ${VALUES.map(v => `<button type="button" role="radio" class="dot d${v + 2}" data-v="${v}" aria-checked="${value === v}" aria-label="${LABELS[v]}" tabindex="${value === v || (value == null && v === 0) ? 0 : -1}"><span></span></button>`).join('')}
         </div>
         <div class="q-legend" aria-hidden="true"><span>Точно <i>А</i></span><span>Скорее <i>А</i></span><span>Поровну</span><span>Скорее <i>Б</i></span><span>Точно <i>Б</i></span></div>
@@ -61,7 +61,7 @@
               <button class="ghost-btn subtle" type="button" data-restart${i === 0 && !Object.keys(st.answers).length ? ' disabled' : ''}>Начать заново</button>
             </div>
             <div class="q-stage" aria-live="polite">${question(qs[i], i, qs.length, st.answers[qs[i].id])}</div>
-            <p class="test-hint">Отвечай так, как обычно бывает, а не как «правильно».<span class="kbd-hint"> Можно нажимать клавиши 1–5.</span></p>
+            <p class="test-hint">Отвечай так, как обычно бывает, а не как «правильно».<span class="kbd-hint" id="q-keys"> Клавиши 1–5 отвечают сразу; стрелки выбирают, Enter — дальше.</span></p>
           </div>
           <div class="counting" hidden><div class="counting-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p>${duo && duo.step === 2 ? 'Считаем тип партнёра…' : 'Считаем твой тип…'}</p></div>
         </section>`;
@@ -96,8 +96,9 @@
         const old = stage.querySelector('.q');
         const tmp = document.createElement('div');
         tmp.innerHTML = question(q, i, qs.length, st.answers[q.id]);
-        const next = tmp.firstElementChild;
+        const next = S.dom.typo(tmp.firstElementChild);
         const enter = () => {
+          stage.setAttribute('aria-live', document.documentElement.classList.contains('kbd') ? 'off' : 'polite');
           stage.replaceChildren(next);
           if (!S.dom.reducedMotion()) next.classList.add(viaKey ? 'q-fade-in' : dir > 0 ? 'q-in-r' : 'q-in-l');
           const focus = next.querySelector('.dot[tabindex="0"]');
@@ -234,11 +235,14 @@
         if (/^[1-5]$/.test(e.key)) { e.preventDefault(); choose(Number(e.key) - 3, true); return; }
         if (e.key === 'Backspace') { e.preventDefault(); go(-1); return; }
         const dot = e.target.closest && e.target.closest('.dot');
-        if (dot && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+        if (dot && /^Arrow(Right|Left|Up|Down)$/.test(e.key) && !locked) {
           e.preventDefault();
           const dots = Array.from(dot.parentNode.children);
-          const j = Math.max(0, Math.min(4, dots.indexOf(dot) + (e.key === 'ArrowRight' ? 1 : -1)));
-          dots.forEach((d, k) => { d.tabIndex = k === j ? 0 : -1; });
+          const j = Math.max(0, Math.min(4, dots.indexOf(dot) + (e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1)));
+          const q = qs[st.index], v = Number(dots[j].dataset.v);
+          st.answers[q.id] = v;
+          save();
+          mark(v);
           dots[j].focus();
         }
       };

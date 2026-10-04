@@ -20,7 +20,7 @@
   art.scene = (kind, left, right, { theme, labels, cls = '', label } = {}) => {
     const th = theme || S.theme.resolved();
     const cl = S.theme.quadraColor(left.quadra, th), cr = S.theme.quadraColor(right.quadra, th);
-    const ink = th === 'dark' ? '#f5f5f7' : '#1d1d1f';
+    const ink = S.theme.token('--text', th);
     const fig = (t, c, role, x, y, s = 0.56, extra = {}) => ({
       t: 'g', tf: Object.assign({ x, y, s }, extra), children: [{ t: 'g', cls: 'sf ' + role, children: art.glyphOf(t.ego[0], c, th) }]
     });
@@ -94,8 +94,8 @@
   // Сцена-загадка для страницы результата по ссылке: тип друга и стеклянный шар с «?» — тип того, кто ещё не прошёл тест
   art.mystery = (t, { theme, cls = '' } = {}) => {
     const th = theme || S.theme.resolved();
-    const c = S.theme.quadraColor(t.quadra, th), ink = th === 'dark' ? '#f5f5f7' : '#1d1d1f';
-    const acc = th === 'dark' ? '#2997ff' : '#0071e3';
+    const c = S.theme.quadraColor(t.quadra, th), ink = S.theme.token('--text', th);
+    const acc = S.theme.token('--art-accent', th);
     const nodes = [
       { t: 'path', d: `M${LX + 18} ${Y - 18} Q160 ${Y - 70} ${RX - 18} ${Y - 18}`, fill: 'none', stroke: rgba(ink, 0.28), sw: 1.4, dash: '3 6', cls: 'sx sx-arc' },
       { t: 'g', tf: { x: LX, y: Y, s: 0.56 }, children: [{ t: 'g', cls: 'sf sa', children: art.glyphOf(t.ego[0], c, th) }] },

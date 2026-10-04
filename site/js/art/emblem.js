@@ -62,7 +62,7 @@
   // Эмблема квадры: 4 ценимых аспекта на общей орбите
   art.quadraEmblem = (q, { cls = '', theme } = {}) => {
     const th = theme || S.theme.resolved();
-    const c = q.color[th === 'dark' ? 'dark' : 'light'];
+    const c = S.theme.quadraColor(q.id, th);
     const R = 58;
     const nodes = [
       { t: 'circle', cx: 0, cy: 0, r: 98, fill: { rad: [0, 0, 98], stops: [[0, rgba(c, th === 'dark' ? 0.32 : 0.2)], [1, rgba(c, 0)]] } },

@@ -6,7 +6,7 @@
   const ui = S.ui;
   const { esc } = S.dom;
 
-  const accent = () => (S.theme.resolved() === 'dark' ? '#2997ff' : '#0071e3');
+  const accent = () => S.theme.token('--art-accent');
 
   function morphArt(kind) {
     const c = accent();
@@ -39,12 +39,12 @@
       <section class="sec page-head">
         <div class="wrap">
           <h1 class="title">Шестнадцать типов, четыре шкалы.</h1>
-          <p class="lead reveal">Всё о типах личности: шкалы, из которых складывается код, описания шестнадцати типов, квадры и отношения между типами. Коды — как в MBTI, глубина — из соционики.</p>
+          <p class="lead">Всё о типах личности: шкалы, из которых складывается код, описания шестнадцати типов, квадры и отношения между типами. Коды — как в MBTI, глубина — из соционики.</p>
           <div class="dich-grid">
             ${DICH.map((d, i) => `
               <article class="card dich reveal" style="--i:${i}" data-morph>
                 <div class="dich-art">${morphArt(d.k)}</div>
-                <h3>${d.title} <span class="dich-letters">${d.letters}</span></h3>
+                <h2 class="dich-title">${d.title} <span class="dich-letters">${d.letters}</span></h2>
                 <p>${d.text}</p>
                 <div class="dich-poles"><span class="pa">${d.a}</span><span class="pb">${d.b}</span></div>
               </article>`).join('')}
@@ -56,22 +56,22 @@
         <div class="wrap-wide">
           <div class="wrap-inner">
             <h2 class="title">Все типы по квадрам.</h2>
-            <p class="lead reveal">У каждого типа своя эмблема: крупный знак — главная функция, маленький на орбите — творческая. Цвет — квадра, то есть компания типов с общими ценностями.</p>
+            <p class="lead">У каждого типа своя эмблема: крупный знак — главная функция, маленький на орбите — творческая. Цвет — квадра, то есть компания типов с общими ценностями.</p>
           </div>
           ${ui.typesGrid()}
-          <p class="more reveal"><a class="link" href="#/types">Все типы подробно</a></p>
+          <p class="more"><a class="link" href="#/types">Все типы подробно</a></p>
         </div>
       </section>
 
       <section class="sec">
         <div class="wrap-wide">
           <div class="wrap-inner">
-            <h2 class="title reveal">Четыре компании<br>с общими ценностями.</h2>
+            <h2 class="title">Четыре компании с общими ценностями.</h2>
           </div>
           <div class="qgrid">
             ${S.data.quadras.map((q, i) => {
               const c = (S.content.quadras || {})[q.id] || {};
-              return `<a class="qcard reveal" style="${ui.qStyle(q.id)};--i:${i}" href="#/quadras#${q.id}">
+              return `<a class="qcard" style="${ui.qStyle(q.id)};--i:${i}" href="#/quadras#${q.id}">
                 <span class="qcard-art" data-anim>${S.art.quadraEmblem(q)}</span>
                 <span class="qcard-name">${q.name}</span>
                 <span class="qcard-motto">${esc(c.motto || '')}</span>
@@ -79,23 +79,23 @@
               </a>`;
             }).join('')}
           </div>
-          <p class="more reveal"><a class="link" href="#/quadras">Подробнее о квадрах</a></p>
+          <p class="more"><a class="link" href="#/quadras">Подробнее о квадрах</a></p>
         </div>
       </section>
 
       <section class="sec sec-alt">
         <div class="wrap">
-          <h2 class="title reveal">Почему с одними легко,<br>а с другими — нет.</h2>
-          <p class="lead reveal">Выбери два типа — покажем, как устроены отношения. Для своей пары лучше пройти тест вдвоём: так разбор будет по вашим настоящим ответам.</p>
+          <h2 class="title">Почему с одними легко, а с другими — нет.</h2>
+          <p class="lead">Выбери два типа — покажем, как устроены отношения. Для своей пары лучше пройти тест вдвоём: так разбор будет по вашим настоящим ответам.</p>
           <div class="reveal">${ui.calc(a, b)}</div>
-          <p class="more reveal"><a class="link" href="#/relations">Все виды отношений</a></p>
+          <p class="more"><a class="link" href="#/relations">Все виды отношений</a></p>
         </div>
       </section>
 
       <section class="sec">
         <div class="wrap">
-          <h2 class="title reveal">Открой коробку.</h2>
-          <p class="lead reveal">Внутри — случайный факт об одном из 16 типов или о соционике. Факты не повторяются, пока колода не кончится.</p>
+          <h2 class="title">Открой коробку.</h2>
+          <p class="lead">Внутри — случайный факт об одном из 16 типов или о соционике. Факты не повторяются, пока колода не кончится.</p>
           <div class="reveal">${ui.box()}</div>
         </div>
       </section>`;

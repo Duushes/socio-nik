@@ -7,7 +7,7 @@
   const { esc, reducedMotion } = S.dom;
   const M = () => S.core.modelA;
 
-  const CLOSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  const CLOSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>';
 
   // render() → HTML тела; вернёт { body, swap(html, dir), close() }
   ui.openSheet = ({ label, render, from, onKey }) => {
@@ -23,6 +23,7 @@
     document.body.appendChild(dlg);
     const panel = dlg.querySelector('.sheet-panel'), body = dlg.querySelector('.sheet-body');
     body.innerHTML = render();
+    S.dom.typo(body);
     dlg.showModal();
     // фокус — на саму панель (без рамки): иначе браузер ставит его на крестик и рисует кольцо
     panel.focus({ preventScroll: true });
@@ -95,6 +96,7 @@
       const at = act && body.contains(act) ? navBtns().indexOf(act) : -2;
       const put = () => {
         body.innerHTML = html;
+        S.dom.typo(body);
         if (at === -2) return;
         const target = at >= 0 ? navBtns()[at] : null;
         (target || panel).focus({ preventScroll: true });

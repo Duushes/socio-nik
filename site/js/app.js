@@ -116,6 +116,25 @@
     return true;
   };
 
+  // Перерисовка на месте (тема, имя, «забыть партнёра») не сбрасывает то, что человек уже выбрал:
+  // раскрытые «подробнее», значения списков (калькулятор) и нажатые переключатели (формат картинки)
+  const snapshot = el => ({
+    open: Array.from(el.querySelectorAll('details')).map(d => d.open),
+    selects: Array.from(el.querySelectorAll('select')).map(s => s.value),
+    pressed: Array.from(el.querySelectorAll('[aria-pressed="true"]')).map(focusKey).filter(Boolean)
+  });
+  function restoreState(el, snap) {
+    const ds = el.querySelectorAll('details');
+    if (ds.length === snap.open.length) ds.forEach((d, i) => { if (snap.open[i]) d.open = true; });
+    const ss = el.querySelectorAll('select');
+    if (ss.length === snap.selects.length) ss.forEach((s, i) => {
+      if (s.value === snap.selects[i]) return;
+      s.value = snap.selects[i];
+      s.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    snap.pressed.forEach(sel => { const b = el.querySelector(sel); if (b && b.getAttribute('aria-pressed') === 'false') b.click(); });
+  }
+
   // ---------- тексты по требованию ----------
   // Главной, тесту и «Совместимости» тексты библиотеки не нужны: они грузятся только там, где их читают
   // (view.needs). Порядок наборов важен: факты собираются из уже загруженных типов и отношений.
@@ -175,6 +194,7 @@
     if (samePage) { scrollToAnchor(r.anchor, true); return; }
     const y = scrollY;
     pendingFocus = keepScroll ? focusKey(document.activeElement) : null;
+    const snap = keepScroll ? snapshot(app()) : null;
     const update = () => {
       if (cleanup) { try { cleanup(); } catch (e) { /* уже убрано */ } cleanup = null; }
       const el = app();
@@ -182,6 +202,7 @@
       // Флаг ставим до отрисовки: по нему вид решает, играть ли свою сцену появления
       S.app.quiet = keepScroll;
       el.innerHTML = view.render(...r.params);
+      S.dom.typo(el);
       document.title = (view.title ? view.title(...r.params) + ' · ' : '') + 'Socio-Nik';
       document.body.setAttribute('data-view', r.name);
       el.classList.toggle('quiet', keepScroll);
@@ -193,6 +214,7 @@
       }
       const c1 = view.mount ? view.mount(el, ...r.params) : null;
       const c2 = S.fx.mountAll(el);
+      if (snap) restoreState(el, snap);
       cleanup = () => { if (c1) c1(); if (c2) c2(); };
       document.querySelectorAll('.nav-links a').forEach(a => a.classList.toggle('on', a.dataset.nav === NAV[r.name]));
       closeMenu();
@@ -205,7 +227,13 @@
 
   function scrollToAnchor(id, smooth) {
     const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: smooth && !S.dom.reducedMotion() ? 'smooth' : 'auto', block: 'start' });
+    if (!el) return;
+    el.scrollIntoView({ behavior: smooth && !S.dom.reducedMotion() ? 'smooth' : 'auto', block: 'start' });
+    // карточку, к которой привела ссылка, коротко отмечаем — видно, куда попал
+    el.classList.remove('is-target');
+    void el.offsetWidth;
+    el.classList.add('is-target');
+    setTimeout(() => el.classList.remove('is-target'), 2400);
   }
 
   // ---------- навигация ----------

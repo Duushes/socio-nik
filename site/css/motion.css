@@ -190,6 +190,10 @@
 .res-emblem.is-landing { view-transition-name: type-emblem; }
 ::view-transition-group(type-emblem) { animation-duration: 0.6s; animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
 
+/* ---------- цель ссылки с якорем: карточка один раз отмечается кольцом и гаснет ---------- */
+.card.is-target { animation: target-ring 1.8s ease-out 0.25s 1 both; }
+@keyframes target-ring { 0%, 35% { box-shadow: 0 0 0 3px var(--focus); } 100% { box-shadow: 0 0 0 3px transparent; } }
+
 /* ---------- раскрывашки: содержимое не выпрыгивает, а проявляется ---------- */
 details[open] > :not(summary) { animation: details-in 0.24s cubic-bezier(0.22, 1, 0.36, 1); }
 @keyframes details-in { from { opacity: 0; transform: translateY(-4px); } }

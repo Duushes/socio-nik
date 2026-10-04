@@ -22,7 +22,7 @@
     S.art.emblem(t, { cls: (live ? 'em-live ' : 'em-float ') + cls, label });
 
   ui.tile = (t, i = 0) => `
-    <a class="tile reveal" href="#/types/${t.id}" style="${ui.qStyle(t.quadra)};--i:${i % 4}">
+    <a class="tile" href="#/types/${t.id}" style="${ui.qStyle(t.quadra)};--i:${i % 4}">
       <span class="tile-art">${ui.emblem(t, { label: false })}</span>
       <span class="tile-code">${t.mbti}</span>
       <span class="tile-alias">${esc(t.title)}</span>
@@ -79,7 +79,7 @@
   };
 
   // ---------- калькулятор совместимости ----------
-  ui.calcOut = (aId, bId) => {
+  ui.calcOut = (aId, bId, level = 3) => {
     const a = M().type(aId), b = M().type(bId), r = M().relation(a, b), txt = relText(r.kind);
     const role = txt.roles && txt.roles[r.id];
     const human = (S.content.pair && S.content.pair.titles && S.content.pair.titles[r.id]) || '';
@@ -87,7 +87,7 @@
       <div class="calc-scene" data-anim>${ui.pairScene(a, b)}</div>
       <div class="calc-text">
         <p class="calc-kicker">${a.mbti} и ${b.mbti}</p>
-        <h3 class="calc-title">${esc(human || ui.relTitle(r, a, b))}</h3>
+        <h${level} class="calc-title">${esc(human || ui.relTitle(r, a, b))}</h${level}>
         <p class="calc-term">${esc(ui.relTitle(r, a, b))} в соционике</p>
         ${ui.toneChip(r.tone)}
         <p class="calc-line">${esc(txt.line || '')}</p>
@@ -96,16 +96,17 @@
       </div>`;
   };
 
-  ui.calc = (aId, bId) => `
-    <div class="calc" data-calc>
+  // level — уровень заголовка результата: 3 под заголовком секции, 2 — сразу под заголовком страницы
+  ui.calc = (aId, bId, { level = 3 } = {}) => `
+    <div class="calc" data-calc data-level="${level}">
       <div class="calc-pick">
         ${ui.typeSelect('a', aId, 'Ты')}
         <button class="swap" type="button" data-swap aria-label="Поменять местами">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         ${ui.typeSelect('b', bId, 'Партнёр или друг')}
       </div>
-      <div class="calc-out" aria-live="polite">${ui.calcOut(aId, bId)}</div>
+      <div class="calc-out" aria-live="polite">${ui.calcOut(aId, bId, level)}</div>
     </div>`;
 
   ui.mountCalc = scope => {
@@ -114,7 +115,8 @@
     const a = el.querySelector('[data-a]'), b = el.querySelector('[data-b]'), out = el.querySelector('.calc-out');
     const update = () => {
       out.classList.remove('pop');
-      out.innerHTML = ui.calcOut(a.value, b.value);
+      out.innerHTML = ui.calcOut(a.value, b.value, Number(el.dataset.level) || 3);
+      S.dom.typo(out);
       void out.offsetWidth;
       out.classList.add('pop');
     };
@@ -197,7 +199,7 @@
     const ic = S.art.celebIcon ? S.art.celebIcon(c.icon) : '';
     return `<span class="celeb-ava${c.kind === 'fiction' ? ' fic' : ''}${ic ? ' has-ic' : ''}${cls}" aria-hidden="true">${ic || esc(initials(c.name))}</span>`;
   };
-  const INFO = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="10" cy="6.2" r="1.1" fill="currentColor"/></svg>';
+  const INFO = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.75"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><circle cx="10" cy="6.2" r="1.1" fill="currentColor"/></svg>';
 
   ui.celebs = t => {
     const list = celebsOf(t.id);
@@ -212,10 +214,10 @@
       </div>`;
     return `
       <div class="wrap celebs" id="celebs" style="${ui.qStyle(t.quadra)}">
-        <h2 class="title-sm reveal">Похожий тип у знаменитостей</h2>
-        <p class="sub reveal">Кого из известных людей и героев книг и фильмов в соционике часто относят к ${t.code}, то есть к ${t.mbti}. В MBTI-сообществе знаменитостей типируют по-своему, и код там бывает другим.</p>
+        <h2 class="title-sm">Похожий тип у знаменитостей</h2>
+        <p class="sub">Кого из известных людей и героев книг и фильмов в соционике часто относят к ${t.code}, то есть к ${t.mbti}. В MBTI-сообществе знаменитостей типируют по-своему, и код там бывает другим.</p>
         <div class="grid2 celeb-grid">${col('real', 'Люди', 0)}${col('fiction', 'Персонажи', 1)}</div>
-        <p class="celeb-disc reveal">${INFO}<span>Так их типируют в соционике — по публичному образу, а не по тесту. Это не диагноз: сами знаменитости тест не проходили, а разные школы иногда называют для них другой тип.</span></p>
+        <p class="celeb-disc">${INFO}<span>Так их типируют в соционике — по публичному образу, а не по тесту. Это не диагноз: сами знаменитости тест не проходили, а разные школы иногда называют для них другой тип.</span></p>
       </div>`;
   };
 
@@ -225,7 +227,7 @@
     if (!list.length) return '';
     const real = list.filter(c => c.kind === 'real'), fic = list.filter(c => c.kind === 'fiction');
     const pick = [real[0], real[1], fic[0]].filter(Boolean);
-    return `<a class="celeb-line reveal" href="#/types/${t.id}#celebs" style="${ui.qStyle(t.quadra)}">
+    return `<a class="celeb-line" href="#/types/${t.id}#celebs" style="${ui.qStyle(t.quadra)}">
       <span class="celeb-stack" aria-hidden="true">${pick.map(c => ava(c, ' sm')).join('')}</span>
       <span class="celeb-line-txt"><span class="celeb-line-k">Похожий тип — у знаменитостей</span> <b>${pick.map(c => esc(c.name)).join(', ')}</b> и ещё ${list.length - pick.length}</span>
       <span class="celeb-go" aria-hidden="true">›</span>
@@ -236,7 +238,7 @@
   ui.mountTips = scope => {
     const tip = document.createElement('div');
     tip.className = 'tip';
-    tip.setAttribute('role', 'tooltip');
+    tip.setAttribute('aria-hidden', 'true');   // то же самое уже есть в aria-label строки или клетки
     document.body.appendChild(tip);
     const showTip = (el, x, y) => {
       const [val, lab] = el.dataset.tip.split('|');
@@ -264,10 +266,12 @@
       const el = e.target.closest && e.target.closest('[data-tip]');
       if (el && (!e.relatedTarget || !el.contains(e.relatedTarget))) tip.classList.remove('on');
     };
+    const esc = e => { if (e.key === 'Escape') tip.classList.remove('on'); };
     scope.addEventListener('pointermove', over);
     scope.addEventListener('focusin', over);
     scope.addEventListener('pointerout', out);
     scope.addEventListener('focusout', out);
-    return () => tip.remove();
+    document.addEventListener('keydown', esc);
+    return () => { tip.remove(); document.removeEventListener('keydown', esc); };
   };
 })(window);

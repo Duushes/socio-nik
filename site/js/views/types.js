@@ -13,7 +13,7 @@
       <section class="sec page-head">
         <div class="wrap-wide">
           <div class="wrap-inner">
-            <h1 class="title reveal">16 типов</h1>
+            <h1 class="title">16 типов</h1>
             <p class="lead">Нажми на тип: внутри описание, модель А и отношения со всеми. Сверху код MBTI, под ним название в соционике. Крупный знак на эмблеме — главная функция, маленький на орбите — творческая.</p>
           </div>
           ${ui.typesGrid()}
@@ -52,19 +52,19 @@
         <section class="type-hero" style="${ui.qStyle(t.quadra)}" data-anim>
           <div class="res-glow" aria-hidden="true"></div>
           <div class="wrap type-top">
-            <a class="crumb reveal" href="#/types">‹ Все типы</a>
+            <a class="crumb" href="#/types">‹ Все типы</a>
             <div class="type-emblem reveal" style="--i:1">${ui.emblem(t, { live: true, cls: 'em-big' })}</div>
             <p class="eyebrow">Квадра ${q.name}, в соционике ${t.code} «${esc(t.alias)}»</p>
-            <h1 class="res-code reveal" style="--i:2">${t.mbti}</h1>
-            <p class="res-name reveal" style="--i:3">${esc(t.title)} · ${esc(t.name.toLowerCase())}</p>
-            <p class="lead reveal" style="--i:4">${esc(c.tagline || '')}</p>
+            <h1 class="res-code">${t.mbti}<span class="sr">, ${esc(t.title)}</span></h1>
+            <p class="res-name"><span aria-hidden="true">${esc(t.title)} · </span>${esc(t.name.toLowerCase())}</p>
+            <p class="lead" style="--i:4">${esc(c.tagline || '')}</p>
           </div>
         </section>
 
         <section class="sec">
           <div class="wrap narrow">
-            <h2 class="title-sm reveal">О типе</h2>
-            ${(c.about || []).map((p, k) => `<p class="body reveal" style="--i:${k}">${esc(p)}</p>`).join('')}
+            <h2 class="title-sm">О типе</h2>
+            ${(c.about || []).map((p, k) => `<p class="body" style="--i:${k}">${esc(p)}</p>`).join('')}
           </div>
           ${ui.celebs(t)}
         </section>
@@ -87,23 +87,23 @@
 
         <section class="sec">
           <div class="wrap">
-            <h2 class="title-sm reveal">Модель А</h2>
-            <p class="sub reveal">Восемь функций: какие аспекты информации тип обрабатывает легко и уверенно, а какие — с трудом или с помощью других. Нажми на функцию — расскажем, как она проявляется у ${t.mbti}.</p>
+            <h2 class="title-sm">Модель А</h2>
+            <p class="sub">Восемь функций: какие аспекты информации тип обрабатывает легко и уверенно, а какие — с трудом или с помощью других. Нажми на функцию — расскажем, как она проявляется у ${t.mbti}.</p>
             ${modelA(t)}
           </div>
         </section>
 
         <section class="sec sec-alt">
           <div class="wrap">
-            <h2 class="title-sm reveal">Отношения со всеми типами</h2>
-            <p class="sub reveal">Нажми на тип — откроется подробный разбор пары.</p>
+            <h2 class="title-sm">Отношения со всеми типами</h2>
+            <p class="sub">Нажми на тип — откроется подробный разбор пары.</p>
             ${ui.relList(t)}
           </div>
         </section>
 
         <section class="sec">
           <div class="wrap">
-            <h2 class="title-sm reveal">Mystery box про ${t.mbti}</h2>
+            <h2 class="title-sm">Mystery box про ${t.mbti}</h2>
             <div class="reveal">${ui.box({ typeId: t.id, compact: true })}</div>
           </div>
         </section>

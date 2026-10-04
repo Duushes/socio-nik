@@ -63,9 +63,9 @@
 
   // ---------- хаб «Совместимость» ----------
   const ICON = {
-    duo: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.8" width="11" height="18.4" rx="2.8" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="10.2" cy="10.5" r="1.9" fill="currentColor"/><circle cx="13.8" cy="13.5" r="1.9" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
-    link: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.2 13.8a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.1 1.1M13.8 10.2a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-    codes: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="8" height="12" rx="2.4" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="13" y="6" width="8" height="12" rx="2.4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5.6 10.5h2.8M15.6 10.5h2.8M5.6 13.5h2.8M15.6 13.5h2.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+    duo: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.8" width="11" height="18.4" rx="2.8" fill="none" stroke="currentColor" stroke-width="1.75"/><circle cx="10.2" cy="10.5" r="1.9" fill="currentColor"/><circle cx="13.8" cy="13.5" r="1.9" fill="none" stroke="currentColor" stroke-width="1.75"/></svg>',
+    link: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.2 13.8a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.1 1.1M13.8 10.2a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>',
+    codes: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="8" height="12" rx="2.4" fill="none" stroke="currentColor" stroke-width="1.75"/><rect x="13" y="6" width="8" height="12" rx="2.4" fill="none" stroke="currentColor" stroke-width="1.75"/><path d="M5.6 10.5h2.8M15.6 10.5h2.8M5.6 13.5h2.8M15.6 13.5h2.8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>'
   };
 
   // Выбор кода MBTI: нативный select. Без своего кода — пустой пункт-подсказка: чужую пару не подставляем
@@ -287,12 +287,12 @@
     return `
       <section class="sec offer-sec" id="razbor">
         <div class="wrap">
-          <h2 class="title reveal">Карта вашей пары.</h2>
-          <p class="lead reveal">Кто что ведёт в восьми сферах жизни и что с этим делать на этой неделе.</p>
+          <h2 class="title">Карта вашей пары.</h2>
+          <p class="lead">Кто что ведёт в восьми сферах жизни и что с этим делать на этой неделе.</p>
           <div class="teaser">
             <div class="teaser-map">
               ${ui.pairVenn(a, b, { zones, mode: 'locked', sample, pname: partnerLabel(sd) })}
-              <ul class="pv-legend teaser-counts reveal" aria-label="Зоны вашей пары">${PR().GROUPS.map(g => `<li class="${sum[g.id] ? '' : 'zero'}">${S.art.groupIcon(g.id)}<span>${esc((G[g.id] || {}).short || g.id)}</span><b>${sum[g.id]}</b></li>`).join('')}</ul>
+              <ul class="pv-legend teaser-counts" aria-label="Зоны вашей пары">${PR().GROUPS.map(g => `<li class="${sum[g.id] ? '' : 'zero'}">${S.art.groupIcon(g.id)}<span>${esc((G[g.id] || {}).short || g.id)}</span><b>${sum[g.id]}</b></li>`).join('')}</ul>
             </div>
             <div class="teaser-side">
               <div class="card sample reveal" data-sample="${sample.aspect}">
@@ -334,7 +334,7 @@
   function zoneItem(z, sd) {
     const D = P().domains[z.aspect], copy = z.copy || {};
     const gist = copy.text ? PR().firstSentence(copy.text, 170) : '';
-    const ink = S.theme.resolved() === 'dark' ? '#a1a1a6' : '#636366';
+    const ink = S.theme.token('--muted');
     return `<li class="zone">
       <article class="zone-card" aria-labelledby="zn-${z.aspect}">
         <span class="zone-head"><span class="zone-glyph" aria-hidden="true">${S.art.glyphSVG(z.aspect, ink, 'zone-svg')}</span>
@@ -391,7 +391,7 @@
     const inStage = L.slots.filter(s => s.region !== 'none'), outside = L.slots.filter(s => s.region === 'none');
     const hint = locked ? `Открыта 1 сфера из 8 — остальные в разборе` : interactive ? 'Нажми на сферу — расскажем, как она устроена у вас' : 'Сфера стоит у того, кто в ней силён';
     return `<figure class="pv pv-${mode} reveal" data-pv style="--ca:${c.me};--cb:${c.partner}">
-      <div class="pv-caps" aria-hidden="true">${['me', 'both', 'partner'].map((reg, i) => `<span class="pv-cap${L.count[reg] ? '' : ' zero'}" style="--i:${i}"><b>${esc(cap[reg])}</b><i>${L.count[reg]}</i></span>`).join('')}</div>
+      <div class="pv-caps" aria-hidden="true">${['me', 'both', 'partner'].map((reg, i) => `<span class="pv-cap${L.count[reg] ? '' : ' zero'}" style="--i:${i}"><b title="${esc(cap[reg])}">${esc(cap[reg])}</b><i>${L.count[reg]}</i></span>`).join('')}</div>
       <div class="pv-stage">
         <div class="pv-aura" aria-hidden="true"></div>
         ${PV.svg(a, b, { label: label || `Карта пары ${a.mbti} и ${b.mbti}` })}
@@ -567,7 +567,8 @@
     const flip = r.id === 'benefactor' || r.id === 'supervisor';
     const [lq, rq] = flip ? [b.quadra, a.quadra] : [a.quadra, b.quadra];
     // коды типов — подписями под фигурами: «ты · ENTP», «партнёр · ISFJ» (или имя) — отдельная строка кодов не нужна
-    const labels = [`${meLabel(sd)} · ${a.mbti}`, `${pName || 'партнёр'} · ${b.mbti}`];
+    const shortName = s => (s.length > 12 ? s.slice(0, 11).trimEnd() + '…' : s);
+    const labels = [`${meLabel(sd)} · ${a.mbti}`, `${pName ? shortName(pName) : 'партнёр'} · ${b.mbti}`];
     const mine = S.state.result(), isMyPair = mine && (sd.me.code === enc(mine) || sd.partner.code === enc(mine));
     const unlocked = S.paywall.unlocked();
     return `
@@ -617,10 +618,10 @@
 
       <section class="sec">
         <div class="wrap center pair-more">
-          <p class="reveal"><a class="btn btn-ghost" href="#/pair">Проверить другую пару</a></p>
-          <p class="reveal links-row"><a class="link" href="#/types/${a.id}">Всё о ${a.mbti}</a><a class="link" href="#/types/${b.id}">Всё о ${b.mbti}</a><a class="link" href="#/relations">16 видов отношений</a></p>
-          ${CP().partner() && CP().partner().code === sd.partner.code ? '<p class="reveal"><button class="ghost-btn danger" type="button" data-forget>Забыть партнёра на этом устройстве</button></p>' : ''}
-          <p class="rp-disc reveal">${esc((P().texts || {}).disclaimer || '')}</p>
+          <p><a class="btn btn-ghost" href="#/pair">Проверить другую пару</a></p>
+          <p class="links-row"><a class="link" href="#/types/${a.id}">Всё о ${a.mbti}</a><a class="link" href="#/types/${b.id}">Всё о ${b.mbti}</a><a class="link" href="#/relations">16 видов отношений</a></p>
+          ${CP().partner() && CP().partner().code === sd.partner.code ? '<p><button class="ghost-btn danger" type="button" data-forget>Забыть партнёра на этом устройстве</button></p>' : ''}
+          <p class="rp-disc">${esc((P().texts || {}).disclaimer || '')}</p>
         </div>
       </section>`;
   }
@@ -632,10 +633,19 @@
       <form class="name-sheet" data-name-form>
         <h2 class="title-sm">Как зовут партнёра?</h2>
         <p class="sub">Имя останется только на этом устройстве: в ссылки и картинки оно не попадёт. Покажем его в заголовках вместо слова «партнёр».</p>
-        <label class="name-field"><span class="sr">Имя</span><input type="text" name="n" maxlength="${CP().NAME_MAX}" autocomplete="off" value="${esc(cur)}" placeholder="Например, Саша"></label>
+        <label class="name-field"><span class="sr">Имя</span><input type="text" name="n" maxlength="${CP().NAME_MAX}" autocomplete="off" value="${esc(cur)}" placeholder="Например, Саша" aria-describedby="name-count"></label>
+        <p class="name-count" id="name-count">${cur.length} из ${CP().NAME_MAX} знаков</p>
         <div class="offer-actions"><button class="btn" type="submit">Сохранить</button>${cur ? '<button class="ghost-btn" type="button" data-name-clear>Убрать имя</button>' : ''}</div>
       </form>` });
     const form = sheet.dlg.querySelector('[data-name-form]');
+    // счётчик знаков: имя не обрезается молча — видно, сколько осталось, на пределе об этом скажет и скринридер
+    const count = sheet.dlg.querySelector('.name-count'), max = CP().NAME_MAX;
+    form.n.addEventListener('input', () => {
+      const n = form.n.value.length;
+      count.textContent = `${n} из ${max} знаков`;
+      count.classList.toggle('full', n >= max);
+      if (n >= max) S.dom.announce(`Это максимум: ${max} знака`);
+    });
     const done = v => { CP().setName(code, v); sheet.close(); setTimeout(() => S.app.render({ instant: true, keepScroll: true }), 360); };
     form.addEventListener('submit', e => { e.preventDefault(); done(form.n.value); });
     const clear = sheet.dlg.querySelector('[data-name-clear]');
@@ -656,7 +666,7 @@
         const z = PR().report(sd.me.type, sd.partner.type, P()).zones.find(x => x.aspect === card.dataset.sample);
         const el = card.querySelector('[data-sample-text]');
         if (z && z.copy && el) {
-          el.textContent = PR().firstSentence(z.copy.text, 200) + ' …';
+          el.textContent = S.dom.typoText(PR().firstSentence(z.copy.text, 200)) + '\u00a0…';
           card.classList.add('loaded');
         }
       }).catch(() => {});
@@ -678,6 +688,7 @@
     reportShown = loadReport().then(() => {
       if (!alive) return null;
       box.innerHTML = reportHTML(sd);
+      S.dom.typo(box);
       box.classList.add('ready');
       if (quiet) box.querySelectorAll('.reveal').forEach(S.fx.show);
       else offReveal = S.fx.reveal(box);

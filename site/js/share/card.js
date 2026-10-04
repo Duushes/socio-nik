@@ -41,14 +41,14 @@
     const res = S.core.scoring.result(axes);
     const M = S.core.modelA;
     const t = M.type(res.top.id), q = S.data.quadras.find(x => x.id === t.quadra);
-    const c = q.color.dark;
+    const c = S.theme.quadraColor(q.id, 'dark');
 
     // фон: чёрный + «аврора» из цветов квадр
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
     S.data.quadras.forEach((qq, i) => {
       const pos = [[0.08, 0.06], [0.95, 0.12], [0.05, 0.92], [0.92, 0.88]][i];
-      blob(ctx, W * pos[0], H * pos[1], W * 0.55, qq.color.dark, qq.id === q.id ? 0.0 : 0.16);
+      blob(ctx, W * pos[0], H * pos[1], W * 0.55, S.theme.quadraColor(qq.id, 'dark'), qq.id === q.id ? 0.0 : 0.16);
     });
     // Сетка координат по форматам: сверху вниз, без наложений (сторис 1920, пост 1350)
     const L = story
@@ -103,7 +103,7 @@
     const x0 = 150, x1 = W - 150;
     if (L.top3) {
       res.dist.slice(0, 3).forEach((row, i) => {
-        const tt = M.type(row.id), qc = S.data.quadras.find(x => x.id === tt.quadra).color.dark;
+        const tt = M.type(row.id), qc = S.theme.quadraColor(tt.quadra, 'dark');
         const yy = L.top3 + i * L.topRow;
         ctx.textAlign = 'left';
         ctx.fillStyle = 'rgba(255,255,255,0.92)';
@@ -226,13 +226,13 @@
     const ctx = canvas.getContext('2d');
     const t = fact.type ? S.core.modelA.type(fact.type) : null;
     const q = t ? S.data.quadras.find(x => x.id === t.quadra) : null;
-    const c = q ? q.color.dark : '#3987e5';
+    const c = S.theme.quadraColor(q ? q.id : 'alpha', 'dark');
 
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
     S.data.quadras.forEach((qq, i) => {
       const pos = [[0.08, 0.06], [0.95, 0.12], [0.05, 0.92], [0.92, 0.88]][i];
-      blob(ctx, W * pos[0], H * pos[1], W * 0.55, qq.color.dark, q && qq.id === q.id ? 0 : 0.16);
+      blob(ctx, W * pos[0], H * pos[1], W * 0.55, S.theme.quadraColor(qq.id, 'dark'), q && qq.id === q.id ? 0 : 0.16);
     });
     blob(ctx, W / 2, 470, W * 0.6, c, 0.45);
 
@@ -261,8 +261,8 @@
     } else {
       S.data.quadras.forEach((qq, i) => {
         const x = W / 2 + (i - 1.5) * 130, y = 500, g = ctx.createRadialGradient(x - 16, y - 18, 4, x, y, 52);
-        g.addColorStop(0, tone(qq.color.dark, 0.55));
-        g.addColorStop(1, tone(qq.color.dark, -0.35));
+        g.addColorStop(0, tone(S.theme.quadraColor(qq.id, 'dark'), 0.55));
+        g.addColorStop(1, tone(S.theme.quadraColor(qq.id, 'dark'), -0.35));
         ctx.fillStyle = g;
         ctx.beginPath();
         ctx.arc(x, y, 48, 0, Math.PI * 2);
@@ -302,7 +302,7 @@
     canvas.width = W;
     canvas.height = H;
     const ctx = canvas.getContext('2d');
-    const Q = id => S.data.quadras.find(q => q.id === id).color.dark;
+    const Q = id => S.theme.quadraColor(id, 'dark');
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
     [['alpha', 0.14, 0.2], ['gamma', 0.86, 0.16], ['beta', 0.82, 0.9], ['delta', 0.16, 0.9]].forEach(([q, x, y]) => blob(ctx, W * x, H * y, W * 0.5, Q(q), 0.4));

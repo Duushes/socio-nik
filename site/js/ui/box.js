@@ -120,6 +120,7 @@
       later(() => stage.classList.add('is-lid'), 420);
       later(() => {
         card.innerHTML = cardHTML(fact, reset);
+        S.dom.typo(card);
         card.hidden = false;
         stage.classList.add('is-open');
         // конфетти — только у двух пиков сайта (раскрытие типа и открытие разбора); у коробки свой жест — крышка и переворот карточки
