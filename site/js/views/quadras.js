@@ -6,6 +6,7 @@
   const { esc } = S.dom;
 
   V.quadras = {
+    needs: ['types'],
     title: () => 'Квадры',
     render: () => `
       <section class="sec page-head">

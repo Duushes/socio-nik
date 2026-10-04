@@ -225,6 +225,7 @@
   }
 
   V.result = {
+    needs: ['types', 'relations', 'functions', 'modelA', 'celebs', 'facts'],
     title: () => {
       const a = S.state.result();
       return a ? 'Твой тип — ' + M().type(S.core.scoring.result(a).top.id).mbti : 'Результат';
@@ -324,6 +325,7 @@
   }
 
   V.shared = {
+    needs: ['types', 'relations', 'functions', 'modelA', 'celebs', 'facts'],
     title: code => {
       const axes = S.core.payload.decode(code);
       return 'Результат друга — ' + M().type(S.core.scoring.result(axes).top.id).mbti;

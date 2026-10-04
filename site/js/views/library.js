@@ -30,6 +30,7 @@
   ];
 
   V.library = {
+    needs: ['types'],
     title: () => 'Библиотека',
     render() {
       const a = S.state.myType() || 'iee';

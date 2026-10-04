@@ -20,6 +20,12 @@ a:hover { text-decoration: underline; }
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 8px; }
 main { outline: none; min-height: 60vh; display: block; }
+/* до первой отрисовки подвал не показываем: иначе первым кадром человек видит оговорки, а потом подвал прыгает вниз */
+body:not([data-view]) .footer { visibility: hidden; }
+/* скелет страницы, пока догружаются тексты */
+.sk { height: 18px; margin: 16px 0; border-radius: var(--r-icon); background: var(--chip); }
+.sk-title { height: 46px; width: min(560px, 80%); margin-bottom: 28px; }
+.sk-short { width: 45%; }
 main:focus, main:focus-visible { outline: none; }
 
 .skip { position: absolute; left: -9999px; top: 8px; z-index: 100; padding: 8px 14px; border-radius: 10px; background: var(--bg); color: var(--text); box-shadow: var(--shadow); }
@@ -41,6 +47,8 @@ main:focus, main:focus-visible { outline: none; }
 .grid2 > * { min-width: 0; }
 
 /* ---------- типографика ---------- */
+h1, h2, h3, .display, .title, .title-sm { text-wrap: balance; }
+p, li, .lead, .body, .sub { text-wrap: pretty; }
 .eyebrow { font-size: 17px; font-weight: 600; color: var(--muted); letter-spacing: -0.01em; margin: 0 0 12px; }
 .display { font-size: clamp(46px, 7.6vw, 96px); line-height: 1.02; letter-spacing: -0.038em; font-weight: 700; margin: 0 0 22px; }
 .title { font-size: clamp(36px, 5.4vw, 64px); line-height: 1.05; letter-spacing: -0.032em; font-weight: 700; margin: 0 0 18px; }
@@ -137,7 +145,7 @@ main:focus, main:focus-visible { outline: none; }
 .footer-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 16px; margin-bottom: 14px; border-bottom: 1px solid var(--hair); }
 .footer-links { display: flex; flex-wrap: wrap; gap: 8px 18px; }
 .footer-links a { color: var(--muted); }
-.footer-note { max-width: 720px; margin: 0; }
+.footer-note { max-width: 65ch; margin: 0; }
 
 @media (max-width: 734px) {
   .sec { padding: 76px 0; }

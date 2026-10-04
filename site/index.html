@@ -3,17 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Socio-Nik — совместимость пары по 16 типам личности</title>
-<meta name="description" content="Тест на 16 типов личности для двоих: по 4 минуты каждому — и сразу видно, где вы дополняете друг друга, а где нужна бережность. Коды как в MBTI, совместимость по соционике.">
-<meta name="theme-color" content="#ffffff">
+<title>Совместимость пары по 16 типам личности · Socio-Nik</title>
+<meta name="description" content="Тест на 16 типов личности для двоих: по 4 минуты каждому, и сразу видно, где вы дополняете друг друга, а где нужна бережность.">
+<link rel="canonical" href="https://duushes.github.io/socio-nik/">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Socio-Nik">
-<meta property="og:title" content="Socio-Nik — как устроена ваша пара">
-<meta property="og:description" content="Тест на 16 типов личности для двоих: совместимость сразу и бесплатно — где вы дополняете друг друга, а где нужна бережность.">
+<meta property="og:title" content="Как устроена ваша пара · Socio-Nik">
+<meta property="og:description" content="Тест на 16 типов личности для двоих. Совместимость сразу и бесплатно: где вы дополняете друг друга, а где нужна бережность.">
 <meta property="og:url" content="https://duushes.github.io/socio-nik/">
 <meta property="og:image" content="https://duushes.github.io/socio-nik/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Карта пары: два круга, у кого какая сфера жизни, и заголовок «Как устроена ваша пара»">
 <meta property="og:locale" content="ru_RU">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://duushes.github.io/socio-nik/og.jpg">
@@ -30,6 +33,8 @@
       document.documentElement.setAttribute('data-theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     }
     document.documentElement.classList.add('js');
+    // каркас первого экрана в <main> — только для главной; по глубокой ссылке его не показываем
+    if (location.hash && location.hash !== '#' && location.hash !== '#/') document.documentElement.classList.add('deep');
   })();
 </script>
 <link rel="stylesheet" href="css/tokens.css">
@@ -65,7 +70,19 @@
   </div>
 </header>
 
-<main id="app" tabindex="-1"></main>
+<main id="app" tabindex="-1">
+  <!-- Каркас первого экрана главной: виден сразу, пока грузятся скрипты; приложение заменит его тем же экраном -->
+  <section class="hero-split" data-shell>
+    <div class="wrap-wide hero-grid">
+      <div class="hero-copy">
+        <h1 class="display">Как устроена ваша пара.</h1>
+        <p class="lead">Каждый проходит тест за 4 минуты. Совместимость покажем сразу и бесплатно.</p>
+        <div class="cta"><a class="btn btn-lg" href="#/duo">Пройти вдвоём</a><a class="btn btn-lg btn-ghost" href="#/test">Позвать по ссылке</a></div>
+      </div>
+      <div class="hero-map" aria-hidden="true"><div class="shell-map"></div></div>
+    </div>
+  </section>
+</main>
 
 <footer class="footer">
   <div class="wrap">
@@ -80,57 +97,45 @@
   </div>
 </footer>
 
-<script src="config.js"></script>
-<script src="js/lib/base.js"></script>
-<script src="js/lib/track.js"></script>
-<script src="js/lib/lazy.js"></script>
-<script src="js/data/aspects.js"></script>
-<script src="js/data/types.js"></script>
-<script src="js/data/quadras.js"></script>
-<script src="js/data/relations.js"></script>
-<script src="js/data/questions.js"></script>
-<script src="js/core/modelA.js"></script>
-<script src="js/core/scoring.js"></script>
-<script src="js/core/payload.js"></script>
-<script src="js/core/pair.js"></script>
-<script src="js/core/couple.js"></script>
-<script src="js/content/types-alpha.js"></script>
-<script src="js/content/types-beta.js"></script>
-<script src="js/content/types-gamma.js"></script>
-<script src="js/content/types-delta.js"></script>
-<script src="js/content/relations.js"></script>
-<script src="js/content/pair.js"></script>
-<script src="js/content/functions.js"></script>
-<script src="js/content/modelA-alpha.js"></script>
-<script src="js/content/modelA-beta.js"></script>
-<script src="js/content/modelA-gamma.js"></script>
-<script src="js/content/modelA-delta.js"></script>
-<script src="js/content/celebs.js"></script>
-<script src="js/content/facts.js"></script>
-<script src="js/art/prims.js"></script>
-<script src="js/art/glyphs.js"></script>
-<script src="js/art/emblem.js"></script>
-<script src="js/art/scenes.js"></script>
-<script src="js/art/celeb-icons.js"></script>
-<script src="js/art/pairmap.js"></script>
-<script src="js/fx/fx.js"></script>
-<script src="js/share/card.js"></script>
-<script src="js/share/social.js"></script>
-<script src="js/share/pair-card.js"></script>
-<script src="js/ui/components.js"></script>
-<script src="js/ui/box.js"></script>
-<script src="js/ui/sheet.js"></script>
-<script src="js/ui/paywall.js"></script>
-<script src="js/views/home.js"></script>
-<script src="js/views/test.js"></script>
-<script src="js/views/result.js"></script>
-<script src="js/views/types.js"></script>
-<script src="js/views/quadras.js"></script>
-<script src="js/views/relations.js"></script>
-<script src="js/views/misc.js"></script>
-<script src="js/views/pair.js"></script>
-<script src="js/views/library.js"></script>
-<!-- Тексты разбора пары (js/content/pair-zones-*.js, pair-relations-*.js) грузятся по требованию — см. views/pair.js -->
-<script src="js/app.js"></script>
+<script src="config.js" defer></script>
+<script src="js/lib/base.js" defer></script>
+<script src="js/lib/track.js" defer></script>
+<script src="js/lib/lazy.js" defer></script>
+<script src="js/data/aspects.js" defer></script>
+<script src="js/data/types.js" defer></script>
+<script src="js/data/quadras.js" defer></script>
+<script src="js/data/relations.js" defer></script>
+<script src="js/data/questions.js" defer></script>
+<script src="js/core/modelA.js" defer></script>
+<script src="js/core/scoring.js" defer></script>
+<script src="js/core/payload.js" defer></script>
+<script src="js/core/pair.js" defer></script>
+<script src="js/core/couple.js" defer></script>
+<script src="js/content/pair.js" defer></script>
+<script src="js/art/prims.js" defer></script>
+<script src="js/art/glyphs.js" defer></script>
+<script src="js/art/emblem.js" defer></script>
+<script src="js/art/scenes.js" defer></script>
+<script src="js/art/celeb-icons.js" defer></script>
+<script src="js/art/pairmap.js" defer></script>
+<script src="js/fx/fx.js" defer></script>
+<script src="js/share/card.js" defer></script>
+<script src="js/share/social.js" defer></script>
+<script src="js/share/pair-card.js" defer></script>
+<script src="js/ui/components.js" defer></script>
+<script src="js/ui/box.js" defer></script>
+<script src="js/ui/sheet.js" defer></script>
+<script src="js/ui/paywall.js" defer></script>
+<script src="js/views/home.js" defer></script>
+<script src="js/views/test.js" defer></script>
+<script src="js/views/result.js" defer></script>
+<script src="js/views/types.js" defer></script>
+<script src="js/views/quadras.js" defer></script>
+<script src="js/views/relations.js" defer></script>
+<script src="js/views/misc.js" defer></script>
+<script src="js/views/pair.js" defer></script>
+<script src="js/views/library.js" defer></script>
+<!-- Тексты типов, отношений, модели А, знаменитостей и фактов, а также разбора пары грузятся по требованию — см. app.js (PACKS) и views/pair.js -->
+<script src="js/app.js" defer></script>
 </body>
 </html>

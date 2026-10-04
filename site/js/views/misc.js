@@ -6,6 +6,7 @@
   const { esc } = S.dom;
 
   V.box = {
+    needs: ['types', 'relations', 'facts'],
     title: () => 'Mystery box',
     valid: id => !id || Boolean(S.core.modelA.find(id)),
     render: id => `

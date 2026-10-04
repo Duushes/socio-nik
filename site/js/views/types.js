@@ -7,6 +7,7 @@
   const M = () => S.core.modelA;
 
   V.types = {
+    needs: ['types'],
     title: () => '16 типов',
     render: () => `
       <section class="sec page-head">
@@ -40,6 +41,7 @@
   }
 
   V.type = {
+    needs: ['types', 'relations', 'functions', 'modelA', 'celebs', 'facts'],
     valid: id => Boolean(M().find(id)),
     title: id => { const t = M().find(id); return `${t.mbti} «${t.title}»`; },
     render(id) {

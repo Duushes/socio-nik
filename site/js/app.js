@@ -116,8 +116,54 @@
     return true;
   };
 
+  // ---------- тексты по требованию ----------
+  // Главной, тесту и «Совместимости» тексты библиотеки не нужны: они грузятся только там, где их читают
+  // (view.needs). Порядок наборов важен: факты собираются из уже загруженных типов и отношений.
+  // В однофайловой сборке всё встроено — READY сразу говорит «на месте», и ничего не грузится
+  const PACKS = {
+    types: ['js/content/types-alpha.js', 'js/content/types-beta.js', 'js/content/types-gamma.js', 'js/content/types-delta.js'],
+    relations: ['js/content/relations.js'],
+    functions: ['js/content/functions.js'],
+    modelA: ['js/content/modelA-alpha.js', 'js/content/modelA-beta.js', 'js/content/modelA-gamma.js', 'js/content/modelA-delta.js'],
+    celebs: ['js/content/celebs.js'],
+    facts: ['js/content/facts.js']
+  };
+  const C = () => S.content || {};
+  const READY = {
+    types: () => Boolean(C().types && S.data.types.every(t => C().types[t.id])),
+    relations: () => Boolean(C().relations && Object.keys(C().relations).length),
+    functions: () => Boolean(C().positions),
+    modelA: () => Boolean(C().modelA && S.data.types.every(t => C().modelA[t.id])),
+    celebs: () => Boolean(C().celebs),
+    facts: () => Boolean(S.facts)
+  };
+  const PACK_ORDER = ['types', 'relations', 'functions', 'modelA', 'celebs', 'facts'];
+  const missingFor = view => PACK_ORDER.filter(n => (view.needs || []).includes(n) && !READY[n]());
+
+  // Пока тексты едут — скелет той же ширины; если не доехали — честное сообщение и кнопка «Обновить»
+  function showLoading() {
+    const el = app();
+    if (el.querySelector('.page-loading')) return;
+    if (cleanup) { try { cleanup(); } catch (e) { /* уже убрано */ } cleanup = null; }
+    el.innerHTML = `<section class="sec page-loading" aria-busy="true"><div class="wrap"><p class="sr" aria-live="polite">Загружаем…</p>
+      <div class="sk sk-title"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line sk-short"></div></div></section>`;
+    document.body.setAttribute('data-view', 'loading');
+  }
+  function showLoadError() {
+    app().innerHTML = `<section class="sec page-head"><div class="wrap center narrow">
+      <h1 class="title">Не получилось загрузить страницу.</h1>
+      <p class="lead">Похоже, связь пропала на полпути. Проверь интернет и обнови страницу — ответы и результат на месте.</p>
+      <p><button class="btn btn-lg" type="button" onclick="location.reload()">Обновить</button></p></div></section>`;
+  }
+
   function render({ instant = false, keepScroll = false } = {}) {
     const r = parse(), view = S.views[r.name];
+    const missing = missingFor(view);
+    if (missing.length) {
+      showLoading();
+      S.lazy(missing.flatMap(n => PACKS[n])).then(() => { lastPath = null; render({ instant: true, keepScroll }); }, showLoadError);
+      return;
+    }
     const path = location.hash.split('#').slice(0, 2).join('#');
     const samePage = path === lastPath && r.anchor;
     lastPath = path;

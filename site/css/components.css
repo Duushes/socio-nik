@@ -1,43 +1,37 @@
 /* Socio-Nik · компоненты экранов */
 
-/* ================= HERO ================= */
-.hero {
-  position: relative; isolation: isolate; overflow: hidden;
-  min-height: min(100svh, 1000px); display: grid; place-items: center;
-  padding: calc(var(--nav-h) + 48px) 0 96px;
-}
-.hero::after { content: ""; position: absolute; inset: auto 0 0 0; height: 28%; z-index: -1; background: linear-gradient(transparent, var(--bg)); }
-.aurora { position: absolute; inset: -25%; z-index: -2; pointer-events: none; }
-.aurora i { position: absolute; width: 62vmax; height: 62vmax; border-radius: 50%; opacity: 0.5; will-change: transform; }
-[data-theme="dark"] .aurora i { opacity: 0.62; }
-.aurora .b1 { left: 4%; top: 6%; background: radial-gradient(closest-side, color-mix(in srgb, var(--q-alpha) 58%, transparent), transparent); }
-.aurora .b2 { right: 2%; top: 2%; background: radial-gradient(closest-side, color-mix(in srgb, var(--q-gamma) 50%, transparent), transparent); }
-.aurora .b3 { right: 8%; bottom: 0; background: radial-gradient(closest-side, color-mix(in srgb, var(--q-beta) 46%, transparent), transparent); }
-.aurora .b4 { left: 6%; bottom: 2%; background: radial-gradient(closest-side, color-mix(in srgb, var(--q-delta) 44%, transparent), transparent); }
-
-.hero-glyphs { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
-.hg {
-  --size: calc(clamp(66px, 9.4vw, 136px) * var(--s));
-  position: absolute; left: var(--x); top: var(--y);
-  width: var(--size); height: var(--size); margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
-  transform: translate3d(calc(var(--px, 0) * var(--d) * -46px), calc(var(--py, 0) * var(--d) * -46px + var(--sy, 0) * var(--d) * -140px), 0);
-  transition: transform 0.7s var(--out);
-}
-.hg-in, .hg-float { display: block; width: 100%; height: 100%; }
-.hg-svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 16px 22px rgba(0, 0, 0, 0.12)); }
-[data-theme="dark"] .hg-svg { filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.6)); }
-
-.hero-copy { position: relative; text-align: center; }
-.hero-copy .lead { margin: 0 auto 38px; }
+/* ================= ПЕРВЫЙ ЭКРАН ГЛАВНОЙ: текст и живая карта пары ================= */
+/* Текст выровнен по верху, отступ под шапкой не больше 96 px; высоту экрана держит карта, а не пустота */
+.hero-split { position: relative; padding: calc(var(--nav-h) + 72px) 0 40px; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: start; gap: 56px; }
+.hero-copy { padding-top: 12px; }
+.hero-split .display { font-size: clamp(40px, 6vw, 72px); margin: 0 0 20px; }
+.hero-split .lead { margin: 0 0 32px; max-width: 30em; }
+.hero-split .cta { justify-content: flex-start; }
+.hero-map { min-width: 0; cursor: pointer; }
+.hero-map .pv { max-width: 600px; }
+.hero-map-cap { margin: 4px 0 0; text-align: center; font-size: 15px; }
+/* каркас первого экрана в index.html: место под карту держим заранее, чтобы ничего не прыгало */
+.shell-map { aspect-ratio: 3 / 2; margin: 30px 0 120px; }
+.deep [data-shell] { display: none; }
+.hero-after { padding: 0 0 28px; }
+.hero-after-in { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 26px; font-size: 17px; }
 .cta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px 26px; }
 .cta .link { font-size: 19px; }
 .mine {
-  display: inline-flex; align-items: center; margin-top: 30px; padding: 9px 18px; border-radius: var(--r-pill);
-  background: var(--glass); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
-  box-shadow: inset 0 0 0 1px var(--hair); color: var(--text); font-size: 15px; font-weight: 500;
+  display: inline-flex; align-items: center; padding: 8px 16px; border-radius: var(--r-pill);
+  background: var(--chip); color: var(--text); font-size: 15px; font-weight: 500;
 }
-.scroll-cue { position: absolute; left: 50%; bottom: 26px; width: 22px; height: 36px; margin-left: -11px; border-radius: 12px; box-shadow: inset 0 0 0 1.5px var(--faint); opacity: 0.6; }
-.scroll-cue i { position: absolute; left: 50%; top: 8px; width: 3px; height: 7px; margin-left: -1.5px; border-radius: 2px; background: var(--faint); }
+@media (max-width: 1068px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 20px; }
+  .hero-copy { padding-top: 0; max-width: 640px; }
+  .hero-map .pv { margin: 0 auto; }
+}
+@media (max-width: 734px) {
+  .hero-split { padding-top: calc(var(--nav-h) + 36px); }
+  .hero-split .cta { flex-direction: column; align-items: stretch; gap: 10px; }
+  .hero-split .cta .btn { width: 100%; }
+}
 
 /* ================= ДИХОТОМИИ ================= */
 .dich-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 44px; }

@@ -32,6 +32,7 @@
   }
 
   V.relations = {
+    needs: ['types', 'relations'],
     title: () => 'Отношения',
     render() {
       const a = S.state.myType() || 'ile';

@@ -26,21 +26,6 @@
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes wobble { 0%, 100% { transform: rotate(-6deg) translateY(0); } 50% { transform: rotate(8deg) translateY(-10px); } }
 
-/* ---------- hero ---------- */
-.aurora .b1 { animation: drift-a 24s var(--ease) infinite alternate; }
-.aurora .b2 { animation: drift-b 28s var(--ease) infinite alternate; }
-.aurora .b3 { animation: drift-c 26s var(--ease) infinite alternate; }
-.aurora .b4 { animation: drift-d 30s var(--ease) infinite alternate; }
-@keyframes drift-a { to { transform: translate(14%, 10%) scale(1.12); } }
-@keyframes drift-b { to { transform: translate(-12%, 14%) scale(0.9); } }
-@keyframes drift-c { to { transform: translate(-10%, -12%) scale(1.14); } }
-@keyframes drift-d { to { transform: translate(12%, -8%) scale(0.92); } }
-.hg-in { animation: assemble 1.5s var(--spring) both; animation-delay: calc(0.12s + var(--i) * 0.08s); }
-.hg-float { animation: float 7s ease-in-out infinite; animation-delay: calc(var(--i) * -0.9s); }
-@keyframes assemble { from { opacity: 0; transform: translate(var(--sx), var(--sy)) rotate(var(--sr)) scale(0.35); } to { opacity: 1; transform: none; } }
-.scroll-cue i { animation: cue 2s ease-in-out infinite; }
-@keyframes cue { 0% { opacity: 0; transform: translateY(0); } 30% { opacity: 1; } 80%, 100% { opacity: 0; transform: translateY(12px); } }
-
 /* ---------- эмблемы ---------- */
 .emblem .em-base, .emblem .em-creative, .emblem .em-shadow { transform-box: fill-box; transform-origin: center; }
 .em-float .em-base, .em-live .em-base { animation: bob 6s ease-in-out infinite; }

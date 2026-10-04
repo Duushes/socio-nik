@@ -209,6 +209,7 @@
 
   // ---------- приглашение партнёра ----------
   V.invite = {
+    needs: ['types'],
     valid: code => Boolean(S.core.payload.decode(code)),
     title: () => 'Приглашение в пару',
     render(code) {
@@ -754,6 +755,7 @@ html.vt-unveil::view-transition-new(${name(i)}) { animation: pv-vt-in 380ms var(
   }
 
   V.pair = {
+    needs: ['types', 'relations', 'functions', 'modelA'],
     valid: (x, y) => Boolean(CP().side(x) && CP().side(y)),
     title: (x, y) => { const sd = sides(x, y); return `${sd.me.type.mbti} и ${sd.partner.type.mbti}`; },
     render: (x, y) => { const sd = sides(x, y); return pairPage(sd, perspective(sd)); },

@@ -6,9 +6,13 @@ const vm = require('vm');
 const { SITE } = require('./load');
 
 const html = fs.readFileSync(path.join(SITE, 'index.html'), 'utf8');
-const scripts = [...html.matchAll(/<script src="([^"]+)"><\/script>/g)].map(m => m[1])
+const scripts = [...html.matchAll(/<script src="([^"]+)"(?: defer)?><\/script>/g)].map(m => m[1])
   .filter(src => /^(config|js\/lib|js\/data|js\/core|js\/content)/.test(src));
-const lazy = fs.readdirSync(path.join(SITE, 'js', 'content')).filter(f => /^pair-.+\.js$/.test(f) && f !== 'pair.js').map(f => 'js/content/' + f);
+// всё, что сайт грузит по требованию: тексты библиотеки (в порядке app.js → PACKS) и тексты разбора пары
+const PACK_FILES = ['types-alpha', 'types-beta', 'types-gamma', 'types-delta', 'relations', 'functions',
+  'modelA-alpha', 'modelA-beta', 'modelA-gamma', 'modelA-delta', 'celebs', 'facts'].map(f => `js/content/${f}.js`);
+const lazy = PACK_FILES.filter(f => !scripts.includes(f))
+  .concat(fs.readdirSync(path.join(SITE, 'js', 'content')).filter(f => /^pair-.+\.js$/.test(f) && f !== 'pair.js').map(f => 'js/content/' + f));
 const ctx = vm.createContext({ console });
 for (const src of scripts.concat(lazy)) vm.runInContext(fs.readFileSync(path.join(SITE, src), 'utf8'), ctx, { filename: src });
 const S = ctx.Socio, PR = S.core.pair, P = S.content.pair, M = S.core.modelA, MA = S.content.modelA;
