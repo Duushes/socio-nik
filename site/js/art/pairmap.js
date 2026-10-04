@@ -163,13 +163,13 @@
       roundRect(ctx, x, y, wdt, h, h / 2);
       ctx.fill();
       if (group === 'care' || group === 'gap') {
-        ctx.strokeStyle = group === 'care' ? '#ec835a' : 'rgba(255,255,255,0.5)';
+        ctx.strokeStyle = group === 'care' ? '#1d1d1f' : 'rgba(255,255,255,0.5)';   // «бережно» — сплошная обводка, «не хватает» — пунктир
         ctx.lineWidth = 2;
         ctx.setLineDash(group === 'gap' ? [5, 4] : []);
         ctx.stroke();
         ctx.setLineDash([]);
       }
-      const ink = group === 'gap' ? 'rgba(255,255,255,0.86)' : group === 'care' ? '#c4542a' : '#1d1d1f';
+      const ink = group === 'gap' ? 'rgba(255,255,255,0.86)' : '#1d1d1f';
       ctx.save();
       ctx.translate(x + pad, cy - ic / 2);
       ctx.scale(ic / 20, ic / 20);

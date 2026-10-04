@@ -26,7 +26,20 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ESC[c]);
   const reducedMotion = () => Boolean(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const pct = n => n + ' %';
-  S.dom = { esc, reducedMotion, pct };
+  // Короткое сообщение для скринридера: что изменилось на экране (например, «разбор открыт»)
+  let live = null;
+  const announce = msg => {
+    if (!root.document || !root.document.body) return;
+    if (!live) {
+      live = root.document.createElement('p');
+      live.className = 'sr';
+      live.setAttribute('aria-live', 'polite');
+      root.document.body.appendChild(live);
+    }
+    live.textContent = '';
+    setTimeout(() => { live.textContent = msg; }, 80);
+  };
+  S.dom = { esc, reducedMotion, pct, announce };
 
   // ---------- хранилище: localStorage с фолбэком в память (приватный режим, data:-снимок) ----------
   const memory = {};

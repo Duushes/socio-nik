@@ -77,14 +77,12 @@
     for (; size >= 60; size -= 4) { ctx.font = font(800, size); lines = wrap(ctx, title, W - 160); if (lines.length <= 2) break; }
     lines.forEach((l, i) => ctx.fillText(l, W / 2, 1080 + i * size * 1.08));
     const y0 = 1080 + (lines.length - 1) * size * 1.08 + 70;
-    ctx.fillStyle = 'rgba(255,255,255,0.62)';
-    ctx.font = font(500, 36);
-    ctx.fillText(`${S.ui.kindTitle(r.kind)} в соционике · ${S.data.tones[r.tone]}`, W / 2, y0);
 
-    // строка о виде отношений в стеклянной карточке
+    // строка «как вы устроены и что помогает» в стеклянной карточке — без термина и без тона:
+    // картинкой делятся, и на ней не должно быть приговора
     ctx.font = font(600, 46);
-    const body = wrap(ctx, txt.line || '', W - 260).slice(0, 4);
-    const lh = 62, top = y0 + 120;
+    const body = wrap(ctx, (P().lines || {})[r.id] || txt.line || '', W - 260).slice(0, 5);
+    const lh = 62, top = y0 + 60;
     ctx.fillStyle = 'rgba(255,255,255,0.08)';
     roundRect(ctx, 80, top - 80, W - 160, body.length * lh + 110, 48);
     ctx.fill();
@@ -165,7 +163,7 @@
       ctx.save();
       ctx.translate(170, y - 24);
       ctx.scale(1.7, 1.7);
-      ctx.strokeStyle = g.id === 'care' ? '#ec835a' : 'rgba(255,255,255,0.9)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
       ctx.lineWidth = 1.7;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';

@@ -39,9 +39,9 @@
   S.paywall = paywall;
 
   const INSIDE = [
-    'Карта восьми сфер — от денег до близости: где вы дополняете друг друга, где говорите на одном языке, а где нужна бережность',
-    'Пять договорённостей на эту неделю — под вашу пару',
-    'Как мириться: три фразы «вместо этого — скажи так»',
+    'Карта восьми сфер, от денег до близости: где вы дополняете друг друга, где говорите на одном языке, а где нужна бережность',
+    'Пять договорённостей на эту неделю под вашу пару',
+    'Как мириться: три фразы «вместо этого скажи так»',
     'Ритуал на неделю и вопросы для вечера вдвоём',
     'Картинка карты для сторис и версия для печати'
   ];
@@ -51,8 +51,7 @@
     const mode = paywall.mode(), price = paywall.price();
     if (gift) {
       return `<div class="offer-sheet">
-        <p class="eyebrow">Подарить разбор</p>
-        <h2 class="title-sm">Подарок паре друзей — скоро.</h2>
+        <h2 class="title-sm">Подарок паре друзей скоро появится.</h2>
         <p class="body">Мы готовим подарочный разбор с открыткой: дарите ссылку, а пара проходит тест и открывает свою карту. Спасибо, что нажали, — так мы понимаем, что подарок нужен.</p>
         <p class="offer-beta">А свой разбор можно открыть уже сейчас: пока он в бета-версии, это бесплатно.</p>
         <div class="offer-actions"><button class="btn btn-lg" type="button" data-offer-yes>Открыть наш разбор</button><button class="ghost-btn" type="button" data-close>Закрыть</button></div>
@@ -62,14 +61,15 @@
       ? '<p class="offer-beta">Оплата скоро появится. Мы не берём денег, пока не подключим чеки и всё, что положено по закону.</p>'
       : '<p class="offer-beta">Сейчас разбор в бета-версии и открывается бесплатно: мы проверяем, нужен ли он. Оплаты на сайте нет — ничего не спишется.</p>';
     return `<div class="offer-sheet">
-      <p class="eyebrow">Разбор пары</p>
-      <h2 class="title-sm">Карта ваших функций — и что с этим делать.</h2>
+      <h2 class="title-sm">Все 8 сфер вашей пары и что с этим делать.</h2>
       ${ui.offerInside()}
-      <div class="offer-price"><b>${rub(price)}</b><span>${mode === 'live' ? 'разовая оплата, без подписки' : 'цена после беты · разово, без подписки'}</span></div>
-      ${beta}
-      <div class="offer-actions">
-        <button class="btn btn-lg" type="button" data-offer-yes${mode === 'live' ? ' disabled' : ''}>${mode === 'live' ? 'Оплатить' : 'Открыть разбор бесплатно'}</button>
-        <button class="ghost-btn" type="button" data-close>Не сейчас</button>
+      <div class="offer-foot">
+        <div class="offer-price"><b>${rub(price)}</b><span>${mode === 'live' ? 'разовая оплата, без подписки' : 'цена после беты, разово и без подписки'}</span></div>
+        ${beta}
+        <div class="offer-actions">
+          <button class="btn btn-lg" type="button" data-offer-yes${mode === 'live' ? ' disabled' : ''}>${mode === 'live' ? 'Оплатить' : 'Открыть разбор бесплатно'}</button>
+          <button class="ghost-btn" type="button" data-close>Не сейчас</button>
+        </div>
       </div>
     </div>`;
   }
@@ -82,14 +82,14 @@
     sheet.dlg.classList.add('offer');
     sheet.dlg.addEventListener('click', e => {
       if (!e.target.closest('[data-offer-yes]')) return;
+      // разбор открываем, когда шторка уже уехала: иначе половина открытия играет под ней
       if (paywall.mode() === 'live') {
-        paywall.live.checkout(ctx).then(() => { paywall.unlock('live'); sheet.close(); if (onUnlock) onUnlock(); }).catch(() => {});
+        paywall.live.checkout(ctx).then(() => { paywall.unlock('live'); return sheet.close(); }).then(() => { if (onUnlock) onUnlock(); }).catch(() => {});
         return;
       }
       paywall.unlock(paywall.mode());
       S.track('report_unlocked', Object.assign({ mode: paywall.mode(), price, gift }, ctx));
-      sheet.close();
-      if (onUnlock) setTimeout(onUnlock, 120);
+      sheet.close().then(() => { if (onUnlock) onUnlock(); });
     });
     return sheet;
   };

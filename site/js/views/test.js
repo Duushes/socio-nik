@@ -29,17 +29,17 @@
   function question(q, i, total, value) {
     return `
       <div class="q" data-q="${q.id}">
-        <div class="q-glyph cycling" data-morph-auto>${axisGlyph(q.axis)}</div>
+        <div class="q-glyph${value > 0 ? ' is-b' : ''}" data-q-glyph>${axisGlyph(q.axis)}</div>
         <p class="q-count">Вопрос ${i + 1} из ${total}</p>
         <h1 class="q-prompt">${esc(q.prompt)}</h1>
         <div class="q-cards">
-          <div class="q-st q-a${value < 0 ? ' lean' : ''}"><span class="q-tag">А</span><p>${esc(q.a)}</p></div>
-          <div class="q-st q-b${value > 0 ? ' lean' : ''}"><span class="q-tag">Б</span><p>${esc(q.b)}</p></div>
+          <div class="q-st q-a${value < 0 ? ' lean' : ''}" data-pick="-1"><span class="q-tag">А</span><p>${esc(q.a)}</p></div>
+          <div class="q-st q-b${value > 0 ? ' lean' : ''}" data-pick="1"><span class="q-tag">Б</span><p>${esc(q.b)}</p></div>
         </div>
         <div class="q-scale" role="radiogroup" aria-label="Что тебе ближе: А или Б">
           ${VALUES.map(v => `<button type="button" role="radio" class="dot d${v + 2}" data-v="${v}" aria-checked="${value === v}" aria-label="${LABELS[v]}" tabindex="${value === v || (value == null && v === 0) ? 0 : -1}"><span></span></button>`).join('')}
         </div>
-        <div class="q-legend" aria-hidden="true"><span>Точно А</span><span>Поровну</span><span>Точно Б</span></div>
+        <div class="q-legend" aria-hidden="true"><span>Точно <i>А</i></span><span>Скорее <i>А</i></span><span>Поровну</span><span>Скорее <i>Б</i></span><span>Точно <i>Б</i></span></div>
       </div>`;
   }
 
@@ -58,7 +58,7 @@
             <div class="test-head">
               <button class="ghost-btn" type="button" data-back${i === 0 ? ' disabled' : ''}>‹ Назад</button>
               ${who}
-              <button class="ghost-btn" type="button" data-restart>Начать заново</button>
+              <button class="ghost-btn subtle" type="button" data-restart${i === 0 && !Object.keys(st.answers).length ? ' disabled' : ''}>Начать заново</button>
             </div>
             <div class="q-stage" aria-live="polite">${question(qs[i], i, qs.length, st.answers[qs[i].id])}</div>
             <p class="test-hint">Отвечай так, как обычно бывает, а не как «правильно».<span class="kbd-hint"> Можно нажимать клавиши 1–5.</span></p>
@@ -71,47 +71,45 @@
       let st = load();
       st.index = Math.min(st.index, qs.length - 1);
       const stage = root.querySelector('.q-stage'), bar = root.querySelector('.test-progress'), back = root.querySelector('[data-back]');
+      const restart = root.querySelector('[data-restart]');
       const timers = [];
-      let locked = false, cycle = 0;
+      let locked = false, pendingQ = null;
 
       const save = () => S.store.set('test', st);
-      const startCycle = () => {
-        clearInterval(cycle);
-        if (S.dom.reducedMotion()) return;
-        cycle = setInterval(() => { const g = stage.querySelector('[data-morph-auto]'); if (g) g.classList.toggle('is-b'); }, 1800);
-      };
+      // Знак над вопросом не крутится сам: он склоняется к тому полюсу, на который смотришь или который выбрал
+      const lean = v => { const g = stage.querySelector('.q:last-child [data-q-glyph]'); if (g) g.classList.toggle('is-b', v > 0); };
 
       // Смена вопроса по очереди: старый уезжает, и только потом въезжает новый — без наложения двух вопросов.
       // Высоту сцены держим на время смены, чтобы страница не прыгала.
-      function paint(dir) {
+      // Ответ — самое частое действие (по 20 на каждого): смена вопроса короткая — уход 120 мс, въезд 240 мс;
+      // с клавиатуры — только мягкая смена прозрачности
+      function paint(dir, viaKey = false) {
         const i = st.index, q = qs[i];
         bar.querySelector('i').style.setProperty('--p', (i / qs.length) * 100 + '%');
         bar.setAttribute('aria-valuenow', i);
         back.disabled = i === 0;
+        restart.disabled = i === 0 && !Object.keys(st.answers).length;
         const old = stage.querySelector('.q');
         const tmp = document.createElement('div');
         tmp.innerHTML = question(q, i, qs.length, st.answers[q.id]);
         const next = tmp.firstElementChild;
         const enter = () => {
           stage.replaceChildren(next);
-          if (!S.dom.reducedMotion()) next.classList.add(dir > 0 ? 'q-in-r' : 'q-in-l');
+          if (!S.dom.reducedMotion()) next.classList.add(viaKey ? 'q-fade-in' : dir > 0 ? 'q-in-r' : 'q-in-l');
           const focus = next.querySelector('.dot[tabindex="0"]');
           if (focus && document.documentElement.classList.contains('kbd')) focus.focus({ preventScroll: true });
           locked = false;
-          timers.push(setTimeout(() => { stage.style.minHeight = ''; }, 450));
+          timers.push(setTimeout(() => { stage.style.minHeight = ''; }, 300));
         };
         if (S.dom.reducedMotion() || !old) { enter(); return; }
         locked = true;
         stage.style.minHeight = stage.offsetHeight + 'px';
-        old.classList.add(dir > 0 ? 'q-out-l' : 'q-out-r');
-        timers.push(setTimeout(enter, 200));
+        old.classList.add(viaKey ? 'q-fade-out' : dir > 0 ? 'q-out-l' : 'q-out-r');
+        timers.push(setTimeout(enter, viaKey ? 90 : 120));
       }
 
-      function choose(v) {
-        if (locked) return;
-        const q = qs[st.index];
-        st.answers[q.id] = v;
-        save();
+      // Отметить ответ на текущем вопросе: точки шкалы, карточки, знак
+      function mark(v) {
         const cur = stage.querySelector('.q:last-child');
         cur.querySelectorAll('.dot').forEach(d => {
           const on = Number(d.dataset.v) === v;
@@ -121,17 +119,43 @@
         });
         cur.querySelector('.q-a').classList.toggle('lean', v < 0);
         cur.querySelector('.q-b').classList.toggle('lean', v > 0);
-        locked = true;
-        timers.push(setTimeout(() => { locked = false; st.index < qs.length - 1 ? go(1) : finish(); }, S.dom.reducedMotion() ? 60 : 260));
+        lean(v);
       }
 
-      function go(dir) {
+      function choose(v, viaKey = false) {
+        if (locked) return;
+        const q = qs[st.index];
+        st.answers[q.id] = v;
+        save();
+        mark(v);
+        locked = true;
+        pendingQ = q.id;
+        timers.push(setTimeout(() => {
+          locked = false;
+          pendingQ = null;
+          st.index < qs.length - 1 ? go(1, viaKey) : finish();
+        }, S.dom.reducedMotion() ? 60 : viaKey ? 120 : 180));
+      }
+
+      // Карточка утверждения — тоже ответ: нажатие — «скорее А / Б», второе нажатие, пока вопрос не сменился, — «точно»
+      function pickCard(sign) {
+        const q = qs[st.index];
+        if (locked && pendingQ === q.id && st.answers[q.id] === sign) {
+          st.answers[q.id] = sign * 2;
+          save();
+          mark(sign * 2);
+          return;
+        }
+        choose(sign);
+      }
+
+      function go(dir, viaKey = false) {
         if (locked) return;
         const n = st.index + dir;
         if (n < 0 || n >= qs.length) return;
         st.index = n;
         save();
-        paint(dir);
+        paint(dir, viaKey);
       }
 
       function finish() {
@@ -162,19 +186,38 @@
         timers.push(setTimeout(() => { location.hash = next; }, S.dom.reducedMotion() ? 50 : 1300));
       }
 
+      const leaving = el => Boolean(el.closest('.q-out-l, .q-out-r, .q-fade-out'));
       const onClick = e => {
         const dot = e.target.closest('.dot');
-        if (dot && stage.contains(dot) && !dot.closest('.q-out-l, .q-out-r')) choose(Number(dot.dataset.v));
+        if (dot && stage.contains(dot) && !leaving(dot)) choose(Number(dot.dataset.v));
+        const card = e.target.closest('[data-pick]');
+        if (card && stage.contains(card) && !leaving(card)) pickCard(Number(card.dataset.pick));
         if (e.target.closest('[data-back]')) go(-1);
-        if (e.target.closest('[data-restart]')) {
-          st = { answers: {}, index: 0 };
-          save();
-          paint(-1);
+        const rb = e.target.closest('[data-restart]');
+        if (rb) {
+          S.ui.confirm({
+            title: 'Начать тест заново?',
+            text: 'Ответы этого прохождения сотрутся. Результат, сохранённый раньше, останется.',
+            yes: 'Стереть ответы', no: 'Продолжить тест', danger: true, from: rb
+          }).then(ok => {
+            if (!ok) return;
+            st = { answers: {}, index: 0 };
+            save();
+            paint(-1);
+          });
         }
       };
+      // наведение: знак показывает полюс, к которому тянется рука; ушли — знак возвращается к выбранному ответу
+      const onOver = e => {
+        const t = e.target.closest && e.target.closest('[data-pick], .dot');
+        if (!t || !stage.contains(t)) return;
+        const v = t.dataset.pick != null ? Number(t.dataset.pick) : Number(t.dataset.v);
+        if (v) lean(v);
+      };
+      const onLeave = () => lean(st.answers[qs[st.index].id] || 0);
       const onKey = e => {
         if (e.target.matches && e.target.matches('input, select, textarea')) return;
-        if (/^[1-5]$/.test(e.key)) { e.preventDefault(); choose(Number(e.key) - 3); return; }
+        if (/^[1-5]$/.test(e.key)) { e.preventDefault(); choose(Number(e.key) - 3, true); return; }
         if (e.key === 'Backspace') { e.preventDefault(); go(-1); return; }
         const dot = e.target.closest && e.target.closest('.dot');
         if (dot && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
@@ -186,15 +229,17 @@
         }
       };
       root.addEventListener('click', onClick);
+      stage.addEventListener('pointerover', onOver);
+      stage.addEventListener('pointerleave', onLeave);
       document.addEventListener('keydown', onKey);
-      startCycle();
       const first = stage.querySelector('.dot[tabindex="0"]');
       if (first && document.documentElement.classList.contains('kbd')) first.focus({ preventScroll: true });
       return () => {
         root.removeEventListener('click', onClick);
+        stage.removeEventListener('pointerover', onOver);
+        stage.removeEventListener('pointerleave', onLeave);
         document.removeEventListener('keydown', onKey);
         timers.forEach(clearTimeout);
-        clearInterval(cycle);
       };
     }
   };

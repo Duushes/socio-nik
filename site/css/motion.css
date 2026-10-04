@@ -61,18 +61,23 @@
 
 /* ---------- тест ---------- */
 /* Вопросы меняются по очереди (см. views/test.js): короткий уход, затем въезд; без размытия — оно мутнит текст */
-.q-out-l { animation: q-out-l 0.2s var(--ease) forwards; pointer-events: none; }
-.q-out-r { animation: q-out-r 0.2s var(--ease) forwards; pointer-events: none; }
-.q-in-r { animation: q-in-r 0.45s var(--out) both; }
-.q-in-l { animation: q-in-l 0.45s var(--out) both; }
-@keyframes q-out-l { to { opacity: 0; transform: translateX(-36px); } }
-@keyframes q-out-r { to { opacity: 0; transform: translateX(36px); } }
-@keyframes q-in-r { from { opacity: 0; transform: translateX(44px); } }
-@keyframes q-in-l { from { opacity: 0; transform: translateX(-44px); } }
-.dot.pop { animation: dot-pop 0.45s var(--spring); }
-.dot.pop span { animation: ring 0.7s var(--out); }
-@keyframes dot-pop { 40% { transform: scale(1.2); } }
-@keyframes ring { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--btn) 55%, transparent); } to { box-shadow: 0 0 0 18px transparent; } }
+/* Ответ — самое частое действие: уход 120 мс, въезд 240 мс, без отскока. С клавиатуры — только прозрачность */
+.q-out-l { animation: q-out-l 0.12s cubic-bezier(0.4, 0, 1, 1) forwards; pointer-events: none; }
+.q-out-r { animation: q-out-r 0.12s cubic-bezier(0.4, 0, 1, 1) forwards; pointer-events: none; }
+.q-in-r { animation: q-in-r 0.24s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.q-in-l { animation: q-in-l 0.24s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.q-fade-out { animation: q-fade-out 0.09s linear forwards; pointer-events: none; }
+.q-fade-in { animation: q-fade-in 0.14s ease-out both; }
+@keyframes q-out-l { to { opacity: 0; transform: translateX(-12px); } }
+@keyframes q-out-r { to { opacity: 0; transform: translateX(12px); } }
+@keyframes q-in-r { from { opacity: 0; transform: translateX(16px); } }
+@keyframes q-in-l { from { opacity: 0; transform: translateX(-16px); } }
+@keyframes q-fade-out { to { opacity: 0; } }
+@keyframes q-fade-in { from { opacity: 0; } }
+.dot.pop { animation: dot-pop 0.16s var(--out); }
+.dot.pop span { animation: ring 0.5s var(--out); }
+@keyframes dot-pop { from { transform: scale(0.94); } }
+@keyframes ring { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--btn) 45%, transparent); } to { box-shadow: 0 0 0 12px transparent; } }
 .counting { animation: fade-in 0.3s both; }
 .counting-orbs { animation: spin 1.6s linear infinite; }
 .counting-orbs i { animation: gather 1.3s var(--ease) infinite alternate; }

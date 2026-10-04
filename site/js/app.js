@@ -94,8 +94,27 @@
     return { name: 'notfound', params: [], anchor: null };
   }
 
-  let cleanup = null, lastPath = null;
+  let cleanup = null, lastPath = null, pendingFocus = null;
   const app = () => document.getElementById('app');
+
+  // Перерисовка «на месте» (тема, «глазами партнёра», имя, открытие разбора) не должна терять фокус:
+  // запоминаем, на каком элементе он стоял, по его data-атрибуту и ставим на такой же в новой разметке.
+  // Части экрана, которые дорисовываются позже (разбор пары), зовут restoreFocus сами
+  const focusKey = el => {
+    if (!el || el === document.body || !app().contains(el) || el === app()) return null;
+    const name = el.getAttributeNames().find(n => n.startsWith('data-'));
+    if (!name) return null;
+    const v = el.getAttribute(name);
+    return v ? `[${name}="${v.replace(/["\\]/g, '\\$&')}"]` : `[${name}]`;
+  };
+  const restoreFocus = scope => {
+    if (!pendingFocus) return false;
+    const el = (scope || app()).querySelector(pendingFocus);
+    if (!el) return false;
+    el.focus({ preventScroll: true });
+    pendingFocus = null;
+    return true;
+  };
 
   function render({ instant = false, keepScroll = false } = {}) {
     const r = parse(), view = S.views[r.name];
@@ -104,12 +123,16 @@
     lastPath = path;
     if (samePage) { scrollToAnchor(r.anchor, true); return; }
     const y = scrollY;
+    pendingFocus = keepScroll ? focusKey(document.activeElement) : null;
     const update = () => {
       if (cleanup) { try { cleanup(); } catch (e) { /* уже убрано */ } cleanup = null; }
       const el = app();
       el.innerHTML = view.render(...r.params);
       document.title = (view.title ? view.title(...r.params) + ' · ' : '') + 'Socio-Nik';
       document.body.setAttribute('data-view', r.name);
+      // quiet: экран тот же, поменялось состояние — входные анимации не повторяем, всё сразу на месте
+      el.classList.toggle('quiet', keepScroll);
+      S.app.quiet = keepScroll;
       if (keepScroll) {
         scrollTo(0, y);
         el.querySelectorAll('.reveal').forEach(S.fx.show);
@@ -122,7 +145,8 @@
       document.querySelectorAll('.nav-links a').forEach(a => a.classList.toggle('on', a.dataset.nav === NAV[r.name]));
       closeMenu();
       if (r.anchor) scrollToAnchor(r.anchor, false);
-      if (!instant && !keepScroll) el.focus({ preventScroll: true });
+      if (keepScroll) restoreFocus(el);
+      else if (!instant) el.focus({ preventScroll: true });
     };
     if (instant) update(); else S.fx.transition(update);
   }
@@ -133,12 +157,22 @@
   }
 
   // ---------- навигация ----------
-  function closeMenu() {
-    const nav = document.querySelector('.nav');
-    if (nav) nav.classList.remove('open');
-    const b = document.querySelector('[data-menu]');
-    if (b) b.setAttribute('aria-expanded', 'false');
+  // Меню на телефоне закрывает экран целиком: пока оно открыто, контент под ним недоступен (inert),
+  // фокус — на первом пункте, Esc закрывает и возвращает фокус на кнопку меню
+  const overlayMenu = () => Boolean(root.matchMedia && root.matchMedia('(max-width: 834px)').matches);
+  function setMenu(open, { focus = true } = {}) {
+    const nav = document.querySelector('.nav'), b = document.querySelector('[data-menu]');
+    if (!nav || !b) return;
+    const was = nav.classList.contains('open');
+    nav.classList.toggle('open', open);
+    b.setAttribute('aria-expanded', String(open));
+    const cover = open && overlayMenu();
+    [app(), document.querySelector('.footer')].forEach(el => { if (el) el.inert = cover; });
+    if (!focus) return;
+    if (open) { const first = nav.querySelector('.nav-links a'); if (first) first.focus(); }
+    else if (was && nav.contains(document.activeElement)) b.focus();
   }
+  function closeMenu() { setMenu(false, { focus: false }); }
 
   function toggleTheme(btn) {
     const next = S.theme.resolved() === 'dark' ? 'light' : 'dark';
@@ -157,11 +191,11 @@
     document.documentElement.classList.add('js');
 
     document.querySelector('[data-theme-toggle]').addEventListener('click', e => toggleTheme(e.currentTarget));
-    document.querySelector('[data-menu]').addEventListener('click', e => {
-      const nav = document.querySelector('.nav'), open = !nav.classList.contains('open');
-      nav.classList.toggle('open', open);
-      e.currentTarget.setAttribute('aria-expanded', String(open));
-    });
+    document.querySelector('[data-menu]').addEventListener('click', () => setMenu(!document.querySelector('.nav').classList.contains('open')));
+    addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('.nav.open')) setMenu(false); });
+    // «К содержимому» — сразу к первому экрану, без смены адреса: хеш здесь занят роутером, а #app — не страница
+    const skip = document.querySelector('.skip');
+    if (skip) skip.addEventListener('click', e => { e.preventDefault(); app().focus(); });
     if (root.matchMedia) {
       root.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
         if (S.theme.preferred() === 'auto') { S.theme.apply(); render({ instant: true, keepScroll: true }); }
@@ -184,6 +218,6 @@
     render: opts => render(opts)
   };
 
-  S.app = { render };
+  S.app = { render, restoreFocus, quiet: false };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })(window);

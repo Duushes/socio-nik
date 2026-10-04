@@ -131,7 +131,7 @@
                 <span class="way-ic">${ICON.link}</span>
                 <h2 class="way-title">Позвать по ссылке</h2>
                 ${my ? `<p>Отправь ссылку — партнёр пройдёт тест у себя, и вы увидите совместимость.</p>${ui.inviteBox(my)}`
-                     : `<p>Сначала пройди тест сам — потом отправишь партнёру ссылку-приглашение.</p><p class="way-cta"><a class="btn" href="#/test">Пройти тест</a></p>`}
+                     : `<p>Сначала пройди тест, потом отправишь партнёру ссылку-приглашение.</p><p class="way-cta"><a class="btn" href="#/test">Пройти тест</a></p>`}
               </article>
               <article class="card way reveal" id="codes" style="--i:2">
                 <span class="way-ic">${ICON.codes}</span>
@@ -272,9 +272,8 @@
     return `
       <section class="sec offer-sec" id="razbor">
         <div class="wrap">
-          <p class="eyebrow reveal">Разбор пары</p>
           <h2 class="title reveal">Карта вашей пары.</h2>
-          <p class="lead reveal">Восемь сфер жизни — от денег до близости. Кто что ведёт, в чём вы сильны вместе и чего не хватает паре. И что с этим делать на этой неделе.</p>
+          <p class="lead reveal">Кто что ведёт в восьми сферах жизни и что с этим делать на этой неделе.</p>
           <div class="teaser">
             <div class="teaser-map">
               ${ui.pairVenn(a, b, { zones, mode: 'locked', sample, pname: partnerLabel(sd) })}
@@ -290,7 +289,6 @@
                 <button class="btn btn-lg btn-shine" type="button" data-offer>Открыть все 8 сфер — ${S.paywall.rub(price)}</button>
                 <button class="ghost-btn" type="button" data-offer-gift>Подарить разбор</button>
               </div>
-              <p class="teaser-note reveal">Ещё 7 сфер — у тебя, у партнёра и вместе, пять договорённостей на неделю, как мириться и вопросы для вечера вдвоём.</p>
             </div>
           </div>
           <div class="reveal">${ui.offerInside()}</div>
@@ -360,7 +358,7 @@
         : `type="button" data-aspect="${z.aspect}" aria-label="${esc(name)}: ${esc(whoOf(z))}. ${esc(gt)}"`;
       const pos = s.region === 'none' ? `--d:${i}` : `--x:${s.x};--y:${s.y.toFixed(2)};--d:${i}`;
       return `<${tag} class="pv-chip g-${z.group}${hidden ? ' locked' : ''}${free ? ' free' : ''}" data-region="${s.region}" data-sphere="${esc(hidden ? '' : name)}" data-who="${esc(hidden ? '' : whoOf(z))}" data-gtitle="${esc(hidden ? '' : gt)}" ${attrs} style="${pos}">
-        <span class="pv-ic">${hidden ? S.art.lockIcon('gi') : S.art.groupIcon(z.group)}</span><span class="pv-name">${hidden ? '<i class="pv-blur">•••••</i>' : esc(name)}</span>${free ? '<span class="pv-tag">открыто</span>' : ''}
+        <span class="pv-ic">${hidden ? S.art.lockIcon('gi') : S.art.groupIcon(z.group)}</span><span class="pv-name">${hidden ? '<i class="pv-blur">•••••</i>' : esc(name)}</span>
       </${tag}>`;
     };
     const inStage = L.slots.filter(s => s.region !== 'none'), outside = L.slots.filter(s => s.region === 'none');
@@ -427,13 +425,12 @@
       [rep.can.partner, `${pname === 'партнёр' ? 'Партнёр' : pname} возьмёт, если попросишь`, 'умеет, но без просьбы не предложит'],
       [rep.can.me, 'Возьмёшь ты, если партнёр попросит', 'умеешь, но для тебя эта сфера не главная'],
       [rep.cares.me, 'Тебе это важнее', 'договоритесь, что последнее слово здесь — твоё'],
-      [rep.cares.partner, `${pname === 'партнёр' ? 'Партнёру' : pname} это важнее`, 'здесь последнее слово — за партнёром'],
+      [rep.cares.partner, 'Партнёру это важнее', 'здесь последнее слово — за партнёром'],
       [rep.split, 'Делите договорённостью', 'роли сами не делятся — распределите их явно']
     ].filter(([list]) => list.length);
     return `
       <div class="wrap">
-        <p class="eyebrow reveal">Разбор пары</p>
-        <h2 class="title reveal">Карта вашей пары.</h2>
+        <h2 class="title reveal" tabindex="-1" data-report-title>Карта вашей пары.</h2>
         <div class="persp seg reveal" role="group" aria-label="Чьими глазами читать разбор">
           <button type="button" data-persp="0" aria-pressed="${!sd.swapped}">С твоей стороны</button>
           <button type="button" data-persp="1" aria-pressed="${sd.swapped}">Глазами партнёра</button>
@@ -525,6 +522,8 @@
   function pairPage(sd, view) {
     const a = sd.me.type, b = sd.partner.type, r = M().relation(a, b), txt = ui.relText(r.kind);
     const title = (P().titles || {})[r.id] || ui.kindTitle(r.kind);
+    const line = (P().lines || {})[r.id] || txt.line || '';
+    const helps = r.tone === 'tense' ? ((P().helps || {})[r.id] || []) : [];
     const role = txt.roles && txt.roles[r.id];
     const pName = CP().nameFor(sd.partner.code);
     const flip = r.id === 'benefactor' || r.id === 'supervisor';
@@ -536,12 +535,11 @@
       <section class="pair-hero" data-anim>
         <div class="pair-glow" aria-hidden="true" style="--qa:var(--q-${lq});--qb:var(--q-${rq})"></div>
         <div class="wrap center">
-          <p class="eyebrow reveal">Ваша пара</p>
-          <div class="pair-scene reveal" style="--i:1">${ui.pairScene(a, b, { labels })}</div>
-          <p class="pair-codes reveal" style="--i:2"><span>${a.mbti} «${esc(a.title)}»</span><span class="amp">и</span><span>${b.mbti} «${esc(b.title)}»</span></p>
+          <div class="pair-scene reveal">${ui.pairScene(a, b, { labels })}</div>
+          <p class="pair-codes reveal" style="--i:1"><span>${a.mbti} «${esc(a.title)}»</span><span><span class="amp">и</span> ${b.mbti} «${esc(b.title)}»</span></p>
           <h1 class="title reveal" style="--i:2">${esc(title)}</h1>
-          <p class="pair-term reveal" style="--i:3">${esc(ui.relTitle(r, a, b))} в соционике ${ui.toneChip(r.tone)}</p>
-          <p class="lead reveal" style="--i:3">${esc(txt.line || '')}</p>
+          <p class="lead reveal" style="--i:3">${esc(line)}</p>
+          ${helps.length ? `<div class="help-card reveal" style="--i:3"><h2 class="help-title">Таким парам помогает</h2><ul class="help-list">${helps.map(h => `<li>${esc(h)}</li>`).join('')}</ul></div>` : ''}
           <p class="pair-name reveal" style="--i:4">
             <button class="ghost-btn" type="button" data-name>${pName ? `Партнёр: ${esc(pName)} · изменить` : 'Как зовут партнёра?'}</button>
           </p>
@@ -554,6 +552,7 @@
           <p class="body reveal">${esc(txt.about || '')}</p>
           ${role ? `<div class="card soft reveal"><h3 class="card-title">С твоей позиции</h3><p>${esc(role)}</p></div>` : ''}
           <div class="card tip-card reveal"><h3 class="card-title">Один совет</h3><p>${esc(txt.tip || '')}</p></div>
+          <details class="term-more reveal"><summary>Как это называется в соционике</summary><p class="pair-term">${esc(ui.relTitle(r, a, b))} ${ui.toneChip(r.tone)}</p></details>
         </div>
         <div class="wrap gap-top">
           <div class="grid2">${personCard(a, 'Ты', 0)}${personCard(b, pName || 'Партнёр', 1)}</div>
@@ -595,7 +594,6 @@
     const cur = CP().nameFor(code);
     const sheet = ui.openSheet({ label: 'Имя партнёра', from, render: () => `
       <form class="name-sheet" data-name-form>
-        <p class="eyebrow">Имя партнёра</p>
         <h2 class="title-sm">Как зовут партнёра?</h2>
         <p class="sub">Имя останется только на этом устройстве: в ссылки и картинки оно не попадёт. Покажем его в заголовках вместо слова «партнёр».</p>
         <label class="name-field"><span class="sr">Имя</span><input type="text" name="n" maxlength="${CP().NAME_MAX}" autocomplete="off" value="${esc(cur)}" placeholder="Например, Саша"></label>
@@ -633,35 +631,126 @@
 
   const shareText = (a, b, title) => `Наша пара по 16 типам: ${a.mbti} и ${b.mbti} — «${title}». Проверьте свою на Socio-Nik`;
 
-  // Разбор только что открыли — карта играет «распаковку»: фишки переворачиваются, из пересечения — искры
-  let justUnlocked = false;
-
+  // Разбор дорисовывается, когда загрузились тексты. reportShown — обещание этой вставки: его ждёт открытие разбора.
+  // В тихой перерисовке (S.app.quiet) всё появляется сразу на месте — без пустых кругов и проявления текста
+  let reportShown = Promise.resolve(null);
   function mountReport(root, sd) {
     const box = root.querySelector('[data-report]');
-    if (!box) return () => {};
+    if (!box) { reportShown = Promise.resolve(null); return () => {}; }
+    const quiet = S.app.quiet;
     let alive = true, offSurvey = null, offReveal = null, offVenn = null;
-    loadReport().then(() => {
-      if (!alive) return;
+    reportShown = loadReport().then(() => {
+      if (!alive) return null;
       box.innerHTML = reportHTML(sd);
       box.classList.add('ready');
-      const fig = box.querySelector('[data-pv]');
-      if (justUnlocked && fig) {
-        justUnlocked = false;
-        fig.classList.add('pv-unveil');
-        setTimeout(() => {
-          const r = fig.querySelector('.pv-stage').getBoundingClientRect();
-          if (!alive || r.bottom < 0 || r.top > innerHeight) return;
-          const PV = S.art.pairVenn, c = PV.colors(sd.me.type, sd.partner.type, S.theme.resolved());
-          S.fx.confetti([c.me, c.partner, S.color.tone(c.me, 0.4), S.color.tone(c.partner, 0.4), '#ffffff'], { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height / 2) / innerHeight, n: 70 });
-        }, 700);
-      }
-      offReveal = S.fx.reveal(box);
+      if (quiet) box.querySelectorAll('.reveal').forEach(S.fx.show);
+      else offReveal = S.fx.reveal(box);
       offVenn = ui.mountVenn(box);
       offSurvey = ui.mountSurvey(box);
+      S.app.restoreFocus(box);
+      return box;
     }).catch(() => {
       if (alive) box.querySelector('.report-loading').textContent = 'Не получилось загрузить разбор — обнови страницу.';
+      return null;
     });
     return () => { alive = false; [offSurvey, offReveal, offVenn].forEach(f => f && f()); };
+  }
+
+  // ---------- открытие разбора — пик продукта ----------
+  // Шторка уже уехала (paywall ждёт её закрытия). Подводим карту тизера под шапку, затем одной View Transition
+  // перерисовываем экран тихо и переворачиваем те же фишки на месте: замок уходит ребром, сфера выходит из ребра.
+  // Порядок — как фишки стоят на карте, шаг 70 мс; бесплатная сфера не переворачивается. В конце — искры из пересечения,
+  // фокус на заголовке разбора и сообщение для скринридера. Без View Transitions — тот же переворот через WAAPI,
+  // в щадящем режиме — просто новый экран
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const navH = () => (document.querySelector('.nav') || {}).offsetHeight || 44;
+  const FLIP_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+
+  function alignMap(box, top0) {
+    const st = box.querySelector('.pv-stage');
+    if (!st || top0 == null) return;
+    const dy = st.getBoundingClientRect().top - top0;
+    if (Math.abs(dy) > 1) scrollBy(0, dy);
+  }
+
+  function flipChips(box) {
+    if (!document.body.animate) return;
+    box.querySelectorAll('[data-pv] .pv-chip').forEach((c, i) => c.animate(
+      [{ transform: 'perspective(520px) rotateY(-90deg)', opacity: 0.35 }, { transform: 'none', opacity: 1 }],
+      { duration: 380, delay: 120 + i * 70, easing: FLIP_EASE, fill: 'backwards' }));
+  }
+
+  function afterUnveil(box, sd) {
+    if (!box) return;
+    box.dataset.unveiled = '1';
+    const title = box.querySelector('[data-report-title]');
+    if (title) title.focus({ preventScroll: true });
+    S.dom.announce('Разбор открыт: все 8 сфер вашей пары и что с ними делать');
+    const stage = box.querySelector('.pv-stage');
+    if (!stage) return;
+    const r = stage.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > innerHeight) return;
+    const c = S.art.pairVenn.colors(sd.me.type, sd.partner.type, S.theme.resolved());
+    S.fx.confetti([c.me, c.partner, S.color.tone(c.me, 0.4), S.color.tone(c.partner, 0.4), '#ffffff'],
+      { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height / 2) / innerHeight, n: 70 });
+  }
+
+  async function unveil(root, sd) {
+    const reduce = S.dom.reducedMotion();
+    const oldFig = root.querySelector('.pv-locked'), oldStage = oldFig && oldFig.querySelector('.pv-stage');
+    // карта тизера должна быть видна целиком: на телефоне кнопка — под картой, и экран уже прокручен ниже
+    if (oldFig && !reduce) {
+      const r = oldFig.getBoundingClientRect(), top = navH() + 16;
+      if (r.top < top || r.bottom > innerHeight - 16) {
+        scrollBy({ top: r.top - top, behavior: 'smooth' });
+        await wait(440);
+      }
+    }
+    await loadReport().catch(() => {});
+    const top0 = oldStage ? oldStage.getBoundingClientRect().top : null;
+    const show = async () => {
+      S.app.render({ instant: true, keepScroll: true });
+      const box = await reportShown;
+      if (box) alignMap(box, top0);
+      return box;
+    };
+    if (reduce || !document.startViewTransition || !oldStage) {
+      const box = await show();
+      if (box && !reduce) flipChips(box);
+      afterUnveil(box, sd);
+      return;
+    }
+    const chips = Array.from(oldFig.querySelectorAll('.pv-chip'));
+    const freeAt = chips.findIndex(c => c.classList.contains('free'));
+    const name = i => 'pv-chip-' + i;
+    oldStage.style.viewTransitionName = 'pv-stage';
+    chips.forEach((c, i) => { c.style.viewTransitionName = name(i); });
+    const style = document.createElement('style');
+    style.textContent = chips.map((c, i) => {
+      const group = `html.vt-unveil::view-transition-group(${name(i)}) { animation-duration: 420ms; animation-timing-function: ${FLIP_EASE}; }`;
+      if (i === freeAt) return group;
+      const d = i * 70;
+      return `${group}
+html.vt-unveil::view-transition-old(${name(i)}) { animation: pv-vt-out 170ms cubic-bezier(0.4, 0, 1, 1) ${d}ms both; }
+html.vt-unveil::view-transition-new(${name(i)}) { animation: pv-vt-in 380ms var(--spring-soft) ${d + 170}ms both; }`;
+    }).join('\n');
+    document.head.appendChild(style);
+    const de = document.documentElement;
+    de.classList.add('vt-unveil');
+    let box = null;
+    const vt = document.startViewTransition(async () => {
+      box = await show();
+      const fig = box && box.querySelector('[data-pv]');
+      if (!fig) return;
+      fig.querySelector('.pv-stage').style.viewTransitionName = 'pv-stage';
+      fig.querySelectorAll('.pv-chip').forEach((c, i) => { c.style.viewTransitionName = name(i); });
+    });
+    vt.ready.catch(() => {});
+    try { await vt.finished; } catch (e) { /* переход прерван — экран уже новый */ }
+    de.classList.remove('vt-unveil');
+    style.remove();
+    if (box) box.querySelectorAll('.pv-stage, .pv-chip').forEach(el => { el.style.viewTransitionName = ''; });
+    afterUnveil(box, sd);
   }
 
   V.pair = {
@@ -690,7 +779,7 @@
       }
 
       const onClick = async e => {
-        const unlocked = () => { justUnlocked = true; S.app.render({ instant: true, keepScroll: true }); };
+        const unlocked = () => unveil(root, sd);
         const offerFrom = e.target.closest('[data-offer]');
         if (offerFrom) ui.openOffer({ from: offerFrom, ctx: { relation: M().relation(a, b).id, from: offerFrom.classList.contains('pv-chip') ? 'map' : 'button' }, onUnlock: unlocked });
         if (e.target.closest('[data-offer-gift]')) ui.openOffer({ gift: true, from: e.target.closest('[data-offer-gift]'), ctx: { relation: M().relation(a, b).id }, onUnlock: unlocked });
@@ -702,7 +791,20 @@
           S.app.render({ instant: true, keepScroll: true });
         }
         if (e.target.closest('[data-name]')) nameSheet(sd.partner.code, e.target.closest('[data-name]'));
-        if (e.target.closest('[data-forget]')) { CP().forget(); S.app.render({ instant: true, keepScroll: true }); }
+        const forgetBtn = e.target.closest('[data-forget]');
+        if (forgetBtn) {
+          const ok = await ui.confirm({
+            title: 'Забыть партнёра на этом устройстве?',
+            text: 'Пара пропадёт из «Совместимости» и с главной, имя сотрётся. Вернуть её можно будет только по ссылке на пару.',
+            yes: 'Забыть партнёра', no: 'Оставить', danger: true, from: forgetBtn
+          });
+          if (ok) {
+            CP().forget();
+            S.app.render({ instant: true, keepScroll: true });
+            const next = root.querySelector('.pair-more a.btn');
+            if (next) next.focus({ preventScroll: true });
+          }
+        }
         if (e.target.closest('[data-copy-pair]')) {
           const ok = await S.share.copy(pairUrl(...sd.path));
           if (status) status.textContent = ok ? 'Ссылка на вашу пару скопирована' : 'Не удалось скопировать ссылку';

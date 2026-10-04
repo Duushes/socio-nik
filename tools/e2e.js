@@ -301,9 +301,13 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
       await sleep(800);
       const sheet = document.querySelector('dialog.sheet.offer');
       const beta = sheet ? /бесплатно/.test(sheet.textContent) && /ничего не спишется/.test(sheet.textContent) : false;
+      const ctaVisible = sheet ? (() => { const r = sheet.querySelector('[data-offer-yes]').getBoundingClientRect(); return r.bottom <= innerHeight && r.top >= 0; })() : false;
       if (sheet) sheet.querySelector('[data-offer-yes]').click();
-      for (let i = 0; i < 40 && !document.querySelector('[data-report].ready'); i++) await sleep(150);
-      await sleep(400);
+      // шторка уезжает, карта подъезжает под шапку, фишки переворачиваются — ждём отметку «распакован»
+      for (let i = 0; i < 60 && !document.querySelector('[data-report][data-unveiled]'); i++) await sleep(150);
+      await sleep(300);
+      const focusOk = Boolean(document.activeElement && document.activeElement.matches('[data-report-title]'));
+      const visibleNow = (() => { const rp = document.querySelector('[data-report] .rp'); return rp ? getComputedStyle(rp).opacity === '1' : false; })();
       const ev = Socio.track.log.filter(e => /^(offer_click|report_unlocked)$/.test(e.event)).map(e => e.event + ':' + (e.props.price || ''));
       const fig = document.querySelector('[data-report] [data-pv]');
       const chip = fig && fig.querySelector('.pv-chip');
@@ -312,11 +316,12 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
       const hoverOk = chip ? readout.startsWith(chip.dataset.sphere) && fig.classList.contains('focus') : false;
       if (fig) fig.dispatchEvent(new PointerEvent('pointerleave', { bubbles: false }));
       const fromMap = Socio.track.log.some(e => e.event === 'offer_click' && e.props.from === 'map');
-      return { beta, unveil: Boolean(fig && fig.classList.contains('pv-unveil')), hoverOk, fromMap, ready: Boolean(document.querySelector('[data-report].ready')), labs: document.querySelectorAll('.pv-open .pv-chip').length, zones: document.querySelectorAll('.zone').length,
+      return { beta, ctaVisible, focusOk, visibleNow, unveil: Boolean(document.querySelector('[data-report][data-unveiled]')), hoverOk, fromMap, ready: Boolean(document.querySelector('[data-report].ready')), labs: document.querySelectorAll('.pv-open .pv-chip').length, zones: document.querySelectorAll('.zone').length,
         deals: document.querySelectorAll('.deals li').length, qs: document.querySelectorAll('.questions li').length, scripts: document.querySelectorAll('.scripts li').length, ev };
     });
     check('fake door: закрытая сфера на карте → честная шторка беты → разбор: карта на 8 сфер, 8 зон, 5 договорённостей, 6 вопросов, 3 фразы', fd.beta && fd.fromMap && fd.ready && fd.labs === 8 && fd.zones === 8 && fd.deals === 5 && fd.qs === 6 && fd.scripts === 3, JSON.stringify(fd));
-    check('после открытия карта «распаковывается», при наведении на сферу — подсказка под картой', fd.unveil && fd.hoverOk, JSON.stringify(fd));
+    check('после открытия карта «распаковывается» без пустого кадра, фокус — на заголовке разбора, при наведении на сферу — подсказка под картой', fd.unveil && fd.focusOk && fd.visibleNow && fd.hoverOk, JSON.stringify(fd));
+    check('в шторке предложения кнопка «Открыть разбор» видна без прокрутки', fd.ctaVisible, JSON.stringify(fd));
     check('события пейвола записаны с ценой: offer_click и report_unlocked', fd.ev.some(x => /^offer_click:\d+/.test(x)) && fd.ev.some(x => /^report_unlocked:\d+/.test(x)), JSON.stringify(fd.ev));
     await shot('p-report-map', '.pv-open', 90);
     await shot('p-report-zones', '.zone-groups', 70);
@@ -362,6 +367,10 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
       const href = location.href;
       const forget = document.querySelector('[data-forget]');
       if (forget) forget.click();
+      await sleep(700);
+      // «Забыть партнёра» необратимо — сначала подтверждение
+      const confirmSheet = document.querySelector('dialog.sheet [data-yes]');
+      if (confirmSheet) confirmSheet.click();
       await sleep(900);
       return { shown, href, links, shareTexts, forget: Boolean(forget), partnerAfter: localStorage.getItem('socio.partner') };
     });

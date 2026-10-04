@@ -75,6 +75,8 @@ main:focus, main:focus-visible { outline: none; }
 .link::after { content: "\00a0›"; }
 .ghost-btn { background: none; border: 0; padding: 10px 4px; color: var(--link); font-size: 17px; cursor: pointer; }
 .ghost-btn:disabled { color: var(--faint); cursor: default; }
+.ghost-btn.subtle { color: var(--muted); }
+.ghost-btn.subtle:disabled { color: var(--faint); }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: var(--r-pill); background: var(--chip); font-size: 14px; font-weight: 500; }
 .qdot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--q); margin-right: 8px; vertical-align: 1px; flex: none; }
 

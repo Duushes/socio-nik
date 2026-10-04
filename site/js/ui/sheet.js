@@ -29,18 +29,20 @@
     document.documentElement.classList.add('sheet-open');
     requestAnimationFrame(() => requestAnimationFrame(() => dlg.classList.add('in')));
 
-    let closed = false;
+    // close() возвращает обещание: оно выполнится, когда шторка уехала и фокус вернулся на кнопку, которая её открыла
+    let closing = null;
     const close = () => {
-      if (closed) return;
-      closed = true;
+      if (closing) return closing;
       dlg.classList.remove('in');
       dlg.classList.add('out');
-      setTimeout(() => {
+      closing = new Promise(resolve => setTimeout(() => {
         dlg.close();
         dlg.remove();
         document.documentElement.classList.remove('sheet-open');
         if (from && document.body.contains(from)) from.focus({ preventScroll: true });
-      }, reducedMotion() ? 0 : 340);
+        resolve();
+      }, reducedMotion() ? 0 : 340));
+      return closing;
     };
     dlg.addEventListener('cancel', e => { e.preventDefault(); close(); });
     dlg.addEventListener('click', e => { if (e.target.closest('[data-close]')) close(); });
@@ -69,13 +71,23 @@
     panel.addEventListener('pointerup', end);
     panel.addEventListener('pointercancel', end);
 
-    // смена содержимого по очереди: старое гаснет, новое въезжает — без наложения
+    // смена содержимого по очереди: старое гаснет, новое въезжает — без наложения.
+    // Фокус не теряется: если он был на кнопке листания, встаёт на ту же по счёту кнопку в новом содержимом
     const swap = (html, dir = 1) => {
-      if (reducedMotion()) { body.innerHTML = html; return; }
+      const act = document.activeElement;
+      const navBtns = () => Array.from(body.querySelectorAll('[data-fn-go]'));
+      const at = act && body.contains(act) ? navBtns().indexOf(act) : -2;
+      const put = () => {
+        body.innerHTML = html;
+        if (at === -2) return;
+        const target = at >= 0 ? navBtns()[at] : null;
+        (target || panel).focus({ preventScroll: true });
+      };
+      if (reducedMotion()) { put(); return; }
       body.classList.add(dir > 0 ? 'sw-out-l' : 'sw-out-r');
       setTimeout(() => {
         body.classList.remove('sw-out-l', 'sw-out-r');
-        body.innerHTML = html;
+        put();
         panel.scrollTop = 0;
         body.classList.add(dir > 0 ? 'sw-in-r' : 'sw-in-l');
         setTimeout(() => body.classList.remove('sw-in-r', 'sw-in-l'), 380);
@@ -83,6 +95,18 @@
     };
     return { dlg, body, swap, close };
   };
+
+  // Подтверждение необратимого действия: шторка с названием действия на кнопке. Вернёт true, если подтвердили
+  ui.confirm = ({ title, text = '', yes, no = 'Отмена', danger = false, from }) => new Promise(resolve => {
+    let ok = false;
+    const sheet = ui.openSheet({ label: title, from, render: () => `<div class="confirm-sheet">
+      <h2 class="title-sm">${esc(title)}</h2>
+      ${text ? `<p class="sub">${esc(text)}</p>` : ''}
+      <div class="offer-actions"><button class="btn${danger ? ' btn-danger' : ''}" type="button" data-yes>${esc(yes)}</button><button class="ghost-btn" type="button" data-close>${esc(no)}</button></div>
+    </div>` });
+    sheet.dlg.addEventListener('click', e => { if (e.target.closest('[data-yes]')) { ok = true; sheet.close(); } });
+    sheet.dlg.addEventListener('close', () => resolve(ok));
+  });
 
   // ---------- шторка функции модели А ----------
   const BLOCKS = { 1: 'Эго', 2: 'Эго', 3: 'Суперэго', 4: 'Суперэго', 5: 'Суперид', 6: 'Суперид', 7: 'Ид', 8: 'Ид' };
