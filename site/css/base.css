@@ -55,17 +55,10 @@ p, li, .lead, .body, .sub { text-wrap: pretty; }
 .title { font-size: clamp(36px, 5.4vw, 64px); line-height: 1.05; letter-spacing: -0.032em; font-weight: 700; margin: 0 0 18px; }
 .title-sm { font-size: clamp(28px, 3.4vw, 40px); line-height: 1.1; letter-spacing: -0.026em; font-weight: 700; margin: 0 0 12px; }
 .lead { font-size: clamp(19px, 2.1vw, 24px); line-height: 1.42; color: var(--muted); letter-spacing: -0.014em; margin: 0 0 34px; max-width: 760px; }
-.center .lead { margin-left: auto; margin-right: auto; }
+.center .lead, .center .body { margin-left: auto; margin-right: auto; }
 .lead-sm { font-size: 21px; line-height: 1.4; font-weight: 600; letter-spacing: -0.016em; margin: 0 0 14px; }
 .sub { color: var(--muted); margin: 0 0 28px; }
-.body { font-size: 19px; line-height: 1.58; margin: 0 0 20px; letter-spacing: -0.014em; }
-.grad {
-  background: linear-gradient(90deg, var(--q-alpha) 0%, var(--q-gamma) 52%, var(--q-beta) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  padding-bottom: 0.06em;
-}
+.body { max-width: 34em; font-size: 19px; line-height: 1.58; margin: 0 0 20px; letter-spacing: -0.014em; }   /* ≈ 75 знаков в строке */
 
 /* ---------- кнопки и ссылки ---------- */
 .btn {

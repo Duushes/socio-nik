@@ -438,7 +438,6 @@
 .bx-hint.is-gone { opacity: 0; visibility: hidden; transition: opacity 0.16s ease, visibility 0s 0.16s; }
 .bx-card { position: relative; z-index: 3; width: min(460px, calc(100% - 20px)); perspective: 1200px; }
 .bx-card-in { position: relative; overflow: hidden; padding: 24px 24px 20px; border-radius: var(--r-card); background: var(--elev); text-align: left; box-shadow: var(--shadow-lg); transform-origin: 50% 90%; }
-.bx-card-in::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--q, linear-gradient(90deg, var(--q-alpha), var(--q-gamma), var(--q-beta), var(--q-delta))); }
 .bx-card header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .bx-card header .chip { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .bx-cat { flex: none; }
