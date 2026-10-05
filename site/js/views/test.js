@@ -48,8 +48,10 @@
     render() {
       const qs = S.data.questions, st = load();
       const i = Math.min(st.index, qs.length - 1);
-      const duo = S.core.couple.duo();
-      const who = duo ? (duo.step === 2 ? '<p class="duo-chip on">Отвечает партнёр</p>' : '<p class="duo-chip">Отвечаешь ты · потом партнёр</p>') : '';
+      const duo = S.core.couple.duo(), friend = S.state.friend;
+      const who = duo ? (duo.step === 2 ? '<p class="duo-chip on">Отвечает партнёр</p>' : '<p class="duo-chip">Отвечаешь ты · потом партнёр</p>')
+        : friend ? `<p class="duo-chip">Потом — ваша пара с ${S.core.modelA.type(S.core.scoring.result(friend).top.id).mbti}</p>`
+        : S.store.get('intent', null) === 'invite' ? '<p class="duo-chip">После теста — ссылка для партнёра</p>' : '';
       return `
         <section class="test">
           <div class="test-progress" role="progressbar" aria-label="Прогресс теста" aria-valuemin="0" aria-valuemax="${qs.length}" aria-valuenow="${i}" aria-valuetext="Отвечено ${i} из ${qs.length}"><i style="--p:${i / qs.length}"></i></div>

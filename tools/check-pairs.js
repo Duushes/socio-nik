@@ -47,6 +47,17 @@ S.data.types.forEach(a => S.data.types.forEach(b => {
     if (!z.own) err(w, `нет своей строчки модели А для ${z.aspect} (позиция ${z.posA})`);
     if (!z.theirs) err(w, `нет строчки «у партнёра» для ${b.mbti}, позиция ${z.posB}`);
   });
+  // начало сферы на карточке разбора (170), в бесплатной сфере тизера (200) и своя строка модели А — всегда с начала текста
+  const cut = (t, max, what) => {
+    if (!t) return;
+    const head = PR.firstSentence(t, max);
+    if (!head || !t.startsWith(head)) err(w, `${what}: начало текста потеряно — «${(head || '').slice(0, 40)}…»`);
+    else if (/^[»"),.:;!?—–-]/.test(head)) err(w, `${what}: начинается со знака — «${head.slice(0, 40)}…»`);
+  };
+  rep.zones.forEach(z => {
+    if (z.copy && z.copy.text) { cut(z.copy.text, 170, `сфера ${z.aspect}`); cut(z.copy.text, 200, `тизер ${z.aspect}`); }
+    if (z.own) cut(z.own, 230, `модель А ${z.aspect}`);
+  });
   const sents = sentencesOf(rep);
   const inner = new Set(sents);
   if (inner.size !== sents.length) err(w, 'одно и то же предложение дважды в одном разборе');

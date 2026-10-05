@@ -30,7 +30,7 @@
   ];
 
   V.library = {
-    needs: ['types'],
+    needs: ['types', 'relations', 'facts'],   // калькулятор — тексты отношений, коробка — факты
     title: () => 'Библиотека',
     render() {
       const a = S.state.myType() || 'iee';

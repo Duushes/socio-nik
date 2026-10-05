@@ -80,11 +80,38 @@
   const CORE = { 1: 2, 2: 1 };
   const sens = z => Math.max(SENS[z.posA] || 0, SENS[z.posB] || 0) * 10 + Math.max(CORE[z.posA] || 0, CORE[z.posB] || 0);
 
-  // Начало текста модели А — как сфера выглядит у твоего типа: целые предложения, пока влезает ~230 знаков
+  // Предложения подряд с самого начала текста. Конец предложения — .!?… (и закрывающие знаки за ними),
+  // если дальше пробел и заглавная буква или конец текста; внутри «кавычек» предложение не кончается:
+  // «ты меня вообще любишь?» посреди фразы — не граница. Регулярка с /g здесь ошибалась: если первый кусок
+  // не подходил, она молча пропускала начало текста
+  function sentences(text) {
+    const s = String(text || ''), out = [];
+    let start = 0, depth = 0;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (ch === '«') depth++;
+      else if (ch === '»') depth = Math.max(0, depth - 1);
+      else if (depth === 0 && '.!?…'.includes(ch)) {
+        let j = i + 1;
+        while (j < s.length && '.!?…»"'.includes(s[j])) j++;
+        const rest = s.slice(j);
+        if (!rest.trim() || /^\s+[«"А-ЯЁA-Z0-9]/.test(rest)) {
+          out.push(s.slice(start, j).trim());
+          start = j;
+          i = j - 1;
+        }
+      }
+    }
+    if (s.slice(start).trim()) out.push(s.slice(start).trim());
+    return out;
+  }
+
+  // Начало текста — целые предложения, пока влезает max знаков (первое — всегда целиком)
   const firstSentence = (text, max = 230) => {
-    const parts = String(text || '').match(/[^.!?…]+[.!?…]+(?:[»"]?)(?=\s+[«А-ЯЁA-Z]|\s*$)/g) || [String(text || '')];
-    let out = parts[0].trim();
-    for (let i = 1; i < parts.length && (out + ' ' + parts[i].trim()).length <= max; i++) out += ' ' + parts[i].trim();
+    const parts = sentences(text);
+    if (!parts.length) return '';
+    let out = parts[0];
+    for (let i = 1; i < parts.length && (out + ' ' + parts[i]).length <= max; i++) out += ' ' + parts[i];
     return out;
   };
 
@@ -142,5 +169,5 @@
     };
   }
 
-  core.pair = { CLASS, KINDS, SYMMETRIC, GROUPS, GROUP_OF, ORDER, DIM, valued, zone, map, summary, report, firstSentence };
+  core.pair = { CLASS, KINDS, SYMMETRIC, GROUPS, GROUP_OF, ORDER, DIM, valued, zone, map, summary, report, firstSentence, sentences };
 })(typeof window !== 'undefined' ? window : globalThis);

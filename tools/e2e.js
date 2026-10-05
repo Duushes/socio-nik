@@ -520,6 +520,17 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
     await go('#/about', 1200);
     await shot('d-about-aspects', '.aspect-grid', 140);
 
+    // ---------- каждый маршрут с чистой загрузки: нужные тексты подгружаются, вечного скелета нет ----------
+    const cold = [];
+    for (const r of ['#/library', '#/types', '#/types/esi', '#/quadras', '#/relations', '#/relations/ile/lse', '#/box', '#/about', '#/pair/enfp/isfp', '#/i/1-72-64-58-19', '#/r/1-72-64-58-19']) {
+      await b.goto('about:blank');
+      await b.goto(BASE + r);
+      await b.sleep(1600);
+      const v = await b.eval(`document.body.dataset.view`);
+      if (!v || v === 'loading' || v === 'error' || v === 'notfound') cold.push(`${r}: ${v}`);
+    }
+    check('каждый маршрут открывается с чистой загрузки, без вечного скелета', cold.length === 0, cold.join(', '));
+
     // ---------- типограф, клавиатура, сохранение выбора при перерисовке ----------
     // Enter нажимает кнопку только вместе с символом: без text Chrome не порождает keypress
     const key = async (k, code = k, vk = 0) => {
@@ -589,12 +600,13 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
     // самый узкий телефон: таблицы, модель А и карта пары помещаются, фишки карты не наезжают друг на друга
     await b.viewport(320, 640, { mobile: true, scale: 2 });
     const narrow = [];
-    for (const r of ['#/about', '#/result', '#/types/esi', '?unlock=1#/pair/enfp/isfp', '?unlock=1#/pair/esfj/intj']) {
+    for (const r of ['#/about', '#/result', '#/types/esi', '#/pair/enfp/istp', '?unlock=1#/pair/enfp/isfp', '?unlock=1#/pair/esfj/intj']) {
       if (r.startsWith('?')) await b.goto(BASE + r); else await go(r, 0);
       await b.sleep(r.includes('unlock') ? 2400 : 900);
       const m = await b.eval(`(() => {
         document.querySelectorAll('details').forEach(d => { d.open = true; });
-        const wide = Array.from(document.querySelectorAll('table, .ma, .pv-stage')).filter(el => el.getBoundingClientRect().right > innerWidth + 0.5).length;
+        const wide = Array.from(document.querySelectorAll('table, .ma, .pv-stage')).filter(el => el.getBoundingClientRect().right > innerWidth + 0.5).length
+          + Array.from(document.querySelectorAll('.pv-stage')).filter(st => { const S = st.getBoundingClientRect(); return Array.from(st.querySelectorAll('.pv-chip')).some(c => { const r = c.getBoundingClientRect(); return r.left < S.left - 1 || r.right > S.right + 1; }); }).length;
         const chips = Array.from(document.querySelectorAll('.pv-stage .pv-chip')).map(c => c.getBoundingClientRect());
         let hits = 0;
         chips.forEach((a, i) => chips.slice(i + 1).forEach(c => { if (a.left < c.right - 0.5 && c.left < a.right - 0.5 && a.top < c.bottom - 0.5 && c.top < a.bottom - 0.5) hits++; }));

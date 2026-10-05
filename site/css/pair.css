@@ -63,18 +63,26 @@
 .codes .btn { justify-self: start; margin-top: 4px; }
 .couple-note { margin: 26px auto 0; max-width: 640px; text-align: center; color: var(--muted); font-size: 15px; }
 .way .socials { margin-top: 14px; }
+.invite-preview { margin: 0 0 18px; text-align: left; }
+.invite-preview figcaption { margin: 0 0 6px; color: var(--muted); font-size: 14px; font-weight: 600; }
+.invite-preview blockquote { margin: 0; padding: 14px 16px; border-radius: var(--r-inner) var(--r-inner) var(--r-inner) 6px; background: var(--card); font-size: 15px; line-height: 1.45; }
+.sec-alt .invite-preview blockquote, .way .invite-preview blockquote { background: var(--card-alt); }
+.invite-url { display: block; margin-top: 4px; color: var(--link); overflow-wrap: anywhere; }
+.invite-main { margin: 0 0 12px; }
+.invite .socials-compact { margin-top: 4px; }
 .invite-alt { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; margin: 16px 0 0 !important; }
 .invite-sec .invite { max-width: 640px; margin: 0 auto; }
 .invite-sec .invite-alt { justify-content: center; }
 .invite-sec .socials { justify-content: center; }
+.invite-sec .invite-preview { max-width: 480px; margin-left: auto; margin-right: auto; }
 .saved-wrap { max-width: 640px; margin: 30px auto 0; text-align: left; }
 .saved-pair { grid-template-columns: 150px 1fr; }
 .saved-pair .lc-art { width: 150px; height: auto; }
 .saved-pair .scene { width: 100%; height: auto; }
 
 /* ================= ТЕСТ ВДВОЁМ ================= */
-.duo-you { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 14px; padding: 6px 14px 6px 6px; border-radius: var(--r-pill); background: var(--chip); font-size: 15px; font-weight: 600; }
-.duo-you-em { display: block; width: 30px; height: 30px; }
+.duo-you { display: inline-flex; align-items: center; gap: 12px; margin: 0 0 16px; padding: 8px 18px 8px 8px; border-radius: var(--r-pill); background: var(--chip); font-size: 17px; font-weight: 600; }
+.duo-you-em { display: block; width: 44px; height: 44px; }
 .duo-you-em svg { width: 100%; height: 100%; }
 .form-err { margin: 0 !important; color: #c4001a; font-size: 14px; font-weight: 600; }
 :root[data-theme="dark"] .form-err { color: #ff6961; }
@@ -139,11 +147,7 @@
 .sample-title small { display: block; margin-top: 3px; color: var(--muted); font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
 .sample-text { margin: 0 !important; color: var(--muted); transition: color 0.4s ease; }
 .sample.loaded .sample-text { color: var(--text); }
-.teaser-counts { list-style: none; margin: 0 0 22px; padding: 0; display: grid; gap: 4px; }
-.teaser-counts li { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 12px; padding: 12px 16px; border-radius: var(--r-inner); background: var(--card); font-size: 17px; font-weight: 600; }
-.sec-alt .teaser-counts li { background: var(--card-alt); }
-.teaser-counts li b { font-size: 17px; font-variant-numeric: tabular-nums; }
-.teaser-counts li.none, .teaser-counts li.zero { background: transparent; box-shadow: inset 0 0 0 1px var(--hair); color: var(--muted); font-weight: 500; }
+.teaser-counts { margin-bottom: 22px; }   /* легенда тизера — та же подпись к значкам, что под картой разбора, а не плитки-фильтры */
 .offer-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-bottom: 26px; }
 .offer-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; max-width: 720px; }
 .offer-list li { position: relative; padding-left: 30px; color: var(--muted); }
@@ -204,10 +208,10 @@ html:not(.kbd) [data-report-title]:focus { outline: none; }
 .report .body, .report .zone-text, .report .rp p { max-width: 34em; }
 /* навигация по разбору: прилипает под шапкой; кнопки, а не якоря — хеш занят роутером */
 .rp-nav { position: sticky; top: calc(var(--nav-h) + 8px); z-index: 5; display: flex; gap: 4px; width: max-content; max-width: 100%; margin: 6px 0 14px; padding: 4px; overflow-x: auto; scrollbar-width: none;
-  border-radius: var(--r-pill); background: var(--glass); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); box-shadow: inset 0 0 0 1px var(--hair); }
+  border-radius: var(--r-pill); background: color-mix(in srgb, var(--bg) 94%, transparent); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); box-shadow: inset 0 0 0 1px var(--hair), 0 4px 14px rgba(0, 0, 0, 0.06); }
 .rp-nav::-webkit-scrollbar { display: none; }
 .rp-nav button { flex: none; min-height: 36px; padding: 0 14px; border: 0; border-radius: var(--r-pill); background: transparent; color: var(--muted); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.2s ease, color 0.2s ease; }
-.rp-nav button[aria-current="true"] { background: var(--text); color: var(--bg); }
+.rp-nav button[aria-current="true"] { background: var(--accent-soft); color: var(--link); }
 .rp, .rp-anchor { scroll-margin-top: calc(var(--nav-h) + 64px); }
 /* фокус при переходе по разделам — для скринридера; рамку видят только те, кто ходит с клавиатуры */
 html:not(.kbd) .rp:focus, html:not(.kbd) .rp-anchor:focus, html:not(.kbd) .invite-sec:focus { outline: none; }
@@ -310,9 +314,7 @@ span.pv-chip { cursor: default; }
 .pv-ic { flex: none; display: grid; place-items: center; color: inherit; opacity: 0.75; }
 .pv-chip .gi { width: 15px; height: 15px; }
 .pv-chip.on, .pv-chip:focus-visible { transform: translateY(-2px) scale(1.06); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06), 0 14px 30px rgba(0, 0, 0, 0.16), inset 0 0 0 0.5px rgba(0, 0, 0, 0.08); }
-.pv-chip.g-care { box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04), 0 6px 18px rgba(0, 0, 0, 0.1), inset 0 0 0 1.5px currentColor; }
-.pv-chip.g-care .pv-ic { opacity: 1; }
-:root[data-theme="dark"] .pv-chip.g-care { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), inset 0 0 0 1.5px currentColor; }
+.pv-chip.g-care .pv-ic { opacity: 1; }   /* «бережно» — значок-сердце полной яркости, без обводки, похожей на «выбрано» */
 :root[data-theme="dark"] .pv-chip.on, :root[data-theme="dark"] .pv-chip:focus-visible { box-shadow: 0 14px 30px rgba(0, 0, 0, 0.6), inset 0 0 0 0.5px rgba(255, 255, 255, 0.22); }
 .pv.focus .pv-chip:not(.on) { opacity: 0.38; }
 .pv[data-focus="me"] .pv-c-partner, .pv[data-focus="partner"] .pv-c-me { opacity: 0.4; }
@@ -341,15 +343,16 @@ html.motion-off.js .pv:not(.in) .pv-c, html.motion-off.js .pv:not(.in) .pv-chip,
 /* тизер: имена закрытых сфер — приглушённые точки, одна сфера открыта бесплатно */
 .pv-blur { font-style: normal; letter-spacing: 2px; color: var(--faint); }
 .pv-chip.locked .pv-ic { opacity: 0.5; }
-.pv-chip.free { box-shadow: 0 0 0 2px var(--btn), 0 6px 18px rgba(0, 0, 0, 0.1); }
-:root[data-theme="dark"] .pv-chip.free { box-shadow: 0 0 0 2px var(--btn), 0 6px 18px rgba(0, 0, 0, 0.45); }
+.pv-chip.free { color: var(--link); }
+.pv-chip.free .pv-ic { opacity: 1; }
 
 /* легенда видов зон под картой разбора */
 .pv-wrap { margin: 18px 0 46px; }
-.pv-legend { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 16px 0 0; padding: 0; }
-.pv-legend li { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--r-pill); background: var(--chip); font-size: 13px; font-weight: 600; }
+.pv-legend-cap { margin: 18px 0 6px; text-align: center; color: var(--muted); font-size: 13px; }
+.pv-legend { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; margin: 0; padding: 0; }
+.pv-legend li { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; }
 .pv-legend li b { color: var(--muted); font-variant-numeric: tabular-nums; }
-.pv-legend li.zero { background: transparent; box-shadow: inset 0 0 0 1px var(--hair); color: var(--muted); font-weight: 500; }
+.pv-legend li.zero { color: var(--muted); font-weight: 500; }
 .pv-legend .gi { width: 15px; height: 15px; }
 
 /* ---------- хореография: встреча → вспышка → сферы разлетаются к тому, кто их ведёт ---------- */
@@ -364,13 +367,13 @@ html.motion-off.js .pv:not(.in) .pv-c, html.motion-off.js .pv:not(.in) .pv-chip,
 .pv.in .pv-stage .pv-chip { animation: pv-fly 0.95s var(--spring-juicy) backwards; animation-delay: calc(0.62s + var(--d, 0) * 70ms); }
 @keyframes pv-fly { from { opacity: 0; transform: translate(var(--fx), var(--fy)) scale(0.35); } 30% { opacity: 1; } }
 .pv.in .pv-gap .pv-chip { animation: pv-rise 0.8s var(--spring-juicy) backwards; animation-delay: calc(0.8s + var(--d, 0) * 70ms); }
-.pv.in .pv-cap { animation: pv-rise 0.7s var(--spring-soft) backwards; animation-delay: calc(1.05s + var(--i, 0) * 90ms); }
-.pv.in .pv-gap-cap, .pv.in .pv-readout { animation: pv-fade 0.6s ease 1.3s backwards; }
+.pv.in .pv-cap { animation: pv-rise 0.6s var(--spring-soft) backwards; animation-delay: calc(0.45s + var(--i, 0) * 70ms); }
+.pv.in .pv-gap-cap, .pv.in .pv-readout { animation: pv-fade 0.5s ease 0.8s backwards; }
 @keyframes pv-rise { from { opacity: 0; transform: translateY(14px) scale(0.94); } }
 @keyframes pv-fade { from { opacity: 0; } }
 /* тизер спокойный: после встречи кругов открытая сфера один раз мягко подсвечивается — «вот что бесплатно», дальше тишина */
-.pv-locked.in .pv-chip.free { animation: pv-fly 0.95s var(--spring-juicy) backwards, pv-glow 1.4s ease-in-out 2s 1; animation-delay: calc(0.62s + var(--d, 0) * 70ms), 2s; }
-@keyframes pv-glow { 50% { box-shadow: 0 0 0 2px var(--btn), 0 0 0 9px color-mix(in srgb, var(--btn) 14%, transparent), 0 6px 18px rgba(0, 0, 0, 0.1); } }   /* кольцо расходится один раз, без цветного свечения */
+.pv-locked.in .pv-chip.free { animation: pv-fly 0.95s var(--spring-juicy) backwards, pv-glow 1.4s ease-in-out 2s 1; animation-delay: calc(0.62s + var(--d, 0) * 70ms), 1.6s; }
+@keyframes pv-glow { 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--btn) 14%, transparent), 0 6px 18px rgba(0, 0, 0, 0.1); } }   /* мягкое кольцо один раз — «вот открытая сфера», без цветного свечения */
 /* перерисовка состояния (тема, «глазами партнёра», имя, открытие разбора) — без повторных входов: карта уже на месте */
 #app.quiet .pv-c, #app.quiet .pv-chip, #app.quiet .pv-cap, #app.quiet .pv-gap-cap, #app.quiet .pv-readout, #app.quiet .pv-aura,
 #app.quiet .pv-lens, #app.quiet .pv-flash, #app.quiet .pv-blur { animation: none !important; }
@@ -394,6 +397,8 @@ html.vt-unveil::view-transition-group(pv-stage) { animation-duration: 420ms; ani
 }
 @media (max-width: 380px) {
   .pv-stage { aspect-ratio: 6 / 5; }
+  /* колонки чуть разведены к краям: на 320 px фишка в пересечении и фишка у партнёра иначе соприкасаются */
+  .pv-stage .pv-chip { left: calc((50 + (var(--x) - 50) * 1.06) * 1%); --fx: calc((50 - var(--x, 50)) * 1.06 * 1cqw); }
   .pv-chip { --fy: calc((50 - var(--y, 50)) * 0.8333cqw); padding: 4px 8px 4px 6px; gap: 4px; font-size: 12px; }
   .pv-chip .gi { width: 12px; height: 12px; }
 }

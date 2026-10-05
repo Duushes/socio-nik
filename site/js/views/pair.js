@@ -78,12 +78,16 @@
       </select></span>
     </label>`;
 
-  // Приглашение партнёра: кнопки сетей, ссылка, «на этом телефоне»
+  // Приглашение партнёра: что партнёр получит (превью), одна главная кнопка, остальные сети — строкой значков
+  const inviteText = t => `Мой тип — ${t.mbti} «${t.title}». Пройди тест на 16 типов, это 4 минуты, и посмотрим, как мы устроены вместе.`;
   ui.inviteBox = axes => {
-    const t = M().type(S.core.scoring.result(axes).top.id), url = inviteUrl(axes);
-    const text = `Мой тип — ${t.mbti} «${t.title}». Пройди тест на 16 типов, это 4 минуты, и посмотрим, как мы устроены вместе.`;
+    const t = M().type(S.core.scoring.result(axes).top.id), url = inviteUrl(axes), text = inviteText(t);
     return `<div class="invite" data-invite-box>
-      ${url ? S.social.bar({ text, url, label: 'Позвать партнёра' }) : '<p class="sub">Ссылки появятся, когда сайт выложен.</p>'}
+      ${url ? `<figure class="invite-preview"><figcaption>Партнёр получит</figcaption>
+        <blockquote>${esc(text)} <span class="invite-url">${esc(url)}</span></blockquote></figure>
+        <p class="invite-main"><button class="btn btn-lg" type="button" data-invite-send>Отправить приглашение</button></p>
+        ${S.social.bar({ text, url, compact: true, label: 'Отправить через', copyLabel: 'Скопировать ссылку' })}`
+      : '<p class="sub">Ссылки появятся, когда сайт выложен.</p>'}
       <p class="invite-alt"><a class="btn btn-ghost" href="#/duo" data-duo-now>Пройти вдвоём</a><a class="link" href="#/pair#codes">Ввести коды</a></p>
       <p class="share-status" aria-live="polite"></p>
     </div>`;
@@ -93,14 +97,26 @@
     if (!box) return () => {};
     const t = M().type(S.core.scoring.result(axes).top.id);
     const off = S.social.mount(box, {
-      text: () => `Мой тип — ${t.mbti} «${t.title}». Пройди тест на 16 типов, это 4 минуты, и посмотрим, как мы устроены вместе.`,
+      text: () => inviteText(t),
       url: () => inviteUrl(axes),
       image: () => { const c = document.createElement('canvas'); S.share.render(c, axes, 'story'); return S.share.toBlob(c); },
       status: () => box.querySelector('.share-status')
     });
-    const onClick = e => {
+    const status = box.querySelector('.share-status');
+    const onClick = async e => {
       if (e.target.closest('[data-social]')) S.track('invite_created', { net: e.target.closest('[data-social]').dataset.social });
       if (e.target.closest('[data-duo-now]')) { CP().setDuo(2); S.store.del('test'); S.track('pair_start', { mode: 'duo' }); }
+      // главная кнопка: на телефоне — системное «Поделиться», на компьютере — сообщение со ссылкой в буфер
+      if (e.target.closest('[data-invite-send]')) {
+        const text = inviteText(t), url = inviteUrl(axes);
+        S.track('invite_created', { net: navigator.share ? 'system' : 'copy-message' });
+        if (navigator.share) {
+          try { await navigator.share({ text, url }); } catch (err) { /* меню закрыли */ }
+        } else {
+          const ok = await S.share.copy(`${text} ${url}`);
+          status.textContent = ok ? 'Сообщение со ссылкой скопировано — вставь его в чат с партнёром' : 'Не удалось скопировать — выдели текст выше';
+        }
+      }
     };
     box.addEventListener('click', onClick);
     return () => { off(); box.removeEventListener('click', onClick); };
@@ -219,13 +235,18 @@
   };
 
   // ---------- приглашение партнёра ----------
+  // сколько ответов уже есть в незаконченном тесте на этом устройстве
+  const startedTest = () => { const st = S.store.get('test', null); return st && st.answers ? Object.keys(st.answers).length : 0; };
+  // строка о чужом типе — в третьем лице (описания типов написаны для самого человека: «Ты…»)
+  const thirdOf = t => (P().third || {})[t.id] || '';
+
   V.invite = {
     needs: ['types'],
     valid: code => Boolean(S.core.payload.decode(code)),
     title: () => 'Приглашение в пару',
     render(code) {
-      const axes = S.core.payload.decode(code), t = M().type(S.core.scoring.result(axes).top.id), c = ui.content(t.id);
-      const my = S.state.result();
+      const axes = S.core.payload.decode(code), t = M().type(S.core.scoring.result(axes).top.id);
+      const my = S.state.result(), begun = startedTest();
       return `
         <section class="sec page-head invite-hero" style="${ui.qStyle(t.quadra)}">
           <div class="wrap center narrow">
@@ -234,7 +255,7 @@
             <p class="lead">${my ? 'Твой тип уже есть, поэтому совместимость откроется сразу.' : 'Пройди тест на 16 типов: 20 вопросов, около 4 минут. Потом вы оба увидите вашу совместимость.'}</p>
             <div class="cta">
               ${my ? `<a class="btn btn-lg" href="#/pair/${enc(my)}/${code}" data-invite-pair>Смотреть нашу совместимость</a>`
-                   : '<a class="btn btn-lg" href="#/test" data-invite-go>Узнать свой тип</a>'}
+                   : `<a class="btn btn-lg" href="#/test" data-invite-go>${begun ? `Продолжить тест · ${begun} из 20` : 'Узнать свой тип'}</a>`}
             </div>
             <p class="sh-note">Без регистрации, ответы остаются на твоём телефоне</p>
           </div>
@@ -246,7 +267,7 @@
               <div>
                 <p class="inviter-k">Кто тебя позвал</p>
                 <h2 class="title-sm">${t.mbti}, ${esc(t.title)}</h2>
-                <p class="body">${esc(c.tagline || '')}</p>
+                <p class="body">${esc(thirdOf(t))}</p>
               </div>
             </div>
             <h2 class="title-sm gap-top">Что будет дальше</h2>
@@ -262,7 +283,8 @@
       const axes = S.core.payload.decode(code);
       S.track('invite_opened', {});
       const onClick = e => {
-        if (e.target.closest('[data-invite-go]')) { S.state.friend = axes; S.store.del('test'); CP().setDuo(null); }
+        // начатый тест продолжаем: человек мог закрыть вкладку на седьмом вопросе
+        if (e.target.closest('[data-invite-go]')) { S.state.friend = axes; if (!startedTest()) S.store.del('test'); CP().setDuo(null); }
         if (e.target.closest('[data-invite-pair]')) CP().setPartner(code, { via: 'invite' });
       };
       root.addEventListener('click', onClick);
@@ -271,13 +293,13 @@
   };
 
   // ---------- экран пары ----------
-  function personCard(t, who, i) {
-    const c = ui.content(t.id);
+  function personCard(t, who, i, third = false) {
+    const c = ui.content(t.id), line = third ? thirdOf(t) || c.tagline : c.tagline;
     return `<a class="card link-card person" style="${ui.qStyle(t.quadra)};--i:${i}" href="#/types/${t.id}">
       <span class="lc-art">${ui.emblem(t, { label: false })}</span>
       <span class="lc-kicker">${esc(who)}</span>
       <span class="lc-title">${t.mbti}, ${esc(t.title)}</span>
-      <span class="lc-text">${esc(c.tagline || '')}</span>
+      <span class="lc-text">${esc(line || '')}</span>
     </a>`;
   }
 
@@ -292,7 +314,8 @@
           <div class="teaser">
             <div class="teaser-map">
               ${ui.pairVenn(a, b, { zones, mode: 'locked', sample, pname: partnerLabel(sd) })}
-              <ul class="pv-legend teaser-counts" aria-label="Зоны вашей пары">${PR().GROUPS.map(g => `<li class="${sum[g.id] ? '' : 'zero'}">${S.art.groupIcon(g.id)}<span>${esc((G[g.id] || {}).short || g.id)}</span><b>${sum[g.id]}</b></li>`).join('')}</ul>
+              <p class="pv-legend-cap">Значок на фишке — вид зоны</p>
+              <ul class="pv-legend teaser-counts" aria-label="Виды зон вашей пары">${PR().GROUPS.map(g => `<li class="${sum[g.id] ? '' : 'zero'}">${S.art.groupIcon(g.id)}<span>${esc((G[g.id] || {}).short || g.id)}</span><b>${sum[g.id]}</b></li>`).join('')}</ul>
             </div>
             <div class="teaser-side">
               <div class="card sample reveal" data-sample="${sample.aspect}">
@@ -312,7 +335,7 @@
   }
 
   // Ключ пары для цены: одинаковый у обоих партнёров, в каком бы порядке ни стояли стороны в ссылке
-  const pairKey = sd => sd.path.slice().sort().join('|');
+  const pairKey = sd => [sd.me.type.id, sd.partner.type.id].sort().join('|');
 
   function reportShell(sd) {
     // скелет в раскладке разбора: два круга карты и две карточки сфер — понятно, что сейчас появится
@@ -382,23 +405,23 @@
       const tag = interactive ? 'button' : 'span';
       const attrs = !interactive ? 'aria-hidden="true"'
         : hidden ? 'type="button" data-offer aria-label="Закрытая сфера — откроется в разборе"'
-        : `type="button" data-aspect="${z.aspect}" aria-label="${esc(name)}: ${esc(whoOf(z))}. ${esc(gt)}"`;
+        : `type="button" data-aspect="${z.aspect}" aria-label="${esc(name)}: ${esc(whoOf(z))}. ${esc(gt)}${free ? '. Открыта бесплатно' : ''}"`;
       const pos = s.region === 'none' ? `--d:${i}` : `--x:${s.x};--y:${s.y.toFixed(2)};--d:${i}`;
       return `<${tag} class="pv-chip g-${z.group}${hidden ? ' locked' : ''}${free ? ' free' : ''}" data-region="${s.region}" data-sphere="${esc(hidden ? '' : name)}" data-who="${esc(hidden ? '' : whoOf(z))}" data-gtitle="${esc(hidden ? '' : gt)}" ${attrs} style="${pos}">
-        <span class="pv-ic">${hidden ? S.art.lockIcon('gi') : S.art.groupIcon(z.group)}</span><span class="pv-name">${hidden ? '<i class="pv-blur">•••••</i>' : esc(name)}</span>
+        <span class="pv-ic">${hidden ? S.art.lockIcon('gi') : free ? S.art.unlockIcon('gi') : S.art.groupIcon(z.group)}</span><span class="pv-name">${hidden ? '<i class="pv-blur">•••••</i>' : esc(name)}</span>
       </${tag}>`;
     };
     const inStage = L.slots.filter(s => s.region !== 'none'), outside = L.slots.filter(s => s.region === 'none');
     const hint = locked ? `Открыта 1 сфера из 8 — остальные в разборе` : interactive ? 'Нажми на сферу — расскажем, как она устроена у вас' : 'Сфера стоит у того, кто в ней силён';
     return `<figure class="pv pv-${mode} reveal" data-pv style="--ca:${c.me};--cb:${c.partner}">
-      <div class="pv-caps" aria-hidden="true">${['me', 'both', 'partner'].map((reg, i) => `<span class="pv-cap${L.count[reg] ? '' : ' zero'}" style="--i:${i}"><b title="${esc(cap[reg])}">${esc(cap[reg])}</b><i>${L.count[reg]}</i></span>`).join('')}</div>
+      <div class="pv-caps" aria-hidden="true">${['me', 'both', 'partner'].map((reg, i) => `<span class="pv-cap${L.count[reg] ? '' : ' zero'}" style="--i:${i}"><b title="${esc(cap[reg])}">${esc(cap[reg])}</b></span>`).join('')}</div>
       <div class="pv-stage">
         <div class="pv-aura" aria-hidden="true"></div>
         ${PV.svg(a, b, { label: label || `Карта пары ${a.mbti} и ${b.mbti}` })}
         <span class="pv-flash" aria-hidden="true"></span>
         ${inStage.map((s, i) => chip(s, i)).join('')}
       </div>
-      ${outside.length ? `<div class="pv-gap"><span class="pv-gap-cap">Не хватает паре <i>${outside.length}</i></span><div class="pv-gap-row">${outside.map((s, i) => chip(s, inStage.length + i)).join('')}</div></div>` : ''}
+      ${outside.length ? `<div class="pv-gap"><span class="pv-gap-cap">Не хватает паре</span><div class="pv-gap-row">${outside.map((s, i) => chip(s, inStage.length + i)).join('')}</div></div>` : ''}
       <figcaption class="pv-readout" aria-live="polite">${esc(hint)}</figcaption>
     </figure>`;
   };
@@ -442,6 +465,7 @@
     const a = sd.me.type, b = sd.partner.type, sum = PR().summary(a, b), G = P().groups;
     return `<div class="pv-wrap">
       ${ui.pairVenn(a, b, { zones, mode: 'open', pname: partnerLabel(sd) })}
+      <p class="pv-legend-cap">Значок на фишке — вид зоны</p>
       <ul class="pv-legend" aria-label="Виды зон">${PR().GROUPS.map(g => `<li class="${sum[g.id] ? '' : 'zero'}">${S.art.groupIcon(g.id)}<span>${esc(G[g.id].short)}</span><b>${sum[g.id]}</b></li>`).join('')}</ul>
     </div>`;
   }
@@ -491,7 +515,7 @@
           <h3 class="rp-title">Восемь сфер</h3>
           <div class="zone-groups">
             ${groups.map(g => `<section class="zg">
-              <h4 class="zg-title">${S.art.groupIcon(g.id)}<span>${esc(G[g.id].title)}</span><b>${rep.summary[g.id]}</b></h4>
+              <h4 class="zg-title">${S.art.groupIcon(g.id)}<span>${esc(G[g.id].title)}</span><span class="sr">, сфер: </span><b>${rep.summary[g.id]}</b></h4>
               <p class="zg-about">${esc(G[g.id].about)}</p>
               <ul class="zones">${rep.zones.filter(z => z.group === g.id).map(z => zoneItem(z, sd)).join('')}</ul>
             </section>`).join('')}
@@ -514,7 +538,9 @@
           <h3 class="rp-title">Когда звать третьего</h3>
           <p class="body">${esc(T.third || '')}</p>
           <p class="safety">${esc(T.safety || '')}</p>
+          <p class="rp-disc">${esc(T.disclaimer || '')}</p>
         </section>
+        ${S.paywall.inSurvey() ? ui.priceSurvey() : ''}
 
         <section class="rp rp-evening" id="rp-evening">
           <h3 class="rp-title">Вечер вдвоём</h3>
@@ -527,8 +553,6 @@
             <p class="share-status" aria-live="polite"></p>
           </div>
         </section>
-        ${S.paywall.inSurvey() ? ui.priceSurvey() : ''}
-        <p class="rp-disc">${esc(T.disclaimer || '')}</p>
       </div>`;
   }
 
@@ -591,7 +615,7 @@
           <details class="term-more"><summary>Как это называется в соционике</summary><p class="pair-term">${esc(ui.relTitle(r, a, b))} ${ui.toneChip(r.tone)}</p></details>
         </div>
         <div class="wrap gap-top">
-          <div class="grid2">${personCard(a, 'Ты', 0)}${personCard(b, pName || 'Партнёр', 1)}</div>
+          <div class="grid2">${personCard(a, 'Ты', 0)}${personCard(b, pName || 'Партнёр', 1, true)}</div>
           <p class="pair-name"><button class="ghost-btn" type="button" data-name>${pName ? `Партнёр: <span class="nm" title="${esc(pName)}">${esc(pName)}</span>, изменить имя` : 'Как зовут партнёра?'}</button></p>
         </div>
       </section>
@@ -608,8 +632,8 @@
             <div class="share-side reveal" style="--i:1">
               <h2 class="title-sm">Поделиться парой</h2>
               <p class="sub">Картинка для сторис — с вашими типами и видом отношений. Имён на ней нет.</p>
-              ${S.social.bar({ text: shareText(a, b, title), url: base() ? base() + '/' : '', label: 'Поделиться парой' })}
-              ${isMyPair && pairUrl(...sd.path) ? `<p class="gap-sm"><button class="btn btn-ghost" type="button" data-copy-pair>Скопировать ссылку на нашу пару</button></p><p class="sub small">Отправь её партнёру — так совместимость увидите оба.</p>` : ''}
+              ${S.social.bar({ text: shareText(a, b, title), url: base() ? base() + '/' : '', label: 'Поделиться парой', copyLabel: 'Скопировать ссылку на сайт' })}
+              ${isMyPair && pairUrl(...sd.path) ? `<p class="gap-sm"><button class="btn btn-ghost" type="button" data-copy-pair>Скопировать ссылку на нашу пару</button></p>${(CP().partner() || {}).via === 'duo' ? '' : '<p class="sub small">Отправь её партнёру — так совместимость увидите оба.</p>'}` : ''}
               <p class="share-status" aria-live="polite"></p>
             </div>
           </div>
@@ -619,7 +643,7 @@
       <section class="sec">
         <div class="wrap center pair-more">
           <p><a class="btn btn-ghost" href="#/pair">Проверить другую пару</a></p>
-          <p class="links-row"><a class="link" href="#/types/${a.id}">Всё о ${a.mbti}</a><a class="link" href="#/types/${b.id}">Всё о ${b.mbti}</a><a class="link" href="#/relations">16 видов отношений</a></p>
+          <p class="links-row"><a class="link" href="#/types/${a.id}">Всё о ${a.mbti}</a><a class="link" href="#/types/${b.id}">Всё о ${b.mbti}</a><a class="link" href="#/relations">Все виды отношений</a></p>
           ${CP().partner() && CP().partner().code === sd.partner.code ? '<p><button class="ghost-btn danger" type="button" data-forget>Забыть партнёра на этом устройстве</button></p>' : ''}
           <p class="rp-disc">${esc((P().texts || {}).disclaimer || '')}</p>
         </div>
@@ -722,7 +746,10 @@
     const io = new IntersectionObserver(entries => {
       entries.forEach(en => seen.set(en.target.id, en.isIntersecting));
       const cur = btns.find(b => seen.get(b.dataset.goto)) || null;
-      if (cur) btns.forEach(b => (b === cur ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
+      if (!cur || cur.getAttribute('aria-current') === 'true') return;
+      btns.forEach(b => (b === cur ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
+      const left = cur.offsetLeft - 8, right = cur.offsetLeft + cur.offsetWidth + 8;
+      if (left < nav.scrollLeft || right > nav.scrollLeft + nav.clientWidth) nav.scrollTo({ left: Math.max(0, left), behavior: S.dom.reducedMotion() ? 'auto' : 'smooth' });
     }, { rootMargin: '-120px 0px -55% 0px' });
     btns.forEach(b => { const t = box.querySelector('#' + b.dataset.goto); if (t) io.observe(t); });
     return () => { nav.removeEventListener('click', onClick); io.disconnect(); };
@@ -896,6 +923,14 @@ html.vt-unveil::view-transition-new(${name(i)}) { animation: pv-vt-in 380ms var(
         const card = e.target.closest('.zone-card');
         const asp = e.target.closest('[data-aspect]') || (card && !e.target.closest('a, button') ? card.querySelector('[data-aspect]') : null);
         if (asp && root.querySelector('[data-report].ready')) zoneSheet(view, asp.dataset.aspect, asp);
+        if (asp && asp.classList.contains('free')) {
+          const card = root.querySelector('[data-sample]');
+          if (card) {
+            card.setAttribute('tabindex', '-1');
+            card.scrollIntoView({ behavior: S.dom.reducedMotion() ? 'auto' : 'smooth', block: 'center' });
+            card.focus({ preventScroll: true });
+          }
+        }
         const p = e.target.closest('[data-persp]');
         if (p && (p.dataset.persp === '1') !== view.swapped) swapPerspective(root, p.dataset.persp === '1');
         if (e.target.closest('[data-name]')) nameSheet(sd.partner.code, e.target.closest('[data-name]'));

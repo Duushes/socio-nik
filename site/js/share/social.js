@@ -33,16 +33,17 @@
   }
 
   // compact — только значки (карточка факта); без url ВКонтакте и «Скопировать ссылку» не показываем
-  function bar({ text, url = '', compact = false, label = 'Поделиться' }) {
+  // copyLabel — что именно копирует кнопка, когда рядом есть другая «скопировать» (ссылка на сайт и ссылка на пару)
+  function bar({ text, url = '', compact = false, label = 'Поделиться', copyLabel = NAMES.copy }) {
     const tip = name => (compact ? ` aria-label="${esc(label)}: ${name}" title="${name}"` : '');
-    const inner = net => ICONS[net] + (compact ? '' : `<span>${NAMES[net]}</span>`);
+    const inner = net => ICONS[net] + (compact ? '' : `<span>${net === 'copy' ? esc(copyLabel) : NAMES[net]}</span>`);
     const cls = net => `soc soc-${net}${compact ? ' soc-icon' : ''}`;
     const items = ['telegram', 'whatsapp', 'max', 'vk', 'story'].map(net => {
       if (net === 'story') return `<button type="button" class="${cls(net)}" data-social="story"${tip(NAMES[net])}>${inner(net)}</button>`;
       const h = href(net, text, url);
       return h ? `<a class="${cls(net)}" data-social="${net}" href="${esc(h)}" target="_blank" rel="noopener"${tip(NAMES[net])}>${inner(net)}</a>` : '';
     });
-    if (url) items.push(`<button type="button" class="${cls('copy')}" data-social="copy"${tip(NAMES.copy)}>${inner('copy')}</button>`);
+    if (url) items.push(`<button type="button" class="${cls('copy')}" data-social="copy"${tip(copyLabel)}>${inner('copy')}</button>`);
     if (typeof navigator !== 'undefined' && navigator.share) items.push(`<button type="button" class="${cls('more')}" data-social="more"${tip('Другие приложения')}>${inner('more')}</button>`);
     return `<div class="socials${compact ? ' socials-compact' : ''}" role="group" aria-label="${esc(label)}">${items.join('')}</div>`;
   }

@@ -173,10 +173,12 @@
       <div class="sk sk-title"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line sk-short"></div></div></section>`;
     document.body.setAttribute('data-view', 'loading');
   }
-  function showLoadError() {
+  function showLoadError(err) {
+    if (err && root.console) console.error(err);
+    document.body.setAttribute('data-view', 'error');
     app().innerHTML = `<section class="sec page-head"><div class="wrap center narrow">
-      <h1 class="title">Не получилось загрузить страницу.</h1>
-      <p class="lead">Похоже, связь пропала на полпути. Проверь интернет и обнови страницу — ответы и результат на месте.</p>
+      <h1 class="title">Не получилось открыть страницу.</h1>
+      <p class="lead">Что-то пошло не так по дороге: например, пропала связь. Обнови страницу — ответы и результат на месте.</p>
       <p><button class="btn btn-lg" type="button" onclick="location.reload()">Обновить</button></p></div></section>`;
   }
 
@@ -185,7 +187,8 @@
     const missing = missingFor(view);
     if (missing.length) {
       showLoading();
-      S.lazy(missing.flatMap(n => PACKS[n])).then(() => { lastPath = null; render({ instant: true, keepScroll }); }, showLoadError);
+      // ошибка и при загрузке, и при отрисовке после неё — честный экран с «Обновить», а не вечный скелет
+      S.lazy(missing.flatMap(n => PACKS[n])).then(() => { lastPath = null; render({ instant: true, keepScroll }); }).catch(showLoadError);
       return;
     }
     const path = location.hash.split('#').slice(0, 2).join('#');
@@ -195,7 +198,8 @@
     const y = scrollY;
     pendingFocus = keepScroll ? focusKey(document.activeElement) : null;
     const snap = keepScroll ? snapshot(app()) : null;
-    const update = () => {
+    const update = () => { try { draw(); } catch (e) { showLoadError(e); } };
+    const draw = () => {
       if (cleanup) { try { cleanup(); } catch (e) { /* уже убрано */ } cleanup = null; }
       const el = app();
       // quiet: экран тот же, поменялось состояние — входные анимации не повторяем, всё сразу на месте.

@@ -74,7 +74,7 @@
           <h1 class="res-code" data-type-code aria-label="${t.mbti}, ${esc(t.title)}">${t.mbti.split('').map((ch, k) => `<span style="--k:${k}">${ch}</span>`).join('')}</h1>
           <p class="res-name">${esc(t.title)}</p>
           <div class="res-pct"><span class="big" data-count="${res.top.pct}">${res.top.pct}</span><span class="pc">%</span></div>
-          <p class="res-pct-lab">вероятность этого типа по твоим ответам</p>
+          <p class="res-pct-lab">${res.top.pct < 40 ? 'вероятность этого типа: ответы ровные, поэтому тип выражен мягко — так бывает часто' : 'вероятность этого типа по твоим ответам'}</p>
           ${res.close ? `<p class="res-between">Результат между ${t.mbti} и ${n1.mbti}: загляни в оба описания.</p>` : ''}
           <div class="cta res-cta">${friend ? `<a class="btn btn-lg" href="#/pair/${enc(axes)}/${enc(friendAxes)}" data-pair-go>Смотреть нашу совместимость</a>`
             : saved ? `<a class="btn btn-lg" href="#/pair/${enc(axes)}/${S.core.couple.partner().code}">Открыть нашу пару</a><button class="btn btn-lg btn-ghost" type="button" data-goto-invite>Позвать партнёра</button>`
@@ -104,7 +104,7 @@
               <span class="lc-art">${ui.emblem(dual, { label: false })}</span>
               <span class="lc-kicker">Тип-дополнение по соционике</span>
               <span class="lc-title">${dual.mbti}, ${esc(dual.title)}</span>
-              <span class="lc-text">В соционике это самая лёгкая пара. Но и другие пары бывают счастливыми: у каждой своя карта.</span>
+              <span class="lc-text">Так в соционике называют тип, чьи сильные стороны дополняют твои. Это не прогноз: счастливыми бывают любые пары, у каждой своя карта.</span>
             </a>
             <a class="card link-card" href="#/quadras#${q.id}" style="${ui.qStyle(q.id)};--i:1">
               <span class="lc-art" data-anim>${S.art.quadraEmblem(q)}</span>
@@ -271,9 +271,9 @@
       };
       const onGo = e => { if (e.target.closest('[data-goto-invite]')) goInvite(); };
       root.addEventListener('click', onGo);
-      let timer = 0;
-      if (S.store.get('intent', null) === 'invite') { S.store.del('intent'); timer = setTimeout(goInvite, 1600); }
-      offs.push(() => { root.removeEventListener('click', onGo); clearTimeout(timer); timers.forEach(clearTimeout); });
+      // тест начали ради приглашения: страницу не прокручиваем за человека — «Позвать партнёра» и так первая кнопка
+      if (S.store.get('intent', null) === 'invite') S.store.del('intent');
+      offs.push(() => { root.removeEventListener('click', onGo); timers.forEach(clearTimeout); });
       return () => offs.forEach(f => f && f());
     }
   };

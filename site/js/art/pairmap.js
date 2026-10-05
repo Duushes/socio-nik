@@ -93,6 +93,8 @@
   };
   const LOCK_PATH = 'M6 9.5h8a1.5 1.5 0 0 1 1.5 1.5v4.5A1.5 1.5 0 0 1 14 17H6a1.5 1.5 0 0 1-1.5-1.5V11A1.5 1.5 0 0 1 6 9.5zM7.3 9.5V7.2a2.7 2.7 0 0 1 5.4 0v2.3';
   art.groupIcon = (id, cls = 'gi') => `<svg class="${cls} gi-${id}" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="${GROUP_PATHS[id]}" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"${id === 'gap' ? ' stroke-dasharray="2.6 2.4"' : ''}/></svg>`;
+  const UNLOCK_PATH = 'M6 9.5h8a1.5 1.5 0 0 1 1.5 1.5v4.5A1.5 1.5 0 0 1 14 17H6a1.5 1.5 0 0 1-1.5-1.5V11A1.5 1.5 0 0 1 6 9.5zM7.3 9.5V6.6a2.7 2.7 0 0 1 5.2-1';
+  art.unlockIcon = (cls = 'gi') => `<svg class="${cls}" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="${UNLOCK_PATH}" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   art.lockIcon = (cls = 'gi') => `<svg class="${cls}" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="${LOCK_PATH}" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   art.groupPath = id => GROUP_PATHS[id];
 
