@@ -38,6 +38,7 @@
     }
     var h = location.hash;
     if (!h || h === '#' || h === '#/') {
+      d.classList.add('hero-on');   // шапка спрятана, пока виден герой главной (дальше решает views/home.js)
       var l = document.createElement('link');
       l.rel = 'preload';
       l.as = 'image';

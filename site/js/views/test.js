@@ -1,34 +1,22 @@
-/* Socio-Nik · тест: 20 вопросов по одному, шкала из 5, автопереход, «Назад», клавиатура, сохранение прогресса */
+/* Socio-Nik · тест: 20 вопросов по одному, шкала из 5, автопереход, «Назад», клавиатура, сохранение прогресса;
+   в конце — сцена раскрытия: портреты мелькают и останавливаются на твоём типе */
 (function (root) {
   const S = root.Socio;
   const V = S.views = S.views || {};
+  const ui = S.ui;
   const { esc } = S.dom;
 
   const VALUES = [-2, -1, 0, 1, 2];
   const LABELS = { '-2': 'Точно А', '-1': 'Скорее А', 0: 'Поровну', 1: 'Скорее Б', 2: 'Точно Б' };
-  const AXIS_PAIR = { EI: ['Te', 'Ti'], NS: ['Ne', 'Se'], TF: ['Te', 'Fe'], RP: null };
-
   const load = () => {
     const st = S.store.get('test', null);
     return st && st.answers && Number.isInteger(st.index) ? st : { answers: {}, index: 0 };
   };
 
-  function axisGlyph(axis) {
-    const c = S.theme.resolved() === 'dark' ? '#2997ff' : '#0071e3';
-    const pair = AXIS_PAIR[axis];
-    if (!pair) {
-      return `<svg class="morph" viewBox="-70 -70 140 140" aria-hidden="true">
-        <g class="m-a"><path d="M-56 42 H-28 V14 H0 V-14 H28 V-42 H56" fill="none" stroke="${c}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g>
-        <g class="m-b"><path d="M-58 0 C-44 -46 -26 -46 -14 0 S16 46 30 0 S52 -40 58 -18" fill="none" stroke="${c}" stroke-width="8" stroke-linecap="round"/></g></svg>`;
-    }
-    return `<svg class="morph" viewBox="-70 -70 140 140" aria-hidden="true"><g class="m-a">${S.art.toSVG(S.art.glyphOf(pair[0], c))}</g><g class="m-b">${S.art.toSVG(S.art.glyphOf(pair[1], c))}</g></svg>`;
-  }
-
   function question(q, i, total, value) {
     return `
       <div class="q" data-q="${q.id}">
-        <div class="q-glyph cycling" data-morph-auto>${axisGlyph(q.axis)}</div>
-        <p class="q-count">Вопрос ${i + 1} из ${total}</p>
+        <p class="q-count caption">Вопрос ${i + 1} из ${total}</p>
         <h1 class="q-prompt">${esc(q.prompt)}</h1>
         <div class="q-cards">
           <div class="q-st q-a${value < 0 ? ' lean' : ''}"><span class="q-tag">А</span><p>${esc(q.a)}</p></div>
@@ -48,8 +36,7 @@
       const i = Math.min(st.index, qs.length - 1);
       return `
         <section class="test">
-          <div class="test-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${qs.length}" aria-valuenow="${i}"><i style="--p:${(i / qs.length) * 100}%"></i></div>
-          <div class="test-aurora" aria-hidden="true"></div>
+          <div class="test-progress" role="progressbar" aria-label="Прогресс теста" aria-valuemin="0" aria-valuemax="${qs.length}" aria-valuenow="${i}"><i style="--p:${(i / qs.length) * 100}%"></i></div>
           <div class="wrap test-wrap">
             <div class="test-head">
               <button class="ghost-btn" type="button" data-back${i === 0 ? ' disabled' : ''}>‹ Назад</button>
@@ -58,7 +45,10 @@
             <div class="q-stage" aria-live="polite">${question(qs[i], i, qs.length, st.answers[qs[i].id])}</div>
             <p class="test-hint">Отвечай так, как обычно бывает, а не как «правильно».<span class="kbd-hint"> Можно нажимать клавиши 1–5.</span></p>
           </div>
-          <div class="counting" hidden><div class="counting-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p>Считаем твой тип…</p></div>
+          <div class="counting" hidden>
+            <div class="slot" style="--q:var(--paper)"><span class="slot-glow" aria-hidden="true"></span><img class="slot-img" alt="" width="520" height="650" decoding="async"></div>
+            <p class="slot-cap caption" aria-live="polite">Считаем твой тип…</p>
+          </div>
         </section>`;
     },
     mount(root) {
@@ -67,13 +57,14 @@
       st.index = Math.min(st.index, qs.length - 1);
       const stage = root.querySelector('.q-stage'), bar = root.querySelector('.test-progress'), back = root.querySelector('[data-back]');
       const timers = [];
-      let locked = false, cycle = 0;
+      let locked = false, warmed = false;
 
       const save = () => S.store.set('test', st);
-      const startCycle = () => {
-        clearInterval(cycle);
-        if (S.dom.reducedMotion()) return;
-        cycle = setInterval(() => { const g = stage.querySelector('[data-morph-auto]'); if (g) g.classList.toggle('is-b'); }, 1800);
+      // Портреты для сцены раскрытия подгружаем заранее, ближе к концу теста
+      const warm = () => {
+        if (warmed || st.index < 11) return;
+        warmed = true;
+        S.data.types.forEach(t => { const im = new Image(); im.src = ui.charSrc(t).src; });
       };
 
       // Смена вопроса по очереди: старый уезжает, и только потом въезжает новый — без наложения двух вопросов.
@@ -83,6 +74,7 @@
         bar.querySelector('i').style.setProperty('--p', (i / qs.length) * 100 + '%');
         bar.setAttribute('aria-valuenow', i);
         back.disabled = i === 0;
+        warm();
         const old = stage.querySelector('.q');
         const tmp = document.createElement('div');
         tmp.innerHTML = question(q, i, qs.length, st.answers[q.id]);
@@ -135,9 +127,31 @@
         S.store.del('test');
         S.state.justFinished = true;
         bar.querySelector('i').style.setProperty('--p', '100%');
-        const ov = root.querySelector('.counting');
+        const me = S.core.modelA.type(S.core.scoring.result(res.axes).top.id);
+        reveal(me, () => { location.hash = '#/result'; });
+      }
+
+      // Слот: портреты мелькают всё медленнее и останавливаются на твоём типе (~2 с)
+      function reveal(me, done) {
+        const ov = root.querySelector('.counting'), slot = ov.querySelector('.slot'), img = ov.querySelector('.slot-img'), cap = ov.querySelector('.slot-cap');
+        const put = t => { img.src = ui.charSrc(t).src; slot.style.setProperty('--q', `var(--q-${t.quadra})`); };
         ov.hidden = false;
-        timers.push(setTimeout(() => { location.hash = '#/result'; }, S.dom.reducedMotion() ? 50 : 1300));
+        if (S.dom.reducedMotion()) { put(me); cap.textContent = `${me.code} · ${me.alias}`; timers.push(setTimeout(done, 700)); return; }
+        const others = S.data.types.filter(t => t.id !== me.id).sort(() => Math.random() - 0.5);
+        const steps = 12;
+        let at = 0;
+        for (let n = 0; n < steps; n++) {
+          at += 55 + 190 * Math.pow(n / (steps - 1), 2.2);
+          const t = n === steps - 1 ? me : others[n % others.length];
+          timers.push(setTimeout(() => {
+            put(t);
+            slot.classList.remove('tick');
+            void slot.offsetWidth;
+            slot.classList.add(t === me ? 'land' : 'tick');
+            if (t === me) cap.textContent = `${me.code} · ${me.alias}`;
+          }, at));
+        }
+        timers.push(setTimeout(done, at + 650));
       }
 
       const onClick = e => {
@@ -165,14 +179,12 @@
       };
       root.addEventListener('click', onClick);
       document.addEventListener('keydown', onKey);
-      startCycle();
       const first = stage.querySelector('.dot[tabindex="0"]');
       if (first && document.documentElement.classList.contains('kbd')) first.focus({ preventScroll: true });
       return () => {
         root.removeEventListener('click', onClick);
         document.removeEventListener('keydown', onKey);
         timers.forEach(clearTimeout);
-        clearInterval(cycle);
       };
     }
   };

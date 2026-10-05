@@ -106,15 +106,20 @@
   };
 
   // Два персонажа лицом друг к другу: правый отражён. Слева — тот, от кого идёт действие
-  ui.duo = (a, b, { labels, cls = '', sizes = ui.CHAR.duo, eager = false } = {}) => {
+  const duoFig = (t, l, side, { sizes = ui.CHAR.duo, eager = false } = {}) => `<figure class="duo-${side}" style="${ui.qStyle(t.quadra)}">
+      <span class="duo-glow" aria-hidden="true"></span>${ui.character(t, { sizes, alt: '', eager })}
+      <figcaption><b>${esc(l)}</b><span>${esc(t.alias)}</span></figcaption></figure>`;
+  ui.duo = (a, b, { labels, cls = '', sizes, eager = false } = {}) => {
     const r = M().relation(a, b);
     let left = a, right = b, lab = labels || [a.code, b.code];
     if (r.id === 'benefactor' || r.id === 'supervisor') { left = b; right = a; lab = [lab[1], lab[0]]; }
-    const fig = (t, l, side) => `<figure class="duo-${side}" style="${ui.qStyle(t.quadra)}">
-        <span class="duo-glow" aria-hidden="true"></span>${ui.character(t, { sizes, alt: '', eager })}
-        <figcaption><b>${esc(l)}</b><span>${esc(t.alias)}</span></figcaption></figure>`;
-    return `<div class="duo ${cls}" role="img" aria-label="${esc(`${a.code} и ${b.code}: ${ui.relTitle(r, a, b)}`)}">${fig(left, lab[0], 'a')}${fig(right, lab[1], 'b')}</div>`;
+    return `<div class="duo ${cls}" role="img" aria-label="${esc(`${a.code} и ${b.code}: ${ui.relTitle(r, a, b)}`)}">${duoFig(left, lab[0], 'a', { sizes, eager })}${duoFig(right, lab[1], 'b', { sizes, eager })}</div>`;
   };
+  // Пара, где твой тип ещё неизвестен: слева «?», справа персонаж из ссылки
+  ui.duoMystery = t => `<div class="duo duo-mystery" role="img" aria-label="${esc(`${t.code} и ты: отношения пока неизвестны`)}">
+      <figure class="duo-a duo-q"><span class="duo-glow" aria-hidden="true"></span><span class="duo-ask" aria-hidden="true">?</span>
+        <figcaption><b>Ты</b><span>тип пока неизвестен</span></figcaption></figure>
+      ${duoFig(t, t.code, 'b')}</div>`;
 
   // ---------- калькулятор совместимости ----------
   ui.calcOut = (aId, bId) => {

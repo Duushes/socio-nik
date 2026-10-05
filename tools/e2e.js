@@ -62,7 +62,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
         await sleep(560);
       }
       mo.disconnect();
-      await sleep(2300);
+      await sleep(3200);
       return { unique: new Set(seen).size, maxQ, view: document.body.dataset.view, code: (document.querySelector('.res-code') || {}).textContent };
     });
     check('тест: 20 разных вопросов кликами → экран результата', flow.unique === 20 && flow.view === 'result', JSON.stringify(flow));
@@ -204,14 +204,14 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       const withMine = {
         badge: Boolean(document.querySelector('.sh-badge')),
         cta: (document.querySelector('.sh-hero .cta .btn') || {}).getAttribute('href'),
-        scene: Boolean(document.querySelector('.sh-pair .scene')) && !document.querySelector('.sc-mystery')
+        scene: Boolean(document.querySelector('.sh-pair .duo')) && !document.querySelector('.duo-mystery')
       };
       localStorage.removeItem('socio.result');
       location.hash = '#/';
       await sleep(700);
       location.hash = '#/r/' + code;
       await sleep(1000);
-      const fresh = { code: document.querySelector('.res-code').textContent, mystery: Boolean(document.querySelector('.sc-mystery')), cta: document.querySelector('.sh-hero [data-friend]').textContent };
+      const fresh = { code: document.querySelector('.res-code').textContent, mystery: Boolean(document.querySelector('.duo-mystery')), cta: document.querySelector('.sh-hero [data-friend]').textContent };
       document.querySelector('.sh-hero [data-friend]').click();
       await sleep(1000);
       for (let i = 0; i < 20; i++) {
@@ -220,12 +220,12 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
         q.querySelectorAll('.dot')[[4, 3, 1, 0, 2][i % 5]].click();
         await sleep(560);
       }
-      await sleep(2300);
+      await sleep(3200);
       const you = { view: document.body.dataset.view, title: (document.querySelector('.sh-you h2') || {}).textContent || '', rel: (document.querySelector('.sh-you .sh-rel') || {}).textContent || '' };
       return { mine, withMine, fresh, you };
     });
     check('ссылка на чужой результат: своя страница с плашкой и кнопкой к вашим отношениям', shared.withMine.badge && shared.withMine.cta === `#/relations/${shared.mine}/iee` && shared.withMine.scene, JSON.stringify(shared.withMine));
-    check('без своего результата: загадка «?» и кнопка «Узнать свой тип»', shared.fresh.code === 'ИЭЭ' && shared.fresh.mystery && shared.fresh.cta === 'Узнать свой тип', JSON.stringify(shared.fresh));
+    check('без своего результата: пара «? и персонаж» и кнопка «Узнать свой тип»', shared.fresh.code === 'ИЭЭ' && shared.fresh.mystery && shared.fresh.cta === 'Узнать свой тип', JSON.stringify(shared.fresh));
     check('после теста по ссылке — блок «Ты и тот, кто прислал ссылку»', shared.you.view === 'result' && / и ИЭЭ$/.test(shared.you.title) && shared.you.rel.length > 5, JSON.stringify(shared.you));
     await shot('d-shared-you', '.sh-you', 60);
     await go('#/r/1-80-85-20-15', 1200);
@@ -233,19 +233,50 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
 
     await go('#/relations', 1000);
 
-    // ---------- тема ----------
-    const theme = await b.eval(async () => {
-      const before = document.documentElement.dataset.theme;
-      document.querySelector('[data-theme-toggle]').click();
-      await new Promise(r => setTimeout(r, 1200));
-      return { before, after: document.documentElement.dataset.theme, view: document.body.dataset.view, saved: localStorage.getItem('socio.theme'), err: document.documentElement.dataset.error || '' };
+    // ---------- главная: герой, лента, стопка ----------
+    const savedResult = await b.eval(`localStorage.getItem('socio.result')`);
+    await b.eval(`localStorage.removeItem('socio.result')`);
+    await b.goto(BASE + '#/');
+    await b.sleep(1500);
+    const home = await b.eval(() => {
+      const hero = document.querySelector('[data-hero]');
+      const cta = hero.querySelector('.hero-actions .btn');
+      const img = hero.querySelector('.hero-fig img');
+      const tiles = Array.from(document.querySelectorAll('.mq-copy:not([inert]) .mq-tile')).map(a => a.getAttribute('href'));
+      return {
+        cta: cta.getAttribute('href'), ctaText: cta.textContent.trim(), name: hero.querySelector('[data-hero-name]').textContent,
+        hero: document.documentElement.dataset.hero, imgOk: img.complete && img.naturalWidth > 0 && img.getAttribute('src').includes(document.documentElement.dataset.hero),
+        tiles: tiles.length, uniq: new Set(tiles).size, inert: document.querySelectorAll('.mq-copy[inert]').length,
+        cards: Array.from(document.querySelectorAll('.stack-card .qc-go')).map(a => a.getAttribute('href')).join(),
+        types: new Set(Array.from(document.querySelectorAll('.stack-card .qc-type')).map(a => a.getAttribute('href'))).size
+      };
     });
-    check('переключатель темы меняет тему, экран перерисован', theme.before !== theme.after && theme.view === 'relations' && !theme.err, JSON.stringify(theme));
-    await go('#/result', 1200);
-    await shot('d-dark-result-top');
-    await go('#/', 1400);
-    await shot('d-dark-home');
-    await b.eval(`localStorage.setItem('socio.theme', '"light"')`);
+    check('герой: «Пройти тест» ведёт в тест', home.cta === '#/test' && home.ctaText === 'Пройти тест', JSON.stringify(home));
+    check('герой: имя и портрет выбранного типа, картинка загружена', home.imgOk && home.name.length > 1, JSON.stringify(home));
+    check('лента: 16 типов, у каждого одна живая копия, остальные inert', home.tiles === 16 && home.uniq === 16 && home.inert === 4, JSON.stringify(home));
+    check('стопка: 4 карточки ведут на квадры, 16 персонажей — на типы', home.cards === '#/quadras#alpha,#/quadras#beta,#/quadras#gamma,#/quadras#delta' && home.types === 16, JSON.stringify(home));
+    const sw = await b.eval(async () => {
+      const before = document.documentElement.dataset.hero;
+      document.querySelector('.hero-next').click();
+      await new Promise(r => setTimeout(r, 900));
+      const after = document.documentElement.dataset.hero;
+      return { before, after, name: document.querySelector('[data-hero-name]').textContent, alias: Socio.core.modelA.type(after).short || Socio.core.modelA.type(after).alias, src: document.querySelector('.hero-fig img').getAttribute('src') };
+    });
+    check('«Другой тип» меняет персонажа, имя и портрет', sw.before !== sw.after && sw.src.includes(sw.after) && sw.name === sw.alias, JSON.stringify(sw));
+    const heroes = [];
+    for (let k = 0; k < 4; k++) { await b.reload(); await b.sleep(700); heroes.push(await b.eval('document.documentElement.dataset.hero')); }
+    check('после каждой перезагрузки на главной другой персонаж', heroes.every((h, k) => !k || h !== heroes[k - 1]), heroes.join(' → '));
+    const tileNav = await b.eval(async () => {
+      const a = document.querySelector('.mq-copy:not([inert]) .mq-tile');
+      const href = a.getAttribute('href');
+      a.click();
+      await new Promise(r => setTimeout(r, 900));
+      return { href, hash: location.hash, view: document.body.dataset.view };
+    });
+    check('плитка ленты открывает страницу типа', tileNav.hash === tileNav.href && tileNav.view === 'type', JSON.stringify(tileNav));
+    await b.eval(`localStorage.setItem('socio.result', ${JSON.stringify(savedResult)})`);
+    await go('#/', 1200);
+    check('с результатом кнопка героя — «Мой результат»', (await b.eval(`document.querySelector('.hero-actions .btn').getAttribute('href')`)) === '#/result');
 
     // ---------- страницы для глаз ----------
     await b.goto(BASE + '#/types/esi');
@@ -336,15 +367,27 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     await b.media({ 'prefers-reduced-motion': 'no-preference' });
 
     // ---------- телефон ----------
-    await b.viewport(390, 844, { mobile: true, scale: 2 });
-    let overflow = [];
-    for (const r of ROUTES) {
-      await b.goto(BASE + r);
-      await b.sleep(600);
-      const o = await b.eval(`document.documentElement.scrollWidth - innerWidth`);
-      if (o > 0) overflow.push(`${r}: +${o}px`);
+    for (const [w, h] of [[320, 640], [390, 844]]) {
+      await b.viewport(w, h, { mobile: true, scale: 2 });
+      const overflow = [];
+      for (const r of ROUTES) {
+        await b.goto(BASE + r);
+        await b.sleep(600);
+        const o = await b.eval(`document.documentElement.scrollWidth - innerWidth`);
+        if (o > 0) overflow.push(`${r}: +${o}px`);
+      }
+      check(`телефон ${w} px: нигде нет горизонтального скролла`, overflow.length === 0, overflow.join(', '));
     }
-    check('телефон 390 px: нигде нет горизонтального скролла', overflow.length === 0, overflow.join(', '));
+    // 375×667: шкала теста видна без прокрутки, персонаж героя не закрывает кнопку
+    await b.viewport(375, 667, { mobile: true, scale: 2 });
+    await b.goto(BASE + '#/test');
+    await b.sleep(900);
+    const scaleBottom = await b.eval(`Math.round(document.querySelector('.q-scale').getBoundingClientRect().bottom)`);
+    check('375×667: шкала теста видна без прокрутки', scaleBottom <= 667, `низ шкалы ${scaleBottom}`);
+    await b.goto(BASE + '#/');
+    await b.sleep(1500);
+    const fold = await b.eval(`(() => { const c = document.querySelector('.hero-actions').getBoundingClientRect(), f = document.querySelector('.hero-fig img').getBoundingClientRect(); return { cta: Math.round(c.top), fig: Math.round(f.bottom), ctaBottom: Math.round(c.bottom) }; })()`);
+    check('375×667: персонаж не закрывает кнопку героя, кнопка на первом экране', fold.fig <= fold.cta && fold.ctaBottom <= 667, JSON.stringify(fold));
     await b.goto(BASE + '#/');
     await b.sleep(1400);
     await shot('m-home');

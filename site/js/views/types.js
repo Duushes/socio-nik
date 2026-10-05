@@ -5,19 +5,20 @@
   const ui = S.ui;
   const { esc } = S.dom;
   const M = () => S.core.modelA;
+  const NB = '\u00A0';
 
   V.types = {
     title: () => '16 типов',
     render: () => `
-      <section class="sec page-head">
-        <div class="wrap-wide">
-          <div class="wrap-inner">
-            <p class="eyebrow reveal">Типы</p>
-            <h1 class="title reveal">16 типов</h1>
-            <p class="lead reveal">Нажми на тип — там описание, модель А и отношения со всеми остальными. Эмблема: крупный знак — базовая функция, маленький на орбите — творческая.</p>
-          </div>
-          ${ui.typesGrid()}
+      <section class="page-top page-head">
+        <div class="wrap">
+          <p class="eyebrow reveal">Типы</p>
+          <h1 class="h2 reveal"><span class="sv">16 типов</span></h1>
+          <p class="lead reveal">Четыре ряда — четыре квадры. Нажми на${NB}тип: там описание, модель${NB}А и${NB}отношения со${NB}всеми остальными.</p>
         </div>
+      </section>
+      <section class="sec types-sec">
+        <div class="wrap">${ui.typesGrid()}</div>
       </section>`
   };
 
@@ -26,18 +27,22 @@
     const m = M().modelA(t.ego), A = S.data.aspects, F = S.data.functions;
     const cell = n => {
       const a = A[m[n - 1]];
-      return `<button type="button" class="ma-cell reveal${n <= 2 ? ' ego' : ''}" style="--i:${n}" data-fn="${n}" aria-haspopup="dialog" aria-label="${F[n - 1].name} функция — ${esc(a.name)}. Подробнее">
+      return `<button type="button" class="ma-cell reveal${n <= 2 ? ' ego' : ''}" style="--i:${n % 4}" data-fn="${n}" aria-haspopup="dialog" aria-label="${F[n - 1].name} функция — ${esc(a.name)}. Подробнее">
         <span class="ma-n">${n}</span>
         <span class="ma-glyph">${S.art.glyphSVG(a.id, S.theme.quadraColor(t.quadra), 'ma-svg')}</span>
         <span class="ma-fn">${F[n - 1].name}</span>
         <span class="ma-asp">${a.short} · ${esc(a.name)}</span>
-        <span class="ma-more" aria-hidden="true">›</span>
+        <span class="ma-more" aria-hidden="true">${ui.ICON.arrow}</span>
       </button>`;
     };
     const rows = [['Эго', 1, 2, 'то, чем тип живёт и действует'], ['Суперэго', 4, 3, 'то, что даётся с напряжением'], ['Суперид', 6, 5, 'то, чего ждёт от других'], ['Ид', 7, 8, 'сильное, но фоновое']];
     return `<div class="ma" style="${ui.qStyle(t.quadra)}">${rows.map(([name, l, r, hint]) => `
       <div class="ma-row"><div class="ma-block reveal"><b>${name}</b><span>${hint}</span></div>${cell(l)}${cell(r)}</div>`).join('')}</div>`;
   }
+
+  // Сильные стороны и зоны роста — нумерованным списком, как «Что внутри»
+  const traits = (list, from = 1) => `<ol class="numlist numlist-sm">${list.map((x, i) => `
+    <li class="reveal"><div class="nl-row"><span class="nl-num" aria-hidden="true">${String(i + from).padStart(2, '0')}</span><span class="nl-body"><span class="nl-text">${esc(x)}</span></span></div></li>`).join('')}</ol>`;
 
   V.type = {
     valid: id => Boolean(M().type(id)),
@@ -47,69 +52,65 @@
       const i = S.data.types.indexOf(t);
       const prev = S.data.types[(i + 15) % 16], next = S.data.types[(i + 1) % 16];
       const dual = M().partner(t, 'dual');
+      const words = t.alias.split(' ');
       return `
-        <section class="type-hero" style="${ui.qStyle(t.quadra)}" data-anim>
-          <div class="res-glow" aria-hidden="true"></div>
-          <div class="wrap type-top">
-            <a class="crumb reveal" href="#/types">‹ Все типы</a>
-            <div class="type-emblem reveal" style="--i:1">${ui.emblem(t, { live: true, cls: 'em-big' })}</div>
-            <p class="eyebrow reveal" style="--i:2"><i class="qdot" aria-hidden="true"></i>${q.name} · ${esc(t.role)}</p>
-            <h1 class="res-code reveal" style="--i:2">${t.code}</h1>
-            <p class="res-name reveal" style="--i:3">${esc(t.name)} · «${esc(t.alias)}»</p>
-            <p class="lead reveal" style="--i:4">${esc(c.tagline || '')}</p>
+        <section class="type-hero" style="${ui.qStyle(t.quadra)}">
+          <a class="crumb" href="#/types">${ui.ICON.back}Все типы</a>
+          <p class="eyebrow type-eyebrow"><i class="qdot" aria-hidden="true"></i>${t.code} · ${esc(t.role)} · ${q.name}</p>
+          <h1 class="type-title display" data-fit data-min="11" data-max="19" data-maxh="22">
+            <span class="sr">${t.code} — </span><span class="fit-in">${words.map(w => `<span class="fit-line"><span class="sv">${esc(w)}</span></span>`).join(' ')}</span>
+          </h1>
+          <div class="type-char" data-magnet><div><div class="res-fig">${ui.character(t, { sizes: ui.CHAR.hero, eager: true })}</div></div></div>
+          <div class="type-meta">
+            <p class="type-name">${esc(t.name)}</p>
+            <p class="lead">${esc(c.tagline || '')}</p>
           </div>
         </section>
 
-        <section class="sec">
-          <div class="wrap narrow">
-            <h2 class="title-sm reveal">О типе</h2>
-            ${(c.about || []).map((p, k) => `<p class="body reveal" style="--i:${k}">${esc(p)}</p>`).join('')}
-          </div>
-          ${ui.celebs(t)}
-        </section>
-
-        <section class="sec sec-alt">
+        <section class="sec sec-white">
           <div class="wrap">
-            <div class="grid2" style="${ui.qStyle(t.quadra)}">
-              <div class="card reveal"><h3 class="card-title">Сильные стороны</h3>
-                <ul class="checks">${(c.strengths || []).map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>
-              <div class="card reveal" style="--i:1"><h3 class="card-title">Зоны роста</h3>
-                <ul class="checks soft">${(c.growth || []).map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>
-            </div>
-            <div class="card wide reveal" style="${ui.qStyle(dual.quadra)}">
-              <span class="wide-art">${ui.emblem(dual, { label: false })}</span>
-              <div><h3 class="card-title">В отношениях</h3><p>${esc(c.inRelations || '')}</p>
-              <a class="link" href="#/relations/${t.id}/${dual.id}">${t.code} и ${dual.code}: дуальные отношения</a></div>
-            </div>
+            <h2 class="h2 sec-head reveal">О${NB}типе</h2>
+            <div class="type-about">${(c.about || []).map((p, k) => `<p class="body reveal" style="--i:${k}">${esc(p)}</p>`).join('')}</div>
+            ${ui.celebs(t)}
           </div>
         </section>
 
         <section class="sec">
           <div class="wrap">
-            <h2 class="title-sm reveal">Модель А</h2>
-            <p class="sub reveal">Восемь функций: какие аспекты информации тип обрабатывает легко и уверенно, а какие — с трудом или с помощью других. Нажми на функцию — расскажем, как она проявляется у ${t.code}.</p>
+            <h2 class="h2 reveal"><span class="sv">Модель${NB}А</span></h2>
+            <p class="lead sec-sub reveal">Восемь функций: какие аспекты информации тип обрабатывает легко и${NB}уверенно, а${NB}какие — с${NB}трудом или с${NB}помощью других. Нажми на${NB}функцию — расскажем, как она проявляется у${NB}${t.code}.</p>
             ${modelA(t)}
           </div>
         </section>
 
-        <section class="sec sec-alt">
+        <section class="sec sec-white">
           <div class="wrap">
-            <h2 class="title-sm reveal">Отношения со всеми типами</h2>
-            <p class="sub reveal">Нажми на тип — откроется подробный разбор пары.</p>
-            ${ui.relList(t)}
+            <div class="grid2 traits">
+              <div><h2 class="h2 h2-sm reveal">Сильные стороны</h2>${traits(c.strengths || [])}</div>
+              <div><h2 class="h2 h2-sm reveal">Зоны роста</h2>${traits(c.growth || [])}</div>
+            </div>
           </div>
         </section>
 
         <section class="sec">
           <div class="wrap">
-            <h2 class="title-sm reveal">Mystery box про ${t.code}</h2>
+            <h2 class="h2 h2-md reveal"><span class="sv">Отношения со${NB}всеми типами</span></h2>
+            <p class="lead sec-sub reveal">${esc(c.inRelations || '')}</p>
+            <p class="reveal sec-sub"><a class="link" href="#/relations/${t.id}/${dual.id}">${t.code} и${NB}${dual.code}: дуальные отношения</a></p>
+            ${ui.relList(t)}
+          </div>
+        </section>
+
+        <section class="sec sec-line">
+          <div class="wrap center">
+            <h2 class="h2 h2-sm reveal"><span class="sv">Mystery box про ${t.code}</span></h2>
             <div class="reveal">${ui.box({ typeId: t.id, compact: true })}</div>
           </div>
         </section>
 
         <nav class="wrap type-nav" aria-label="Соседние типы">
-          <a href="#/types/${prev.id}" style="${ui.qStyle(prev.quadra)}"><span>‹ ${prev.code}</span><small>${esc(prev.alias)}</small></a>
-          <a href="#/types/${next.id}" style="${ui.qStyle(next.quadra)}"><span>${next.code} ›</span><small>${esc(next.alias)}</small></a>
+          <a class="btn-ghost" href="#/types/${prev.id}" style="${ui.qStyle(prev.quadra)}"><span aria-hidden="true">‹</span> ${esc(ui.short(prev))}<span class="sr"> — ${prev.code}</span></a>
+          <a class="btn-ghost" href="#/types/${next.id}" style="${ui.qStyle(next.quadra)}">${esc(ui.short(next))}<span class="sr"> — ${next.code}</span> <span aria-hidden="true">›</span></a>
         </nav>`;
     },
     mount(root, id) {
@@ -119,8 +120,8 @@
         if (cell && root.contains(cell)) ui.openFunction(t, Number(cell.dataset.fn), cell);
       };
       root.addEventListener('click', onClick);
-      const off = ui.mountBox(root);
-      return () => { root.removeEventListener('click', onClick); off(); };
+      const offs = [ui.mountBox(root), ui.mountOverlap(root)];
+      return () => { root.removeEventListener('click', onClick); offs.forEach(f => f()); };
     }
   };
 })(window);

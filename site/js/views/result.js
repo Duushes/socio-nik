@@ -5,16 +5,34 @@
   const ui = S.ui;
   const { esc } = S.dom;
   const M = () => S.core.modelA;
+  const NB = '\u00A0';
+
+  // Заголовок «Привет, {имя}» с подгонкой по ширине и персонаж с магнитом под ним
+  const greet = (word, t) => `
+    <h1 class="res-title display" data-fit data-min="12" data-max="17.5" data-maxh="19">
+      <span class="fit-in"><span class="fit-line"><span class="sv">${word}</span></span> <span class="fit-line"><span class="sv">${esc(ui.short(t))}</span></span></span>
+    </h1>
+    <div class="res-char" data-magnet><div><div class="res-fig">${ui.character(t, { sizes: ui.CHAR.hero, eager: true })}</div></div></div>`;
+
+  const nextCards = res => `<div class="next-grid">${res.next.map((r, i) => {
+    const tt = M().type(r.id);
+    return `<a class="next-card reveal" style="${ui.qStyle(tt.quadra)};--i:${i}" href="#/types/${tt.id}">
+      <span class="next-art">${ui.character(tt, { sizes: ui.CHAR.ava, alt: '' })}</span>
+      <span class="next-code">${tt.code}</span>
+      <span class="next-name">${esc(tt.alias)} · ${esc(tt.role)}</span>
+      <span class="next-pct num">${r.pct} %</span>
+    </a>`;
+  }).join('')}</div>`;
 
   // Тест пройден по ссылке друга — сразу показываем ваши отношения
   function friendPair(me, fr) {
     const r = M().relation(me, fr), txt = ui.relText(r.kind);
     return `
-      <section class="sec sec-alt sh-you">
+      <section class="sec sh-you">
         <div class="wrap center">
           <p class="eyebrow reveal">Ты и тот, кто прислал ссылку</p>
-          <h2 class="title reveal">${me.code} и ${fr.code}</h2>
-          <div class="sh-pair reveal" data-anim>${ui.pairScene(me, fr, { labels: ['ты', fr.code] })}</div>
+          <h2 class="h2 h2-md reveal"><span class="sv">${me.code} и ${fr.code}</span></h2>
+          <div class="sh-pair reveal">${ui.duo(me, fr, { labels: ['Ты', fr.code] })}</div>
           <h3 class="sh-rel reveal">${esc(ui.relTitle(r, me, fr))}</h3>
           <p class="reveal">${ui.toneChip(r.tone)}</p>
           <p class="lead reveal">${esc(txt.line || '')}</p>
@@ -23,92 +41,75 @@
       </section>`;
   }
 
-  function page(axes, { shared = false } = {}) {
+  function page(axes) {
     const res = S.core.scoring.result(axes);
     const t = M().type(res.top.id), q = ui.quadra(t.quadra), c = ui.content(t.id);
     const dual = M().partner(t, 'dual');
-    const [n1, n2] = res.next.map(r => M().type(r.id));
+    const n1 = M().type(res.next[0].id);
     const qc = (S.content.quadras || {})[q.id] || {};
-    const friend = !shared && S.state.friend ? S.core.scoring.result(S.state.friend).top.id : null;
-    const link = shared ? '' : S.share.url(axes), plain = S.share.text(axes, { withUrl: false });
+    const friend = S.state.friend ? S.core.scoring.result(S.state.friend).top.id : null;
+    const link = S.share.url(axes), plain = S.share.text(axes, { withUrl: false });
 
     return `
-      <section class="res-hero" style="${ui.qStyle(t.quadra)}" data-anim>
-        <div class="res-glow" aria-hidden="true"></div>
-        <div class="wrap res-top">
-          <p class="eyebrow reveal">${shared ? 'Результат по ссылке' : 'Твой тип'}</p>
-          <div class="res-emblem reveal" style="--i:1">${ui.emblem(t, { live: true, cls: 'em-big' })}</div>
-          <h1 class="res-code reveal" style="--i:2">${t.code}</h1>
-          <p class="res-name reveal" style="--i:3">${esc(t.name)}</p>
-          <p class="res-alias reveal" style="--i:3">«${esc(t.alias)}» · ${esc(t.role)} · квадра ${q.name}</p>
-          <div class="res-pct reveal" style="--i:4"><span class="big" data-count="${res.top.pct}">${res.top.pct}</span><span class="pc">%</span></div>
-          <p class="res-pct-lab reveal" style="--i:4">вероятность этого типа по ${shared ? 'ответам' : 'твоим ответам'}</p>
-          ${res.close ? `<p class="res-between reveal" style="--i:5">Результат между ${t.code} и ${n1.code} — загляни в оба описания.</p>` : ''}
-          ${shared ? `<p class="reveal" style="--i:5"><a class="btn" href="#/test" data-friend>Пройди тест — узнаем, какие у вас отношения</a></p>` : ''}
+      <section class="res-hero" style="${ui.qStyle(t.quadra)}">
+        <p class="eyebrow res-eyebrow">Твой тип</p>
+        ${greet('Привет,', t)}
+        <div class="res-meta">
+          <p class="res-code">${t.code}</p>
+          <p class="res-name">${esc(t.name)}</p>
+          <p class="res-alias">«${esc(t.alias)}» · ${esc(t.role)} · квадра ${q.name}</p>
+          <div class="res-pct"><span class="big num" data-count="${res.top.pct}">${res.top.pct}</span><span class="pc">%</span></div>
+          <p class="res-pct-lab">вероятность этого типа по${NB}твоим ответам</p>
+          ${res.close ? `<p class="res-between">Результат между ${t.code} и${NB}${n1.code} — загляни в${NB}оба описания.</p>` : ''}
         </div>
       </section>
       ${friend ? friendPair(t, M().type(friend)) : ''}
 
-      <section class="sec">
+      <section class="sec sec-white">
         <div class="wrap">
-          <h2 class="title-sm reveal">Ещё похоже на</h2>
-          <div class="next-grid">
-            ${res.next.map((r, i) => {
-              const tt = M().type(r.id);
-              return `<a class="next-card tilt reveal" style="${ui.qStyle(tt.quadra)};--i:${i}" href="#/types/${tt.id}">
-                <span class="next-art">${ui.emblem(tt, { label: false })}</span>
-                <span class="next-code">${tt.code}</span>
-                <span class="next-name">${esc(tt.alias)} · ${esc(tt.role)}</span>
-                <span class="next-pct">${r.pct} %</span>
-                <span class="glare" aria-hidden="true"></span>
-              </a>`;
-            }).join('')}
+          <h2 class="h2 h2-md sec-head reveal">Коротко о${NB}типе</h2>
+          <div class="res-brief">
+            <div>
+              <p class="lead res-tagline reveal">${esc(c.tagline || '')}</p>
+              <p class="body reveal">${esc((c.about || [])[0] || '')}</p>
+              <p class="reveal"><a class="link" href="#/types/${t.id}">Читать полностью</a></p>
+              ${ui.celebLine(t)}
+            </div>
+            <div class="res-links">
+              <a class="link-card reveal" href="#/quadras#${q.id}" style="${ui.qStyle(q.id)}">
+                <span class="lc-art" data-anim>${S.art.quadraEmblem(q, { theme: 'light' })}</span>
+                <span class="lc-kicker">Твоя квадра</span>
+                <span class="lc-title">${q.name}</span>
+                <span class="lc-text">${esc(qc.motto || '')}</span>
+              </a>
+              <a class="link-card reveal" href="#/relations/${t.id}/${dual.id}" style="${ui.qStyle(dual.quadra)};--i:1">
+                <span class="lc-art lc-char">${ui.character(dual, { sizes: ui.CHAR.ava, alt: '' })}</span>
+                <span class="lc-kicker">Твой дуал</span>
+                <span class="lc-title">${dual.code} «${esc(dual.alias)}»</span>
+                <span class="lc-text">${esc(ui.relText('dual').line || '')}</span>
+              </a>
+            </div>
           </div>
         </div>
       </section>
 
-      <section class="sec sec-alt">
+      <section class="sec">
         <div class="wrap">
-          <h2 class="title-sm reveal">Четыре шкалы</h2>
-          <p class="sub reveal">Какой полюс каждой пары тебе ближе.</p>
+          <h2 class="h2 h2-md sec-head reveal"><span class="sv">Ещё похоже на</span></h2>
+          ${nextCards(res)}
+          <h2 class="h2 h2-md gap-top reveal"><span class="sv">Четыре шкалы</span></h2>
+          <p class="lead sec-sub reveal">Какой полюс каждой пары тебе ближе.</p>
           ${ui.axisBars(res.axes)}
-          <h2 class="title-sm reveal gap-top">Все 16 типов</h2>
-          <p class="sub reveal">Вероятности по всем типам складываются в 100 %. Наведи на строку — увидишь подробности.</p>
+          <h2 class="h2 h2-md gap-top reveal"><span class="sv">Все 16 типов</span></h2>
+          <p class="lead sec-sub reveal">Вероятности по всем типам складываются в${NB}100${NB}%. Наведи на строку — увидишь подробности.</p>
           ${ui.distribution(res)}
         </div>
       </section>
 
-      ${shared ? '' : `
-      <section class="sec">
+      <section class="sec sec-white">
         <div class="wrap">
-          <h2 class="title-sm reveal">Коротко о типе</h2>
-          <p class="lead-sm reveal">${esc(c.tagline || '')}</p>
-          <p class="body reveal">${esc((c.about || [])[0] || '')}</p>
-          <p class="reveal"><a class="link" href="#/types/${t.id}">Читать полностью</a></p>
-          ${ui.celebLine(t)}
-          <div class="grid2 gap-top">
-            <a class="card link-card tilt reveal" href="#/quadras#${q.id}" style="${ui.qStyle(q.id)}">
-              <span class="lc-art" data-anim>${S.art.quadraEmblem(q)}</span>
-              <span class="lc-kicker">Твоя квадра</span>
-              <span class="lc-title">${q.name}</span>
-              <span class="lc-text">${esc(qc.motto || '')}</span>
-              <span class="glare" aria-hidden="true"></span>
-            </a>
-            <a class="card link-card tilt reveal" href="#/relations/${t.id}/${dual.id}" style="${ui.qStyle(dual.quadra)};--i:1">
-              <span class="lc-art">${ui.emblem(dual, { label: false })}</span>
-              <span class="lc-kicker">Твой дуал</span>
-              <span class="lc-title">${dual.code} «${esc(dual.alias)}»</span>
-              <span class="lc-text">${esc(ui.relText('dual').line || '')}</span>
-              <span class="glare" aria-hidden="true"></span>
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <section class="sec sec-alt">
-        <div class="wrap">
-          <h2 class="title-sm reveal">Сравни с другом</h2>
-          <p class="sub reveal">${friend ? `Результат по ссылке — ${M().type(friend).code} «${esc(M().type(friend).alias)}». Вот как устроены ваши отношения.` : 'Выбери тип близкого человека — покажем, как устроены ваши отношения.'}</p>
+          <h2 class="h2 h2-md reveal">Сравни с другом</h2>
+          <p class="lead sec-sub reveal">${friend ? `Результат по ссылке — ${M().type(friend).code} «${esc(M().type(friend).alias)}». Вот как устроены ваши отношения.` : 'Выбери тип близкого человека — покажем, как устроены ваши отношения.'}</p>
           <div class="reveal">${ui.calc(t.id, friend || dual.id)}</div>
         </div>
       </section>
@@ -116,13 +117,12 @@
       <section class="sec">
         <div class="wrap">
           <div class="share" data-share>
-            <div class="share-preview tilt reveal">
+            <div class="share-preview reveal">
               <canvas class="share-canvas" width="1080" height="1920" role="img" aria-label="Картинка с результатом: ${t.code}, ${res.top.pct} %"></canvas>
-              <span class="glare" aria-hidden="true"></span>
             </div>
             <div class="share-side reveal" style="--i:1">
-              <h2 class="title-sm">Поделись результатом</h2>
-              <p class="sub">Картинка для сторис или поста — с твоим типом, процентами и шкалами.</p>
+              <h2 class="h2 h2-sm"><span class="sv">Поделись результатом</span></h2>
+              <p class="lead">Картинка для сторис или поста — с${NB}твоим типом, процентами и${NB}шкалами.</p>
               <div class="seg" role="group" aria-label="Формат картинки">
                 <button type="button" data-fmt="story" aria-pressed="true">Сторис</button>
                 <button type="button" data-fmt="post" aria-pressed="false">Пост</button>
@@ -130,7 +130,7 @@
               <div class="share-actions">
                 <button class="btn" type="button" data-do="share" hidden>Поделиться</button>
                 <button class="btn" type="button" data-do="download">Скачать картинку</button>
-                <button class="btn btn-ghost" type="button" data-do="copy">Скопировать текст</button>
+                <button class="btn-ghost" type="button" data-do="copy">Скопировать текст</button>
               </div>
               ${S.social.bar({ text: plain, url: link, label: 'Поделиться результатом' })}
               <p class="share-status" aria-live="polite"></p>
@@ -139,17 +139,12 @@
         </div>
       </section>
 
-      <section class="sec sec-alt">
-        <div class="wrap">
-          <h2 class="title-sm reveal">Mystery box про ${t.code}</h2>
-          <p class="sub reveal">Случайный факт о твоём типе.</p>
-          <div class="reveal">${ui.box({ typeId: t.id, compact: true })}</div>
-        </div>
-      </section>`}
-
-      <section class="sec">
+      <section class="sec sec-line">
         <div class="wrap center">
-          <p class="reveal"><a class="btn btn-ghost" href="#/test" data-restart-test>Пройти тест заново</a></p>
+          <h2 class="h2 h2-sm reveal"><span class="sv">Mystery box про ${t.code}</span></h2>
+          <p class="lead sec-sub reveal">Случайный факт о${NB}твоём типе.</p>
+          <div class="reveal">${ui.box({ typeId: t.id, compact: true })}</div>
+          <p class="gap-top reveal"><a class="btn-ghost" href="#/test" data-restart-test>Пройти тест заново</a></p>
           <details class="how reveal">
             <summary>Как это считается</summary>
             <p>Каждый ответ сдвигает одну из четырёх шкал. Из суммы по шкале получается вероятность каждого полюса, а вероятность типа — произведение вероятностей его четырёх полюсов, поэтому по 16 типам всегда выходит 100 %.</p>
@@ -168,8 +163,13 @@
       try { S.share.render(canvas, axes, fmt); } catch (e) { status.textContent = 'Не получилось нарисовать картинку'; }
     };
     draw();
+    // Картинка рисуется шрифтом сайта: перерисовываем, когда он догрузится
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
     const shareBtn = box.querySelector('[data-do="share"]');
-    if (S.share.canShareFiles()) shareBtn.hidden = false;
+    if (S.share.canShareFiles()) {
+      shareBtn.hidden = false;
+      box.querySelector('[data-do="download"]').className = 'btn-ghost';
+    }
     box.addEventListener('click', async e => {
       const f = e.target.closest('[data-fmt]');
       if (f) {
@@ -197,8 +197,17 @@
       image: () => { const c = document.createElement('canvas'); S.share.render(c, axes, 'story'); return S.share.toBlob(c); },
       status: () => status
     });
-
   }
+
+  // Персонаж наезжает на нижнюю строку заголовка — на треть высоты букв
+  const overlap = root => {
+    const hero = root.querySelector('.res-hero, .type-hero, .sh-hero, .lost-hero');
+    if (!hero) return () => {};
+    const set = e => { const fs = parseFloat(getComputedStyle(e.target).fontSize); hero.style.setProperty('--fs', fs + 'px'); };
+    hero.addEventListener('fitted', set);
+    return () => hero.removeEventListener('fitted', set);
+  };
+  ui.mountOverlap = overlap;
 
   V.result = {
     title: () => {
@@ -208,23 +217,27 @@
     render() {
       const axes = S.state.result();
       if (!axes) {
-        return `<section class="sec empty"><div class="wrap center">
-          <div class="lost" aria-hidden="true">${S.art.glyphSVG('Ni', S.theme.quadraColor('gamma'), 'lost-svg')}</div>
-          <h1 class="title">Результата пока нет</h1>
-          <p class="lead">Пройди тест — это 20 вопросов и около 4 минут.</p>
-          <p><a class="btn btn-lg" href="#/test">Пройти тест</a></p></div></section>`;
+        const t = S.data.types[Math.floor(Math.random() * 16)];
+        return `<section class="lost-hero" style="${ui.qStyle(t.quadra)}">
+          <h1 class="display lost-title" data-fit data-min="12" data-max="16" data-maxh="16"><span class="fit-in"><span class="fit-line"><span class="sv">Пока</span></span> <span class="fit-line"><span class="sv">пусто</span></span></span></h1>
+          <div class="lost-char">${ui.character(t, { sizes: ui.CHAR.hero, eager: true, alt: '' })}</div>
+          <div class="lost-foot">
+            <p class="lead">Результата пока нет. Пройди тест — это 20${NB}вопросов и${NB}около 4${NB}минут.</p>
+            <p class="lost-actions"><a class="btn" href="#/test">Пройти тест</a></p>
+          </div>
+        </section>`;
       }
       return page(axes);
     },
     mount(root) {
       const axes = S.state.result();
-      if (!axes) return () => {};
-      const offs = [ui.mountCalc(root), ui.mountBox(root), ui.mountTips(root), mountShare(root, axes)];
+      if (!axes) return overlap(root);
+      const offs = [overlap(root), ui.mountCalc(root), ui.mountBox(root), ui.mountTips(root), mountShare(root, axes)];
       if (S.state.justFinished) {
         S.state.justFinished = false;
         const t = M().type(S.core.scoring.result(axes).top.id);
         const c = S.theme.quadraColor(t.quadra);
-        setTimeout(() => S.fx.confetti([c, S.color.tone(c, 0.35), S.color.tone(c, -0.2), '#ffffff'], { y: 0.3 }), 450);
+        setTimeout(() => S.fx.confetti([c, S.color.tone(c, 0.35), '#b600a8', '#d7e2ea'], { y: 0.3 }), 450);
       }
       const again = root.querySelector('[data-restart-test]');
       if (again) again.addEventListener('click', () => S.store.del('test'));
@@ -238,31 +251,30 @@
     const t = M().type(res.top.id), q = ui.quadra(t.quadra), c = ui.content(t.id);
     const mineId = S.state.myType(), mine = mineId ? M().type(mineId) : null;
     const rel = mine ? M().relation(mine, t) : null;
-    const test = label => `<a class="btn btn-lg" href="#/test" data-friend>${label}</a>`;
+    const test = label => `<a class="btn" href="#/test" data-friend>${label}</a>`;
     return `
-      <section class="res-hero sh-hero" style="${ui.qStyle(t.quadra)}" data-anim>
-        <div class="res-glow" aria-hidden="true"></div>
-        <div class="wrap res-top">
-          <p class="sh-badge reveal"><i aria-hidden="true"></i>Тебе прислали результат теста Socio-Nik</p>
-          <div class="res-emblem reveal" style="--i:1">${ui.emblem(t, { live: true, cls: 'em-big' })}</div>
-          <h1 class="res-code reveal" style="--i:2">${t.code}</h1>
-          <p class="res-name reveal" style="--i:3">${esc(t.name)}</p>
-          <p class="res-alias reveal" style="--i:3">«${esc(t.alias)}» · ${esc(t.role)} · квадра ${q.name} · ${res.top.pct} %</p>
-          <p class="sh-motto reveal" style="--i:4"><span>Коротко о типе</span>«${esc(c.tagline || '')}»</p>
-          <div class="cta reveal" style="--i:5">
-            ${mine ? `<a class="btn btn-lg" href="#/relations/${mine.id}/${t.id}">Ваши отношения</a><a class="link" href="#/test" data-friend>Пройти тест заново</a>`
-                   : `${test('Узнать свой тип')}<a class="link" href="#/types/${t.id}">Подробнее о ${t.code}</a>`}
+      <section class="res-hero sh-hero" style="${ui.qStyle(t.quadra)}">
+        <p class="sh-badge"><i aria-hidden="true"></i>Тебе прислали результат теста Socio-Nik</p>
+        ${greet('Это', t)}
+        <div class="res-meta">
+          <p class="res-code">${t.code}</p>
+          <p class="res-name">${esc(t.name)}</p>
+          <p class="res-alias">«${esc(t.alias)}» · ${esc(t.role)} · квадра ${q.name} · ${res.top.pct}${NB}%</p>
+          <p class="sh-motto"><span>Коротко о типе</span>«${esc(c.tagline || '')}»</p>
+          <div class="cta">
+            ${mine ? `<a class="btn" href="#/relations/${mine.id}/${t.id}">Ваши отношения</a><a class="link" href="#/test" data-friend>Пройти тест заново</a>`
+                   : `${test('Узнать свой тип')}<a class="link" href="#/types/${t.id}">Подробнее о${NB}${t.code}</a>`}
           </div>
-          <p class="sh-note reveal" style="--i:5">20 вопросов · около 4 минут · без регистрации</p>
+          <p class="sh-note">20 вопросов · около 4 минут · без регистрации</p>
         </div>
       </section>
 
-      <section class="sec sec-alt">
+      <section class="sec sec-white">
         <div class="wrap center">
           <p class="eyebrow reveal">${mine ? 'Вы вдвоём' : 'Твоя очередь'}</p>
-          <h2 class="title reveal">${mine ? `${mine.code} и ${t.code}` : 'А какой тип у тебя?'}</h2>
+          <h2 class="h2 h2-md reveal">${mine ? `${mine.code} и ${t.code}` : 'А какой тип у тебя?'}</h2>
           <p class="lead reveal">${mine ? esc(ui.relText(rel.kind).line || '') : 'Пройди тест — и сразу увидишь, как устроены ваши отношения: дуальные, зеркальные, деловые или ещё какие-то из четырнадцати видов.'}</p>
-          <div class="sh-pair reveal" data-anim>${mine ? ui.pairScene(mine, t, { labels: ['ты', t.code] }) : S.art.mystery(t)}</div>
+          <div class="sh-pair reveal">${mine ? ui.duo(mine, t, { labels: ['Ты', t.code] }) : ui.duoMystery(t)}</div>
           ${mine ? `<h3 class="sh-rel reveal">${esc(ui.relTitle(rel, mine, t))}</h3><p class="reveal"><a class="btn" href="#/relations/${mine.id}/${t.id}">Подробнее о ваших отношениях</a></p>`
                  : `<p class="reveal">${test('Пройти тест')}</p>`}
         </div>
@@ -270,41 +282,30 @@
 
       <section class="sec">
         <div class="wrap">
-          <h2 class="title-sm reveal">Как распределились ответы</h2>
-          <p class="sub reveal">Какой полюс каждой пары ближе тому, кто прислал ссылку.</p>
+          <h2 class="h2 h2-md reveal"><span class="sv">Как распределились ответы</span></h2>
+          <p class="lead sec-sub reveal">Какой полюс каждой пары ближе тому, кто прислал ссылку.</p>
           ${ui.axisBars(res.axes)}
-          <h2 class="title-sm reveal gap-top">Ещё похоже на</h2>
-          <div class="next-grid">
-            ${res.next.map((r, i) => {
-              const tt = M().type(r.id);
-              return `<a class="next-card tilt reveal" style="${ui.qStyle(tt.quadra)};--i:${i}" href="#/types/${tt.id}">
-                <span class="next-art">${ui.emblem(tt, { label: false })}</span>
-                <span class="next-code">${tt.code}</span>
-                <span class="next-name">${esc(tt.alias)} · ${esc(tt.role)}</span>
-                <span class="next-pct">${r.pct} %</span>
-                <span class="glare" aria-hidden="true"></span>
-              </a>`;
-            }).join('')}
-          </div>
+          <h2 class="h2 h2-md gap-top sec-head reveal"><span class="sv">Ещё похоже на</span></h2>
+          ${nextCards(res)}
         </div>
       </section>
 
-      <section class="sec sec-alt">
+      <section class="sec sec-white">
         <div class="wrap narrow">
-          <h2 class="title-sm reveal">Что за тип — ${t.code}</h2>
-          <p class="sub reveal">Отрывок из описания — оно написано для человека этого типа.</p>
+          <h2 class="h2 h2-md reveal">Что за тип — ${t.code}</h2>
+          <p class="lead sec-sub reveal">Отрывок из описания — оно написано для человека этого типа.</p>
           <p class="body reveal">${esc((c.about || [])[0] || '')}</p>
-          <ul class="checks reveal" style="${ui.qStyle(t.quadra)}">${(c.strengths || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+          <ol class="steps reveal" style="${ui.qStyle(t.quadra)}">${(c.strengths || []).map(x => `<li>${esc(x)}</li>`).join('')}</ol>
           ${ui.celebLine(t)}
-          <p class="reveal gap-top"><a class="link" href="#/types/${t.id}">Всё о ${t.code}: описание, модель А, отношения</a></p>
+          <p class="reveal gap-top"><a class="link" href="#/types/${t.id}">Всё о${NB}${t.code}: описание, модель${NB}А, отношения</a></p>
         </div>
       </section>
 
       <section class="sec final">
         <div class="wrap center">
-          <h2 class="title reveal">${mine ? 'Сравни и с другими.' : 'Твоя очередь.'}</h2>
+          <h2 class="h2 reveal"><span class="sv">${mine ? 'Сравни и с другими' : 'Твоя очередь'}</span></h2>
           <p class="lead reveal">${mine ? 'Калькулятор покажет отношения с любым из 16 типов.' : 'Узнай свой соционический тип и то, как вы с этим человеком дополняете друг друга.'}</p>
-          <p class="reveal">${mine ? '<a class="btn btn-lg" href="#/relations">Открыть калькулятор</a>' : test('Пройти тест')}</p>
+          <p class="reveal">${mine ? '<a class="btn" href="#/relations">Открыть калькулятор</a>' : test('Пройти тест')}</p>
         </div>
       </section>`;
   }
@@ -322,7 +323,8 @@
         if (e.target.closest('[data-friend]')) { S.state.friend = axes; S.store.del('test'); }
       };
       root.addEventListener('click', onClick);
-      return () => root.removeEventListener('click', onClick);
+      const off = overlap(root);
+      return () => { root.removeEventListener('click', onClick); off(); };
     }
   };
 })(window);

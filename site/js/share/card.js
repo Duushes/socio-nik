@@ -4,7 +4,8 @@
   const S = root.Socio = root.Socio || {};
   const { rgba, tone } = S.color;
 
-  const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif';
+  // Шрифт сайта; картинку перерисовываем после document.fonts.ready (views/result.js)
+  const FONT = 'Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
   const font = (w, px) => `${w} ${px}px ${FONT}`;
 
   function fit(ctx, text, maxW, weight, px, min = 20) {

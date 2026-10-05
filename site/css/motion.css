@@ -41,12 +41,10 @@
 .tile:nth-child(4) .em-base { animation-delay: -4.5s; }
 .qe-spin { transform-origin: 0 0; animation: spin 48s linear infinite; }
 .qe-item { transform-box: fill-box; transform-origin: center; animation: spin 48s linear infinite reverse; }
-.res-glow { animation: breathe 9s ease-in-out infinite; }
-.lost { animation: wobble 4.5s ease-in-out infinite; }
 .bx-glow { animation: spin 18s linear infinite; }
 
 /* ---------- калькулятор ---------- */
-.calc-out.pop .calc-scene { animation: pop-in 0.6s var(--out) both; }
+.calc-out.pop .calc-duo { animation: pop-in 0.6s var(--out) both; }
 .calc-out.pop .calc-text { animation: pop-in 0.6s var(--out) 0.08s both; }
 
 /* ---------- тест ---------- */
@@ -62,11 +60,8 @@
 .dot.pop { animation: dot-pop 0.45s var(--spring); }
 .dot.pop span { animation: ring 0.7s var(--out); }
 @keyframes dot-pop { 40% { transform: scale(1.2); } }
-@keyframes ring { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--btn) 55%, transparent); } to { box-shadow: 0 0 0 18px transparent; } }
+@keyframes ring { from { box-shadow: 0 0 0 0 rgba(182, 0, 168, 0.55); } to { box-shadow: 0 0 0 18px transparent; } }
 .counting { animation: fade-in 0.3s both; }
-.counting-orbs { animation: spin 1.6s linear infinite; }
-.counting-orbs i { animation: gather 1.3s var(--ease) infinite alternate; }
-@keyframes gather { from { transform: translate(var(--tx), var(--ty)) scale(1); } to { transform: translate(calc(var(--tx) * 0.25), calc(var(--ty) * 0.25)) scale(0.7); } }
 
 /* ---------- mystery box ---------- */
 .bx-cube { animation: bx-idle 6s ease-in-out infinite; }

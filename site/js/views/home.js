@@ -6,7 +6,7 @@
   const ui = S.ui;
   const { esc } = S.dom;
   const M = () => S.core.modelA;
-  const NB = ' ';
+  const NB = '\u00A0';
 
   let introDone = false;
   const heroType = () => M().type(document.documentElement.dataset.hero) || M().type('iee');
