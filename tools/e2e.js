@@ -18,8 +18,7 @@ const check = (name, ok, info = '') => {
   console.log((ok ? '✓ ' : '✗ ') + name + (ok || !info ? '' : ' — ' + info));
 };
 
-const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/result', '#/library', '#/types', '#/types/esi', '#/types/entp', '#/quadras', '#/relations',
-  '#/relations/ile/lse', '#/pair/enfp/isfp', '#/pair/1-72-64-58-19/1-30-40-55-61', '#/box', '#/about', '#/r/1-72-64-58-19', '#/nope'];
+const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras', '#/relations', '#/relations/ile/lse', '#/box', '#/about', '#/r/1-72-64-58-19', '#/nope'];
 
 (async () => {
   const b = await launch();
@@ -32,8 +31,6 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
     await b.shot(path.join(SHOTS, name + '.png'));
   };
   try {
-    // Типограф ставит неразрывные пробелы; проверки читают текст через plainText — с обычными пробелами
-    await b.send('Page.addScriptToEvaluateOnNewDocument', { source: "Object.defineProperty(Node.prototype, 'plainText', { get() { return this.textContent.replace(/\\u00a0/g, ' '); } });" });
     await b.viewport(1280, 900);
     await b.goto(BASE + '#/');
     await b.sleep(1200);
@@ -66,7 +63,7 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
       }
       mo.disconnect();
       await sleep(2300);
-      return { unique: new Set(seen).size, maxQ, view: document.body.dataset.view, code: (document.querySelector('.res-code') || {}).plainText };
+      return { unique: new Set(seen).size, maxQ, view: document.body.dataset.view, code: (document.querySelector('.res-code') || {}).textContent };
     });
     check('тест: 20 разных вопросов кликами → экран результата', flow.unique === 20 && flow.view === 'result', JSON.stringify(flow));
     check('смена вопроса без наложения: на экране всегда один вопрос', flow.maxQ === 1, 'одновременно вопросов: ' + flow.maxQ);
@@ -74,14 +71,14 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
 
     await b.reload();
     await b.sleep(900);
-    const again = await b.eval(`(document.querySelector('.res-code') || {}).plainText`);
+    const again = await b.eval(`(document.querySelector('.res-code') || {}).textContent`);
     check('результат сохраняется после перезагрузки', again === flow.code, `${again} ≠ ${flow.code}`);
 
     // ---------- клавиатура, «Назад», «Сначала» ----------
     await go('#/test', 900);
     const keys = await b.eval(async () => {
       const sleep = ms => new Promise(r => setTimeout(r, ms));
-      const count = () => document.querySelector('.q-stage .q:last-child .q-count').plainText;
+      const count = () => document.querySelector('.q-stage .q:last-child .q-count').textContent;
       const c0 = count();
       document.dispatchEvent(new KeyboardEvent('keydown', { key: '4', bubbles: true }));
       await sleep(900);
@@ -117,26 +114,26 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
     if (siteUrl) {
       check('текст шера со ссылкой на результат', /Socio-Nik https:\/\/\S+\/#\/r\/1-\d+-\d+-\d+-\d+$/.test(share.text), share.text);
       const round = await b.eval(async () => {
-        const code = document.querySelector('.res-code').plainText;
+        const code = document.querySelector('.res-code').textContent;
         const hash = Socio.share.url(Socio.state.result()).split('#')[1];
         location.hash = '#' + hash;
         await new Promise(r => setTimeout(r, 900));
-        return { code, view: document.body.dataset.view, shared: document.querySelector('.res-code').plainText, links: document.querySelectorAll('.share-links a').length };
+        return { code, view: document.body.dataset.view, shared: document.querySelector('.res-code').textContent, links: document.querySelectorAll('.share-links a').length };
       });
       check('ссылка на результат открывает тот же тип', round.view === 'shared' && round.shared === round.code, JSON.stringify(round));
       await go('#/result', 900);
       const soc = await b.eval(() => {
         const bar = document.querySelector('.share .socials');
         const href = n => (bar.querySelector(`[data-social="${n}"]`) || {}).href || '';
-        return { tg: href('telegram'), wa: href('whatsapp'), max: href('max'), vk: href('vk'), story: Boolean(bar.querySelector('[data-social="story"]')), meta: /instagram|инстаграм/i.test(document.body.innerHTML), copy: Boolean(bar.querySelector('[data-social="copy"]')) };
+        return { tg: href('telegram'), wa: href('whatsapp'), x: href('x'), vk: href('vk'), story: Boolean(bar.querySelector('[data-social="story"]')), meta: /instagram|инстаграм/i.test(document.body.innerHTML), copy: Boolean(bar.querySelector('[data-social="copy"]')) };
       });
       const enc = encodeURIComponent(await b.eval('Socio.share.url(Socio.state.result())'));
-      check('результат: Telegram, WhatsApp, MAX, ВКонтакте, «Картинка для сторис» и «Скопировать ссылку»; упоминаний Instagram нет',
+      check('результат: Telegram, WhatsApp, X, ВКонтакте, «Картинка для сторис» и «Скопировать ссылку»; упоминаний Instagram нет',
         soc.tg.startsWith('https://t.me/share/url?url=' + enc) && soc.wa.startsWith('https://wa.me/?text=') && soc.wa.includes(enc) &&
-        soc.max.startsWith('https://max.ru/:share?text=') && soc.max.includes(enc) && soc.vk.startsWith('https://vk.com/share.php?url=' + enc) && soc.story && soc.copy && !soc.meta,
+        soc.x.startsWith('https://x.com/intent/tweet?text=') && soc.x.includes('&url=' + enc) && soc.vk.startsWith('https://vk.com/share.php?url=' + enc) && soc.story && soc.copy && !soc.meta,
         JSON.stringify(soc));
     } else {
-      check('текст шера без ссылки, пока нет SITE_URL', /^Мой тип личности — .+ Socio-Nik$/.test(share.text), share.text);
+      check('текст шера без ссылки, пока нет SITE_URL', /^Мой соционический тип — .+ Socio-Nik$/.test(share.text), share.text);
     }
     await shot('d-result-dist', '.dist');
     await shot('d-result-share', '[data-share]');
@@ -147,12 +144,12 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
       const sleep = ms => new Promise(r => setTimeout(r, ms));
       document.querySelector('.bx').click();
       await sleep(1500);
-      const t1 = (document.querySelector('.bx-text') || {}).plainText || '';
-      const count1 = document.querySelector('.box-count b').plainText;
+      const t1 = (document.querySelector('.bx-text') || {}).textContent || '';
+      const count1 = document.querySelector('.box-count b').textContent;
       document.querySelector('[data-more]').click();
       await sleep(1900);
-      const t2 = (document.querySelector('.bx-text') || {}).plainText || '';
-      return { t1: t1.slice(0, 50), t2: t2.slice(0, 50), count1, count2: document.querySelector('.box-count b').plainText, open: document.querySelector('.box-stage').classList.contains('is-open') };
+      const t2 = (document.querySelector('.bx-text') || {}).textContent || '';
+      return { t1: t1.slice(0, 50), t2: t2.slice(0, 50), count1, count2: document.querySelector('.box-count b').textContent, open: document.querySelector('.box-stage').classList.contains('is-open') };
     });
     check('mystery box открывается и показывает факт', box.open && box.t1.length > 20, JSON.stringify(box));
     check('«Ещё факт» — другой факт, счётчик растёт', box.t2 && box.t2 !== box.t1 && Number(box.count2) > Number(box.count1), JSON.stringify(box));
@@ -166,11 +163,11 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
       if (!canFiles) {
         card.querySelector('[data-social="story"]').click();
         await new Promise(r => setTimeout(r, 800));
-        status = card.querySelector('.bx-share-status').plainText;
+        status = card.querySelector('.bx-share-status').textContent;
       }
       return { nets, tg, png: png.size, canFiles, status, meta: /instagram|инстаграм/i.test(card.innerHTML) };
     });
-    check('факт: четыре сети, картинка для сторис и ссылка на тип; упоминаний Instagram нет', ['telegram', 'whatsapp', 'max', 'vk', 'story'].every(n => fsoc.nets.includes(n)) && !fsoc.meta && /%23%2Ftypes%2F[a-z]{3}|%23%2Fbox/.test(fsoc.tg), JSON.stringify(fsoc));
+    check('факт: четыре сети, картинка для сторис и ссылка на тип; упоминаний Instagram нет', ['telegram', 'whatsapp', 'x', 'vk', 'story'].every(n => fsoc.nets.includes(n)) && !fsoc.meta && /%23%2Ftypes%2F[a-z]{3}|%23%2Fbox/.test(fsoc.tg), JSON.stringify(fsoc));
     check('факт: картинка для сторис собирается', fsoc.png > 60000 && (fsoc.canFiles || /сохранена/.test(fsoc.status)), JSON.stringify(fsoc));
     await shot('d-box-open', '.box-stage', 140);
 
@@ -179,7 +176,7 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
     const calc = await b.eval(async () => {
       const sleep = ms => new Promise(r => setTimeout(r, ms));
       const a = document.querySelector('[data-a]'), bb = document.querySelector('[data-b]');
-      const title = () => document.querySelector('.calc-title').plainText + ' | ' + document.querySelector('.calc-term').plainText;
+      const title = () => document.querySelector('.calc-title').textContent;
       a.value = 'ile'; a.dispatchEvent(new Event('change'));
       bb.value = 'esi'; bb.dispatchEvent(new Event('change'));
       await sleep(100);
@@ -189,11 +186,10 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
       const t2 = title();
       document.querySelector('[data-swap]').click();
       await sleep(100);
-      return { t1, t2, t3: title(), link: document.querySelector('.calc-text .link').getAttribute('href') };
+      return { t1, t2, t3: title() };
     });
-    check('калькулятор: ENTP и ISFJ — «Разные языки», в соционике конфликтные', calc.t1 === 'Разные языки | Конфликтные отношения в соционике', calc.t1);
-    check('калькулятор: заказ с ролями, перестановка и ссылка на экран пары', calc.t2 === 'Партнёр тебя вдохновляет | Социальный заказ: ESTJ — заказчик для ENTP в соционике' &&
-      calc.t3 === 'Ты вдохновляешь партнёра | Социальный заказ: ESTJ — заказчик для ENTP в соционике' && calc.link === '#/pair/estj/entp', JSON.stringify(calc));
+    check('калькулятор: ИЛЭ и ЭСИ — конфликтные', calc.t1 === 'Конфликтные отношения', calc.t1);
+    check('калькулятор: заказ с ролями и перестановка', calc.t2 === 'Социальный заказ: ЛСЭ — заказчик для ИЛЭ' && calc.t3 === 'Социальный заказ: ЛСЭ — заказчик для ИЛЭ', JSON.stringify(calc));
     await shot('d-relations-calc', '[data-calc]', 110);
     await shot('d-relations-kinds', '.kinds', 90);
     await shot('d-relations-matrix', '.matrix', 150);
@@ -202,7 +198,7 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
     const shared = await b.eval(async () => {
       const sleep = ms => new Promise(r => setTimeout(r, ms));
       const code = '1-80-85-20-15';                   // Э · И · этика · иррационал → ИЭЭ
-      const mine = Socio.state.myType(), mineCode = Socio.core.payload.encode(Socio.state.result());
+      const mine = Socio.state.myType();
       location.hash = '#/r/' + code;
       await sleep(1000);
       const withMine = {
@@ -215,7 +211,7 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
       await sleep(700);
       location.hash = '#/r/' + code;
       await sleep(1000);
-      const fresh = { code: document.querySelector('.res-code').plainText, mystery: Boolean(document.querySelector('.sc-mystery')), cta: document.querySelector('.sh-hero [data-friend]').plainText };
+      const fresh = { code: document.querySelector('.res-code').textContent, mystery: Boolean(document.querySelector('.sc-mystery')), cta: document.querySelector('.sh-hero [data-friend]').textContent };
       document.querySelector('.sh-hero [data-friend]').click();
       await sleep(1000);
       for (let i = 0; i < 20; i++) {
@@ -225,205 +221,15 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
         await sleep(560);
       }
       await sleep(2300);
-      const you = { view: document.body.dataset.view, title: (document.querySelector('.sh-you h2') || {}).plainText || '', rel: ((document.querySelector('.sh-you h2') || {}).plainText || '').split(': ')[1] || '' };
-      const goPair = (document.querySelector('[data-pair-go]') || { getAttribute: () => '' }).getAttribute('href');
-      return { mine, mineCode, withMine, fresh, you, goPair };
+      const you = { view: document.body.dataset.view, title: (document.querySelector('.sh-you h2') || {}).textContent || '', rel: (document.querySelector('.sh-you .sh-rel') || {}).textContent || '' };
+      return { mine, withMine, fresh, you };
     });
-    check('ссылка на чужой результат: своя страница с плашкой и кнопкой к вашей паре', shared.withMine.badge && shared.withMine.cta === `#/pair/${shared.mineCode}/1-80-85-20-15` && shared.withMine.scene, JSON.stringify(shared));
-    check('без своего результата: загадка «?» и кнопка «Узнать свой тип»', shared.fresh.code === 'ENFP' && shared.fresh.mystery && shared.fresh.cta === 'Узнать свой тип', JSON.stringify(shared.fresh));
-    check('после теста по ссылке — блок «Ты и тот, кто позвал» и кнопка к экрану пары', shared.you.view === 'result' && / и ENFP: /.test(shared.you.title) && shared.you.rel.length > 5 && /^#\/pair\/1-[\d-]+\/1-80-85-20-15$/.test(shared.goPair), JSON.stringify(shared));
+    check('ссылка на чужой результат: своя страница с плашкой и кнопкой к вашим отношениям', shared.withMine.badge && shared.withMine.cta === `#/relations/${shared.mine}/iee` && shared.withMine.scene, JSON.stringify(shared.withMine));
+    check('без своего результата: загадка «?» и кнопка «Узнать свой тип»', shared.fresh.code === 'ИЭЭ' && shared.fresh.mystery && shared.fresh.cta === 'Узнать свой тип', JSON.stringify(shared.fresh));
+    check('после теста по ссылке — блок «Ты и тот, кто прислал ссылку»', shared.you.view === 'result' && / и ИЭЭ$/.test(shared.you.title) && shared.you.rel.length > 5, JSON.stringify(shared.you));
     await shot('d-shared-you', '.sh-you', 60);
     await go('#/r/1-80-85-20-15', 1200);
     await shot('d-shared');
-
-    await go('#/relations', 1000);
-
-    // ---------- коды MBTI и старые адреса ----------
-    const mb = await b.eval(async () => {
-      const sleep = ms => new Promise(r => setTimeout(r, ms));
-      const h1 = async h => { location.hash = h; await sleep(800); return { view: document.body.dataset.view, h1: (document.querySelector('h1') || {}).plainText || '' }; };
-      return { entp: await h1('#/types/entp'), ile: await h1('#/types/ile'), oldPair: await h1('#/relations/ile/sei'), box: await h1('#/box'), quadras: await h1('#/quadras'), shared: await h1('#/r/1-72-64-58-19') };
-    });
-    check('#/types/entp и #/types/ile — одна страница ENTP (в заголовке для скринридера — и название)', mb.entp.h1 === 'ENTP, Изобретатель' && mb.ile.h1 === 'ENTP, Изобретатель', JSON.stringify(mb));
-    check('старые адреса работают: #/relations/ile/sei → экран пары, #/r/…, #/box, #/quadras', mb.oldPair.view === 'pair' && mb.oldPair.h1 === 'Полное дополнение' && mb.box.view === 'box' && mb.quadras.view === 'quadras' && mb.shared.view === 'shared' && mb.shared.h1 === 'ENTP', JSON.stringify(mb));
-
-    // ---------- тест вдвоём на одном телефоне ----------
-    // чистое состояние: память страницы тоже сбрасываем перезагрузкой (смена одного #хэша её не сбрасывает)
-    await b.eval(`localStorage.clear(); sessionStorage.clear(); location.hash = '#/duo'`);
-    await b.reload();
-    await b.sleep(900);
-    const answerFn = `async pattern => {
-      const sleep = ms => new Promise(r => setTimeout(r, ms));
-      for (let i = 0; i < 20; i++) {
-        const q = document.querySelector('.q-stage .q:last-child');
-        if (!q) return 'нет вопроса ' + i;
-        q.querySelectorAll('.dot')[pattern[i % pattern.length]].click();
-        await sleep(560);
-      }
-      await sleep(2300);
-      return '';
-    }`;
-    const duo = await b.eval(`(async () => {
-      const sleep = ms => new Promise(r => setTimeout(r, ms));
-      const answer = ${answerFn};
-      document.querySelector('[data-duo-start]').click();
-      await sleep(900);
-      const chip1 = (document.querySelector('.duo-chip') || {}).plainText || '';
-      const e1 = await answer([0, 1, 3, 4, 1]);
-      const view1 = document.body.dataset.view, hand = /передай/.test(document.querySelector('h1').plainText);
-      const mine = localStorage.getItem('socio.result');
-      document.querySelector('[data-duo-go]').click();
-      await sleep(900);
-      const chip2 = (document.querySelector('.duo-chip') || {}).plainText || '';
-      const e2 = await answer([4, 3, 1, 0, 2]);
-      return { e1, e2, chip1, chip2, view1, hand, view2: document.body.dataset.view, hash: location.hash, mineKept: localStorage.getItem('socio.result') === mine,
-        partner: JSON.parse(localStorage.getItem('socio.partner') || 'null'), duoLeft: localStorage.getItem('socio.duo') };
-    })()`);
-    check('тест вдвоём: ты → «передай телефон» → партнёр → экран пары; твой результат не затёрт', !duo.e1 && !duo.e2 && duo.view1 === 'duo' && duo.hand && duo.view2 === 'pair' &&
-      /^#\/pair\/1-[\d-]+\/1-[\d-]+$/.test(duo.hash) && duo.mineKept && duo.partner && duo.partner.via === 'duo' && !duo.duoLeft && /потом партнёр/.test(duo.chip1) && /Отвечает партнёр/.test(duo.chip2), JSON.stringify(duo));
-    await shot('p-pair-top');
-
-    // ---------- бесплатный экран пары и пейвол ----------
-    const free = await b.eval(() => ({
-      offer: Boolean(document.querySelector('.offer-cta [data-offer]')), price: (document.querySelector('.offer-cta [data-offer]') || {}).plainText || '',
-      counts: document.querySelectorAll('.teaser-counts li').length, report: Boolean(document.querySelector('[data-report]')),
-      chips: document.querySelectorAll('.pv-locked .pv-chip').length, free: document.querySelectorAll('.pv-locked .pv-chip.free').length,
-      leak: Array.from(document.querySelectorAll('.pv-locked .pv-chip.locked')).filter(c => /[А-Яа-яЁё]{3,}/.test(c.plainText + c.getAttribute('aria-label').replace('Закрытая сфера — откроется в разборе', '') + c.dataset.sphere)).length,
-      title: document.querySelector('.pair-hero h1').plainText, events: Socio.track.log.map(e => e.event)
-    }));
-    check('тизер: карта из 8 сфер, одна открыта бесплатно, имена остальных не попадают в разметку', free.chips === 8 && free.free === 1 && free.leak === 0, JSON.stringify(free));
-    check('экран пары бесплатно: вид отношений, тизер на 5 групп и кнопка с ценой; разбор закрыт', free.offer && /\d[\s\u00a0]₽/.test(free.price) && free.counts === 5 && !free.report && free.title.length > 5 &&
-      free.events.includes('pair_view') && free.events.includes('offer_view') && free.events.includes('partner_test_done'), JSON.stringify(free));
-    await shot('p-pair-offer', '#razbor', 40);
-
-    const fd = await b.eval(async () => {
-      const sleep = ms => new Promise(r => setTimeout(r, ms));
-      // закрытая сфера на карте тоже открывает предложение
-      document.querySelector('.pv-chip.locked').click();
-      await sleep(800);
-      const sheet = document.querySelector('dialog.sheet.offer');
-      const beta = sheet ? /бесплатно/.test(sheet.plainText) && /ничего не спишется/.test(sheet.plainText) : false;
-      const ctaVisible = sheet ? (() => { const r = sheet.querySelector('[data-offer-yes]').getBoundingClientRect(); return r.bottom <= innerHeight && r.top >= 0; })() : false;
-      if (sheet) sheet.querySelector('[data-offer-yes]').click();
-      // шторка уезжает, карта подъезжает под шапку, фишки переворачиваются — ждём отметку «распакован»
-      for (let i = 0; i < 60 && !document.querySelector('[data-report][data-unveiled]'); i++) await sleep(150);
-      await sleep(300);
-      const focusOk = Boolean(document.activeElement && document.activeElement.matches('[data-report-title]'));
-      const visibleNow = (() => { const rp = document.querySelector('[data-report] .rp'); return rp ? getComputedStyle(rp).opacity === '1' : false; })();
-      const ev = Socio.track.log.filter(e => /^(offer_click|report_unlocked)$/.test(e.event)).map(e => e.event + ':' + (e.props.price || ''));
-      const fig = document.querySelector('[data-report] [data-pv]');
-      const chip = fig && fig.querySelector('.pv-chip');
-      if (chip) chip.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));
-      const readout = fig ? fig.querySelector('.pv-readout').plainText : '';
-      const hoverOk = chip ? readout.startsWith(chip.dataset.sphere) && fig.classList.contains('focus') : false;
-      if (fig) fig.dispatchEvent(new PointerEvent('pointerleave', { bubbles: false }));
-      const fromMap = Socio.track.log.some(e => e.event === 'offer_click' && e.props.from === 'map');
-      return { beta, ctaVisible, focusOk, visibleNow, unveil: Boolean(document.querySelector('[data-report][data-unveiled]')), hoverOk, fromMap, ready: Boolean(document.querySelector('[data-report].ready')), labs: document.querySelectorAll('.pv-open .pv-chip').length, zones: document.querySelectorAll('.zone').length,
-        deals: document.querySelectorAll('.deals li').length, qs: document.querySelectorAll('.questions li').length, scripts: document.querySelectorAll('.scripts li').length, ev };
-    });
-    check('fake door: закрытая сфера на карте → честная шторка беты → разбор: карта на 8 сфер, 8 зон, 5 договорённостей, 6 вопросов, 3 фразы', fd.beta && fd.fromMap && fd.ready && fd.labs === 8 && fd.zones === 8 && fd.deals === 5 && fd.qs === 6 && fd.scripts === 3, JSON.stringify(fd));
-    check('после открытия карта «распаковывается» без пустого кадра, фокус — на заголовке разбора, при наведении на сферу — подсказка под картой', fd.unveil && fd.focusOk && fd.visibleNow && fd.hoverOk, JSON.stringify(fd));
-    check('в шторке предложения кнопка «Открыть разбор» видна без прокрутки', fd.ctaVisible, JSON.stringify(fd));
-    check('события пейвола записаны с ценой: offer_click и report_unlocked', fd.ev.some(x => /^offer_click:\d+/.test(x)) && fd.ev.some(x => /^report_unlocked:\d+/.test(x)), JSON.stringify(fd.ev));
-    await shot('p-report-map', '.pv-open', 90);
-    await shot('p-report-zones', '.zone-groups', 70);
-    await shot('p-report-recs', '.deals', 140);
-
-    const rp = await b.eval(async () => {
-      const sleep = ms => new Promise(r => setTimeout(r, ms));
-      document.querySelector('.zone-more-btn').click();
-      await sleep(900);
-      const d = document.querySelector('dialog.sheet');
-      const sheet = d ? { title: d.querySelector('.fn-title').plainText, secs: d.querySelectorAll('.fn-sec').length } : null;
-      if (d) d.querySelector('.sheet-close').click();
-      await sleep(600);
-      document.querySelector('[data-persp="1"]').click();
-      for (let i = 0; i < 30 && !document.querySelector('[data-report].ready'); i++) await sleep(150);
-      await sleep(300);
-      const pressed = (document.querySelector('[data-persp="1"]') || { getAttribute: () => '' }).getAttribute('aria-pressed');
-      const note = Boolean(document.querySelector('.persp-note'));
-      const c = document.createElement('canvas');
-      Socio.share.renderMap(c, Socio.core.modelA.type('iee'), Socio.core.modelA.type('sei'));
-      const png = await new Promise(r => c.toBlob(x => r(x ? x.size : 0), 'image/png'));
-      document.querySelector('[data-persp="0"]').click();
-      await sleep(900);
-      return { sheet, pressed, note, png, w: c.width, h: c.height };
-    });
-    check('шторка сферы: «вместе», у тебя и у партнёра', rp.sheet && rp.sheet.secs >= 3, JSON.stringify(rp));
-    check('переключатель «глазами партнёра» меняет сторону разбора', rp.pressed === 'true' && rp.note, JSON.stringify(rp));
-    check('картинка карты для сторис 1080×1920 рисуется', rp.w === 1080 && rp.h === 1920 && rp.png > 80000, JSON.stringify(rp));
-
-    // ---------- имя партнёра: только на устройстве ----------
-    const nm = await b.eval(async () => {
-      const sleep = ms => new Promise(r => setTimeout(r, ms));
-      window.scrollTo(0, 0);
-      document.querySelector('[data-name]').click();
-      await sleep(900);
-      const f = document.querySelector('[data-name-form]');
-      f.n.value = 'Саша';
-      f.requestSubmit();
-      await sleep(1500);
-      const shown = /Саша/.test(document.querySelector('.pair-hero').plainText);
-      const links = Array.from(document.querySelectorAll('a[href]')).map(a => a.getAttribute('href')).filter(h => /Саша|%D0%A1%D0%B0/i.test(h));
-      const shareTexts = Array.from(document.querySelectorAll('[data-share-pair] a[href]')).map(a => decodeURIComponent(a.getAttribute('href'))).filter(h => /Саша/.test(h));
-      const href = location.href;
-      const forget = document.querySelector('[data-forget]');
-      if (forget) forget.click();
-      await sleep(700);
-      // «Забыть партнёра» необратимо — сначала подтверждение
-      const confirmSheet = document.querySelector('dialog.sheet [data-yes]');
-      if (confirmSheet) confirmSheet.click();
-      await sleep(900);
-      return { shown, href, links, shareTexts, forget: Boolean(forget), partnerAfter: localStorage.getItem('socio.partner') };
-    });
-    check('имя партнёра — в заголовке, но не в адресе, ссылках и шере; «Забыть партнёра» стирает его', nm.shown && !/Саша|%D0%A1%D0%B0/i.test(nm.href) && !nm.links.length && !nm.shareTexts.length && nm.forget && nm.partnerAfter === null, JSON.stringify(nm));
-
-    // ---------- приглашение по ссылке ----------
-    await b.eval(`localStorage.clear(); sessionStorage.clear(); location.hash = '#/i/1-80-85-20-15'`);
-    await b.reload();
-    await b.sleep(1000);
-    await shot('p-invite');
-    const inv = await b.eval(`(async () => {
-      const sleep = ms => new Promise(r => setTimeout(r, ms));
-      const answer = ${answerFn};
-      const code = document.querySelector('.two-them').plainText;
-      document.querySelector('[data-invite-go]').click();
-      await sleep(1000);
-      const e = await answer([4, 3, 1, 0, 2]);
-      const you = Boolean(document.querySelector('.sh-you'));
-      const go = document.querySelector('[data-pair-go]');
-      const href = go ? go.getAttribute('href') : '';
-      if (go) go.click();
-      await sleep(1300);
-      return { e, code, you, href, after: document.body.dataset.view, partner: JSON.parse(localStorage.getItem('socio.partner') || 'null'), ev: Socio.track.log.map(x => x.event) };
-    })()`);
-    check('приглашение: тип того, кто позвал → тест → свой тип и кнопка к паре → экран пары', !inv.e && inv.code === 'ENFP' && inv.you && /^#\/pair\/1-[\d-]+\/1-80-85-20-15$/.test(inv.href) &&
-      inv.after === 'pair' && inv.partner && inv.partner.code === '1-80-85-20-15', JSON.stringify(inv));
-    check('события приглашения: invite_opened и partner_test_done', inv.ev.includes('invite_opened') && inv.ev.includes('partner_test_done'), JSON.stringify(inv.ev));
-
-    // ---------- «мы знаем свои коды» ----------
-    await go('#/pair', 1000);
-    await shot('p-hub');
-    const codes = await b.eval(async () => {
-      const sleep = ms => new Promise(r => setTimeout(r, ms));
-      const f = document.querySelector('[data-codes]');
-      f.querySelector('[data-ca]').value = 'enfp';
-      f.querySelector('[data-cb]').value = 'isfp';
-      f.requestSubmit();
-      await sleep(1000);
-      return { hash: location.hash, view: document.body.dataset.view, h1: document.querySelector('h1').plainText };
-    });
-    check('«Мы знаем свои коды» → экран пары ENFP и ISFP: «Почти дополнение»', codes.hash === '#/pair/enfp/isfp' && codes.view === 'pair' && codes.h1 === 'Почти дополнение', JSON.stringify(codes));
-
-    // ---------- ?unlock=1 и печать ----------
-    await b.goto(BASE + '?unlock=1#/pair/enfp/isfp');
-    await b.sleep(1800);
-    const ul = await b.eval(`({ ready: Boolean(document.querySelector('[data-report].ready')), offer: Boolean(document.querySelector('[data-offer]')) })`);
-    check('?unlock=1 открывает разбор без пейвола', ul.ready && !ul.offer, JSON.stringify(ul));
-    await b.send('Emulation.setEmulatedMedia', { media: 'print' });
-    const pr = await b.eval(`({ nav: getComputedStyle(document.querySelector('.nav')).display, share: getComputedStyle(document.querySelector('[data-share-pair]').closest('section')).display, report: getComputedStyle(document.querySelector('[data-report]')).display })`);
-    await b.send('Emulation.setEmulatedMedia', { media: '' });
-    check('печать: разбор остаётся, меню и шер скрыты', pr.nav === 'none' && pr.share === 'none' && pr.report !== 'none', JSON.stringify(pr));
 
     await go('#/relations', 1000);
 
@@ -442,7 +248,8 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
     await b.eval(`localStorage.setItem('socio.theme', '"light"')`);
 
     // ---------- страницы для глаз ----------
-    await go('#/types/esi', 1200);
+    await b.goto(BASE + '#/types/esi');
+    await b.sleep(1200);
     await shot('d-type-top');
     await shot('d-type-modelA', '.ma', 120);
     await shot('d-type-relations', '.rel-groups', 120);
@@ -457,14 +264,14 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
       await sleep(900);
       const d = document.querySelector('dialog.sheet');
       const own = Socio.content.modelA && Socio.content.modelA.esi && Socio.content.modelA.esi[4];
-      const main = d.querySelector('.fn-main p').plainText;
-      const res = { open: d.open, title: d.querySelector('.fn-title').plainText, own: Boolean(own) && main === own.text, tip: Boolean(d.querySelector('.fn-tip')), rel: d.querySelector('.fn-rel').getAttribute('href') };
+      const main = d.querySelector('.fn-main p').textContent;
+      const res = { open: d.open, title: d.querySelector('.fn-title').textContent, own: Boolean(own) && main === own.text, tip: Boolean(d.querySelector('.fn-tip')), rel: d.querySelector('.fn-rel').getAttribute('href') };
       d.querySelector('.fn-nav [data-fn-go]:last-child').click();
       await sleep(700);
-      res.next = d.querySelector('.fn-title').plainText;
+      res.next = d.querySelector('.fn-title').textContent;
       d.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
       await sleep(700);
-      res.arrow = d.querySelector('.fn-title').plainText;
+      res.arrow = d.querySelector('.fn-title').textContent;
       return res;
     });
     check('шторка модели А: ЭСИ, болевая, свой текст типа и совет', fn.open && fn.title === 'Болевая' && fn.own && fn.tip && fn.rel === '#/relations/esi/ile', JSON.stringify(fn));
@@ -486,7 +293,7 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
       const res = {
         real: cols[0] ? cols[0].querySelectorAll('.celeb .celeb-ava:not(.fic)').length : 0,
         fic: cols[1] ? cols[1].querySelectorAll('.celeb .celeb-ava.fic').length : 0,
-        disc: /не диагноз/.test((box.querySelector('.celeb-disc') || {}).plainText || ''),
+        disc: /не диагноз/.test((box.querySelector('.celeb-disc') || {}).textContent || ''),
         icons: Array.from(box.querySelectorAll('.celeb-ava')).filter(a => a.querySelector('svg.celeb-ic')).length,
         visible: Array.from(box.querySelectorAll('.celeb-ava')).every(a => getComputedStyle(a).opacity === '1')
       };
@@ -495,7 +302,7 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
       const line = document.querySelector('.celeb-line');
       res.mine = Socio.state.myType();
       res.line = line ? line.getAttribute('href') : null;
-      res.lineText = line ? line.querySelector('.celeb-line-txt').plainText.replace(/\s+/g, ' ').trim() : '';
+      res.lineText = line ? line.querySelector('.celeb-line-txt').textContent.replace(/\s+/g, ' ').trim() : '';
       if (line) {
         line.click();
         await sleep(1800);
@@ -520,61 +327,6 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
     await go('#/about', 1200);
     await shot('d-about-aspects', '.aspect-grid', 140);
 
-    // ---------- каждый маршрут с чистой загрузки: нужные тексты подгружаются, вечного скелета нет ----------
-    const cold = [];
-    for (const r of ['#/library', '#/types', '#/types/esi', '#/quadras', '#/relations', '#/relations/ile/lse', '#/box', '#/about', '#/pair/enfp/isfp', '#/i/1-72-64-58-19', '#/r/1-72-64-58-19']) {
-      await b.goto('about:blank');
-      await b.goto(BASE + r);
-      await b.sleep(1600);
-      const v = await b.eval(`document.body.dataset.view`);
-      if (!v || v === 'loading' || v === 'error' || v === 'notfound') cold.push(`${r}: ${v}`);
-    }
-    check('каждый маршрут открывается с чистой загрузки, без вечного скелета', cold.length === 0, cold.join(', '));
-
-    // ---------- типограф, клавиатура, сохранение выбора при перерисовке ----------
-    // Enter нажимает кнопку только вместе с символом: без text Chrome не порождает keypress
-    const key = async (k, code = k, vk = 0) => {
-      await b.send('Input.dispatchKeyEvent', Object.assign({ type: 'keyDown', key: k, code, windowsVirtualKeyCode: vk }, k === 'Enter' ? { text: '\r' } : {}));
-      await b.send('Input.dispatchKeyEvent', { type: 'keyUp', key: k, code, windowsVirtualKeyCode: vk });
-    };
-    await b.goto(BASE + '#/');
-    await b.sleep(900);
-    const typo = await b.eval(`(() => { const lead = document.querySelector('.hero-copy .lead'); return { nb: lead.textContent.includes('4\\u00a0минуты'), svg: !Array.from(document.querySelectorAll('svg text')).some(t => /\\u00a0/.test(t.textContent)) }; })()`);
-    check('типограф: «4 минуты» не рвутся по строкам, SVG не тронут', typo.nb && typo.svg, JSON.stringify(typo));
-    await b.eval(`localStorage.removeItem('socio.test'); location.hash = '#/test'`);
-    await b.sleep(900);
-    await b.eval(`document.querySelector('.q:last-child .dot.d2').focus()`);
-    await key('ArrowRight', 'ArrowRight', 39);
-    await b.sleep(500);
-    const arrows = await b.eval(`({ count: document.querySelector('.q:last-child .q-count').plainText, checked: (document.querySelector('.q:last-child .dot[aria-checked="true"]') || {}).dataset?.v, focus: document.activeElement.dataset.v })`);
-    await key('Enter', 'Enter', 13);
-    await b.sleep(700);
-    const afterEnter = await b.eval(`document.querySelector('.q:last-child .q-count').plainText`);
-    check('тест: стрелка выбирает ответ без перехода, Enter — дальше', arrows.count === 'Вопрос 1 из 20' && arrows.checked === '1' && arrows.focus === '1' && afterEnter === 'Вопрос 2 из 20', JSON.stringify({ arrows, afterEnter }));
-    await b.eval(`location.hash = '#/relations'`);
-    await b.sleep(1200);
-    const mx = await b.eval(`(() => { const stops = document.querySelectorAll('.matrix .mx[tabindex="0"]').length; document.querySelector('.matrix .mx[tabindex="0"]').focus(); return stops; })()`);
-    await key('ArrowRight', 'ArrowRight', 39);
-    await key('ArrowDown', 'ArrowDown', 40);
-    const mxAfter = await b.eval(`({ col: document.activeElement.dataset.col, row: document.activeElement.closest('tr').rowIndex, stops: document.querySelectorAll('.matrix .mx[tabindex="0"]').length })`);
-    check('матрица 16×16: одна остановка Tab, по клеткам — стрелками', mx === 1 && mxAfter.col === '1' && mxAfter.row === 2 && mxAfter.stops === 1, JSON.stringify({ mx, mxAfter }));
-    await b.eval(`location.hash = '#/result'`);
-    await b.sleep(1400);
-    const keep = await b.eval(async () => {
-      const sleep = ms => new Promise(r => setTimeout(r, ms));
-      document.querySelector('[data-fmt="post"]').click();
-      const dt = document.querySelector('.table-view');
-      if (dt) dt.open = true;
-      await sleep(200);
-      document.querySelector('[data-theme-toggle]').click();
-      await sleep(900);
-      const res = { post: (document.querySelector('[data-fmt="post"]') || {}).getAttribute?.('aria-pressed'), table: Boolean(document.querySelector('.table-view') && document.querySelector('.table-view').open) };
-      document.querySelector('[data-theme-toggle]').click();
-      await sleep(900);
-      return res;
-    });
-    check('смена темы не сбрасывает выбранный формат картинки и раскрытую таблицу', keep.post === 'true' && keep.table, JSON.stringify(keep));
-
     // ---------- щадящий режим ----------
     await b.media({ 'prefers-reduced-motion': 'reduce' });
     await b.goto(BASE + '#/');
@@ -586,62 +338,23 @@ const ROUTES = ['#/', '#/pair', '#/duo', '#/i/1-72-64-58-19', '#/test', '#/resul
     // ---------- телефон ----------
     await b.viewport(390, 844, { mobile: true, scale: 2 });
     let overflow = [];
-    await b.goto(BASE + '#/');
-    await b.sleep(600);
-    for (const r of ROUTES.concat(['?unlock=1#/pair/enfp/isfp', '?unlock=1#/pair/esfj/intj'])) {
-      if (r.startsWith('?')) await b.goto(BASE + r); else await go(r, 0);
-      await b.sleep(r.includes('unlock') ? 1600 : 700);
-      const at = await b.eval(`location.hash`);
-      if (at !== r.slice(r.indexOf('#'))) overflow.push(`${r}: не открылся (${at})`);
+    for (const r of ROUTES) {
+      await b.goto(BASE + r);
+      await b.sleep(600);
       const o = await b.eval(`document.documentElement.scrollWidth - innerWidth`);
       if (o > 0) overflow.push(`${r}: +${o}px`);
     }
     check('телефон 390 px: нигде нет горизонтального скролла', overflow.length === 0, overflow.join(', '));
-    // самый узкий телефон: таблицы, модель А и карта пары помещаются, фишки карты не наезжают друг на друга
-    await b.viewport(320, 640, { mobile: true, scale: 2 });
-    const narrow = [];
-    for (const r of ['#/about', '#/result', '#/types/esi', '#/pair/enfp/istp', '?unlock=1#/pair/enfp/isfp', '?unlock=1#/pair/esfj/intj']) {
-      if (r.startsWith('?')) await b.goto(BASE + r); else await go(r, 0);
-      await b.sleep(r.includes('unlock') ? 2400 : 900);
-      const m = await b.eval(`(() => {
-        document.querySelectorAll('details').forEach(d => { d.open = true; });
-        const wide = Array.from(document.querySelectorAll('table, .ma, .pv-stage')).filter(el => el.getBoundingClientRect().right > innerWidth + 0.5).length
-          + Array.from(document.querySelectorAll('.pv-stage')).filter(st => { const S = st.getBoundingClientRect(); return Array.from(st.querySelectorAll('.pv-chip')).some(c => { const r = c.getBoundingClientRect(); return r.left < S.left - 1 || r.right > S.right + 1; }); }).length;
-        const chips = Array.from(document.querySelectorAll('.pv-stage .pv-chip')).map(c => c.getBoundingClientRect());
-        let hits = 0;
-        chips.forEach((a, i) => chips.slice(i + 1).forEach(c => { if (a.left < c.right - 0.5 && c.left < a.right - 0.5 && a.top < c.bottom - 0.5 && c.top < a.bottom - 0.5) hits++; }));
-        return { over: document.documentElement.scrollWidth - innerWidth, wide, hits };
-      })()`);
-      if (m.over > 0 || m.wide || m.hits) narrow.push(`${r}: ${JSON.stringify(m)}`);
-    }
-    check('телефон 320 px: таблицы, модель А и карта помещаются, фишки не наезжают', narrow.length === 0, narrow.join(', '));
-    await b.viewport(390, 844, { mobile: true, scale: 2 });
     await b.goto(BASE + '#/');
     await b.sleep(1400);
     await shot('m-home');
-    await go('#/test', 1200);
+    await b.goto(BASE + '#/test');
+    await b.sleep(1200);
     await shot('m-test');
-    await go('#/result', 1400);
+    await b.goto(BASE + '#/result');
+    await b.sleep(1400);
     await shot('m-result-top');
     await shot('m-result-axes', '.axes', 90);
-    await b.goto(BASE + '?unlock=1#/pair/enfp/isfp');
-    await b.sleep(1800);
-    await shot('m-report-map', '.pv-open', 70);
-    await shot('m-report-zones', '.zone-groups', 60);
-    await b.goto(BASE + '#/pair/enfp/isfp');
-    await b.sleep(1500);
-    await shot('m-pair-top');
-    await shot('m-pair-offer', '#razbor', 30);
-    await go('#/', 1400);
-    await shot('m-home-scenes', '.scene-list', 120);
-
-    // ---------- однофайловая сборка: разбор открывается без подгрузки ----------
-    execSync(`node "${path.join(__dirname, 'bundle.js')}" index.html && rm -rf /tmp/socionik-dist && mkdir -p /tmp/socionik-dist && cp "${path.join(__dirname, '..', 'dist', 'index.html')}" /tmp/socionik-dist/index.html`);
-    await b.viewport(1280, 900);
-    await b.goto('file:///tmp/socionik-dist/index.html?unlock=1#/pair/enfp/isfp');
-    await b.sleep(1800);
-    const bundled = await b.eval(`({ ready: Boolean(document.querySelector('[data-report].ready')), zones: document.querySelectorAll('.zone').length, lazy: Array.from(document.scripts).filter(x => x.src).length })`);
-    check('однофайловая сборка: разбор открывается, внешних скриптов нет', bundled.ready && bundled.zones === 8 && bundled.lazy === 0, JSON.stringify(bundled));
 
     check('ошибок JS за весь прогон нет', b.errors.length === 0, b.errors.slice(0, 5).join(' | '));
   } catch (e) {

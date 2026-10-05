@@ -30,7 +30,7 @@
   art.emblem = (t, { cls = '', theme, label } = {}) =>
     art.svg(emblemNodes(t, theme || S.theme.resolved()), {
       cls: 'emblem ' + cls,
-      label: label === false ? '' : (label || `Эмблема ${t.mbti}: базовая функция — ${S.data.aspects[t.ego[0]].name.toLowerCase()}, творческая — ${S.data.aspects[t.ego[1]].name.toLowerCase()}`)
+      label: label === false ? '' : (label || `Эмблема ${t.code}: базовая функция — ${S.data.aspects[t.ego[0]].name.toLowerCase()}, творческая — ${S.data.aspects[t.ego[1]].name.toLowerCase()}`)
     });
 
   // Живая орбита для крупных эмблем: спутник обходит базовый знак и уходит за него
@@ -62,7 +62,7 @@
   // Эмблема квадры: 4 ценимых аспекта на общей орбите
   art.quadraEmblem = (q, { cls = '', theme } = {}) => {
     const th = theme || S.theme.resolved();
-    const c = S.theme.quadraColor(q.id, th);
+    const c = q.color[th === 'dark' ? 'dark' : 'light'];
     const R = 58;
     const nodes = [
       { t: 'circle', cx: 0, cy: 0, r: 98, fill: { rad: [0, 0, 98], stops: [[0, rgba(c, th === 'dark' ? 0.32 : 0.2)], [1, rgba(c, 0)]] } },

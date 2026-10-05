@@ -1,6 +1,4 @@
-/* Socio-Nik · тест: 20 вопросов по одному, шкала из 5, автопереход, «Назад», клавиатура, сохранение прогресса.
-   Тест вдвоём на одном телефоне: шаг 1 — отвечаешь ты (результат сохраняется как твой), шаг 2 — партнёр
-   (результат хранится отдельно и не затирает твой), после второго теста сразу открывается экран пары. */
+/* Socio-Nik · тест: 20 вопросов по одному, шкала из 5, автопереход, «Назад», клавиатура, сохранение прогресса */
 (function (root) {
   const S = root.Socio;
   const V = S.views = S.views || {};
@@ -16,7 +14,7 @@
   };
 
   function axisGlyph(axis) {
-    const c = S.theme.token('--art-accent');
+    const c = S.theme.resolved() === 'dark' ? '#2997ff' : '#0071e3';
     const pair = AXIS_PAIR[axis];
     if (!pair) {
       return `<svg class="morph" viewBox="-70 -70 140 140" aria-hidden="true">
@@ -29,17 +27,17 @@
   function question(q, i, total, value) {
     return `
       <div class="q" data-q="${q.id}">
-        <div class="q-glyph${value > 0 ? ' is-b' : ''}" data-q-glyph>${axisGlyph(q.axis)}</div>
+        <div class="q-glyph cycling" data-morph-auto>${axisGlyph(q.axis)}</div>
         <p class="q-count">Вопрос ${i + 1} из ${total}</p>
         <h1 class="q-prompt">${esc(q.prompt)}</h1>
         <div class="q-cards">
-          <div class="q-st q-a${value < 0 ? ' lean' : ''}" data-pick="-1"><span class="q-tag">А</span><p>${esc(q.a)}</p></div>
-          <div class="q-st q-b${value > 0 ? ' lean' : ''}" data-pick="1"><span class="q-tag">Б</span><p>${esc(q.b)}</p></div>
+          <div class="q-st q-a${value < 0 ? ' lean' : ''}"><span class="q-tag">А</span><p>${esc(q.a)}</p></div>
+          <div class="q-st q-b${value > 0 ? ' lean' : ''}"><span class="q-tag">Б</span><p>${esc(q.b)}</p></div>
         </div>
-        <div class="q-scale" role="radiogroup" aria-label="Что тебе ближе: А или Б" aria-describedby="q-keys">
+        <div class="q-scale" role="radiogroup" aria-label="Что тебе ближе: А или Б">
           ${VALUES.map(v => `<button type="button" role="radio" class="dot d${v + 2}" data-v="${v}" aria-checked="${value === v}" aria-label="${LABELS[v]}" tabindex="${value === v || (value == null && v === 0) ? 0 : -1}"><span></span></button>`).join('')}
         </div>
-        <div class="q-legend" aria-hidden="true"><span>Точно <i>А</i></span><span>Скорее <i>А</i></span><span>Поровну</span><span>Скорее <i>Б</i></span><span>Точно <i>Б</i></span></div>
+        <div class="q-legend" aria-hidden="true"><span>Точно А</span><span>Поровну</span><span>Точно Б</span></div>
       </div>`;
   }
 
@@ -48,24 +46,19 @@
     render() {
       const qs = S.data.questions, st = load();
       const i = Math.min(st.index, qs.length - 1);
-      const duo = S.core.couple.duo(), friend = S.state.friend;
-      const who = duo ? (duo.step === 2 ? '<p class="duo-chip on">Отвечает партнёр</p>' : '<p class="duo-chip">Отвечаешь ты · потом партнёр</p>')
-        : friend ? `<p class="duo-chip">Потом — ваша пара с ${S.core.modelA.type(S.core.scoring.result(friend).top.id).mbti}</p>`
-        : S.store.get('intent', null) === 'invite' ? '<p class="duo-chip">После теста — ссылка для партнёра</p>' : '';
       return `
         <section class="test">
-          <div class="test-progress" role="progressbar" aria-label="Прогресс теста" aria-valuemin="0" aria-valuemax="${qs.length}" aria-valuenow="${i}" aria-valuetext="Отвечено ${i} из ${qs.length}"><i style="--p:${i / qs.length}"></i></div>
+          <div class="test-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${qs.length}" aria-valuenow="${i}"><i style="--p:${(i / qs.length) * 100}%"></i></div>
           <div class="test-aurora" aria-hidden="true"></div>
           <div class="wrap test-wrap">
             <div class="test-head">
               <button class="ghost-btn" type="button" data-back${i === 0 ? ' disabled' : ''}>‹ Назад</button>
-              ${who}
-              <button class="ghost-btn subtle" type="button" data-restart${i === 0 && !Object.keys(st.answers).length ? ' disabled' : ''}>Начать заново</button>
+              <button class="ghost-btn" type="button" data-restart>Начать заново</button>
             </div>
             <div class="q-stage" aria-live="polite">${question(qs[i], i, qs.length, st.answers[qs[i].id])}</div>
-            <p class="test-hint">Отвечай так, как обычно бывает, а не как «правильно».<span class="kbd-hint" id="q-keys"> Клавиши 1–5 отвечают сразу; стрелки выбирают, Enter — дальше.</span></p>
+            <p class="test-hint">Отвечай так, как обычно бывает, а не как «правильно».<span class="kbd-hint"> Можно нажимать клавиши 1–5.</span></p>
           </div>
-          <div class="counting" hidden><div class="counting-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p>${duo && duo.step === 2 ? 'Считаем тип партнёра…' : 'Считаем твой тип…'}</p></div>
+          <div class="counting" hidden><div class="counting-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p>Считаем твой тип…</p></div>
         </section>`;
     },
     mount(root) {
@@ -73,50 +66,47 @@
       let st = load();
       st.index = Math.min(st.index, qs.length - 1);
       const stage = root.querySelector('.q-stage'), bar = root.querySelector('.test-progress'), back = root.querySelector('[data-back]');
-      const restart = root.querySelector('[data-restart]');
       const timers = [];
-      let locked = false, pendingQ = null, alive = true;
-      // тексты экрана результата грузим в паузе между вопросами, а не после последнего ответа
-      const idle = root.requestIdleCallback || (f => setTimeout(f, 1500));
-      idle(() => { if (alive) S.app.preload('#/result').catch(() => {}); });
+      let locked = false, cycle = 0;
 
       const save = () => S.store.set('test', st);
-      // Знак над вопросом не крутится сам: он склоняется к тому полюсу, на который смотришь или который выбрал
-      const lean = v => { const g = stage.querySelector('.q:last-child [data-q-glyph]'); if (g) g.classList.toggle('is-b', v > 0); };
+      const startCycle = () => {
+        clearInterval(cycle);
+        if (S.dom.reducedMotion()) return;
+        cycle = setInterval(() => { const g = stage.querySelector('[data-morph-auto]'); if (g) g.classList.toggle('is-b'); }, 1800);
+      };
 
       // Смена вопроса по очереди: старый уезжает, и только потом въезжает новый — без наложения двух вопросов.
       // Высоту сцены держим на время смены, чтобы страница не прыгала.
-      // Ответ — самое частое действие (по 20 на каждого): смена вопроса короткая — уход 120 мс, въезд 240 мс;
-      // с клавиатуры — только мягкая смена прозрачности
-      function paint(dir, viaKey = false) {
+      function paint(dir) {
         const i = st.index, q = qs[i];
-        bar.querySelector('i').style.setProperty('--p', i / qs.length);
+        bar.querySelector('i').style.setProperty('--p', (i / qs.length) * 100 + '%');
         bar.setAttribute('aria-valuenow', i);
-        bar.setAttribute('aria-valuetext', `Отвечено ${i} из ${qs.length}`);
         back.disabled = i === 0;
-        restart.disabled = i === 0 && !Object.keys(st.answers).length;
         const old = stage.querySelector('.q');
         const tmp = document.createElement('div');
         tmp.innerHTML = question(q, i, qs.length, st.answers[q.id]);
-        const next = S.dom.typo(tmp.firstElementChild);
+        const next = tmp.firstElementChild;
         const enter = () => {
-          stage.setAttribute('aria-live', document.documentElement.classList.contains('kbd') ? 'off' : 'polite');
           stage.replaceChildren(next);
-          if (!S.dom.reducedMotion()) next.classList.add(viaKey ? 'q-fade-in' : dir > 0 ? 'q-in-r' : 'q-in-l');
+          if (!S.dom.reducedMotion()) next.classList.add(dir > 0 ? 'q-in-r' : 'q-in-l');
           const focus = next.querySelector('.dot[tabindex="0"]');
           if (focus && document.documentElement.classList.contains('kbd')) focus.focus({ preventScroll: true });
           locked = false;
-          timers.push(setTimeout(() => { stage.style.minHeight = ''; }, 300));
+          timers.push(setTimeout(() => { stage.style.minHeight = ''; }, 450));
         };
         if (S.dom.reducedMotion() || !old) { enter(); return; }
         locked = true;
         stage.style.minHeight = stage.offsetHeight + 'px';
-        old.classList.add(viaKey ? 'q-fade-out' : dir > 0 ? 'q-out-l' : 'q-out-r');
-        timers.push(setTimeout(enter, viaKey ? 90 : 120));
+        old.classList.add(dir > 0 ? 'q-out-l' : 'q-out-r');
+        timers.push(setTimeout(enter, 200));
       }
 
-      // Отметить ответ на текущем вопросе: точки шкалы, карточки, знак
-      function mark(v) {
+      function choose(v) {
+        if (locked) return;
+        const q = qs[st.index];
+        st.answers[q.id] = v;
+        save();
         const cur = stage.querySelector('.q:last-child');
         cur.querySelectorAll('.dot').forEach(d => {
           const on = Number(d.dataset.v) === v;
@@ -126,141 +116,63 @@
         });
         cur.querySelector('.q-a').classList.toggle('lean', v < 0);
         cur.querySelector('.q-b').classList.toggle('lean', v > 0);
-        lean(v);
-      }
-
-      function choose(v, viaKey = false) {
-        if (locked) return;
-        const q = qs[st.index];
-        st.answers[q.id] = v;
-        save();
-        mark(v);
         locked = true;
-        pendingQ = q.id;
-        timers.push(setTimeout(() => {
-          locked = false;
-          pendingQ = null;
-          st.index < qs.length - 1 ? go(1, viaKey) : finish();
-        }, S.dom.reducedMotion() ? 240 : viaKey ? 120 : 180));   // в щадящем режиме вопрос меняется без движения — дадим увидеть отмеченный ответ
+        timers.push(setTimeout(() => { locked = false; st.index < qs.length - 1 ? go(1) : finish(); }, S.dom.reducedMotion() ? 60 : 260));
       }
 
-      // Карточка утверждения — тоже ответ: нажатие — «скорее А / Б», второе нажатие, пока вопрос не сменился, — «точно»
-      function pickCard(sign) {
-        const q = qs[st.index];
-        if (locked && pendingQ === q.id && st.answers[q.id] === sign) {
-          st.answers[q.id] = sign * 2;
-          save();
-          mark(sign * 2);
-          return;
-        }
-        choose(sign);
-      }
-
-      function go(dir, viaKey = false) {
+      function go(dir) {
         if (locked) return;
         const n = st.index + dir;
         if (n < 0 || n >= qs.length) return;
         st.index = n;
         save();
-        paint(dir, viaKey);
+        paint(dir);
       }
 
       function finish() {
         const res = S.core.scoring.score(st.answers, qs);
-        const CP = S.core.couple, duo = CP.duo(), mine = S.state.result(), enc = S.core.payload.encode;
-        let next = '#/result';
+        S.state.saveResult(res.axes);
         S.store.del('test');
-        if (duo && duo.step === 2 && mine) {
-          // второй в паре на том же телефоне: результат партнёра — отдельно, свой не трогаем
-          const code = enc(res.axes);
-          CP.setPartner(code, { via: 'duo' });
-          CP.setDuo(null);
-          S.track('partner_test_done', { mode: 'duo' });
-          next = `#/pair/${enc(mine)}/${code}`;
-        } else {
-          S.state.saveResult(res.axes);
-          S.state.justFinished = true;
-          S.track('test_finish', { type: S.core.modelA.type(res.top.id).mbti, close: Boolean(res.close) });
-          if (duo && duo.step === 1) { CP.setDuo(2); next = '#/duo'; S.state.justFinished = false; }
-          else if (S.state.friend) {
-            CP.setPartner(enc(S.state.friend), { via: 'invite' });
-            S.track('partner_test_done', { mode: 'invite' });
-          }
-        }
-        bar.querySelector('i').style.setProperty('--p', 1);
-        bar.setAttribute('aria-valuenow', qs.length);
-        bar.setAttribute('aria-valuetext', `Отвечено ${qs.length} из ${qs.length}`);
-        // Переходим, когда тексты следующего экрана на месте (обычно они уже подгружены за время теста) —
-        // тогда экран подсчёта сменяется результатом без скелета, и переход успевает сыграть.
-        // В щадящем режиме — без экрана подсчёта. Иначе шарики подсчёта получают имя эмблемы:
-        // при переходе они перетекают в эмблему типа (View Transition)
-        const ready = S.app.preload(next).catch(() => {});
-        const leave = () => { if (alive) location.hash = next; };
-        if (S.dom.reducedMotion()) { ready.then(leave); return; }
+        S.state.justFinished = true;
+        bar.querySelector('i').style.setProperty('--p', '100%');
         const ov = root.querySelector('.counting');
         ov.hidden = false;
-        if (next === '#/result') ov.querySelector('.counting-orbs').style.viewTransitionName = 'type-emblem';
-        Promise.all([ready, new Promise(ok => timers.push(setTimeout(ok, 1300)))]).then(leave);
+        timers.push(setTimeout(() => { location.hash = '#/result'; }, S.dom.reducedMotion() ? 50 : 1300));
       }
 
-      const leaving = el => Boolean(el.closest('.q-out-l, .q-out-r, .q-fade-out'));
       const onClick = e => {
         const dot = e.target.closest('.dot');
-        if (dot && stage.contains(dot) && !leaving(dot)) choose(Number(dot.dataset.v));
-        const card = e.target.closest('[data-pick]');
-        if (card && stage.contains(card) && !leaving(card)) pickCard(Number(card.dataset.pick));
+        if (dot && stage.contains(dot) && !dot.closest('.q-out-l, .q-out-r')) choose(Number(dot.dataset.v));
         if (e.target.closest('[data-back]')) go(-1);
-        const rb = e.target.closest('[data-restart]');
-        if (rb) {
-          S.ui.confirm({
-            title: 'Начать тест заново?',
-            text: 'Ответы этого прохождения сотрутся. Результат, сохранённый раньше, останется.',
-            yes: 'Стереть ответы', no: 'Продолжить тест', danger: true, from: rb
-          }).then(ok => {
-            if (!ok) return;
-            st = { answers: {}, index: 0 };
-            save();
-            paint(-1);
-          });
+        if (e.target.closest('[data-restart]')) {
+          st = { answers: {}, index: 0 };
+          save();
+          paint(-1);
         }
       };
-      // наведение: знак показывает полюс, к которому тянется рука; ушли — знак возвращается к выбранному ответу
-      const onOver = e => {
-        const t = e.target.closest && e.target.closest('[data-pick], .dot');
-        if (!t || !stage.contains(t)) return;
-        const v = t.dataset.pick != null ? Number(t.dataset.pick) : Number(t.dataset.v);
-        if (v) lean(v);
-      };
-      const onLeave = () => lean(st.answers[qs[st.index].id] || 0);
       const onKey = e => {
         if (e.target.matches && e.target.matches('input, select, textarea')) return;
-        if (/^[1-5]$/.test(e.key)) { e.preventDefault(); choose(Number(e.key) - 3, true); return; }
+        if (/^[1-5]$/.test(e.key)) { e.preventDefault(); choose(Number(e.key) - 3); return; }
         if (e.key === 'Backspace') { e.preventDefault(); go(-1); return; }
         const dot = e.target.closest && e.target.closest('.dot');
-        if (dot && /^Arrow(Right|Left|Up|Down)$/.test(e.key) && !locked) {
+        if (dot && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
           e.preventDefault();
           const dots = Array.from(dot.parentNode.children);
-          const j = Math.max(0, Math.min(4, dots.indexOf(dot) + (e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1)));
-          const q = qs[st.index], v = Number(dots[j].dataset.v);
-          st.answers[q.id] = v;
-          save();
-          mark(v);
+          const j = Math.max(0, Math.min(4, dots.indexOf(dot) + (e.key === 'ArrowRight' ? 1 : -1)));
+          dots.forEach((d, k) => { d.tabIndex = k === j ? 0 : -1; });
           dots[j].focus();
         }
       };
       root.addEventListener('click', onClick);
-      stage.addEventListener('pointerover', onOver);
-      stage.addEventListener('pointerleave', onLeave);
       document.addEventListener('keydown', onKey);
+      startCycle();
       const first = stage.querySelector('.dot[tabindex="0"]');
       if (first && document.documentElement.classList.contains('kbd')) first.focus({ preventScroll: true });
       return () => {
         root.removeEventListener('click', onClick);
-        stage.removeEventListener('pointerover', onOver);
-        stage.removeEventListener('pointerleave', onLeave);
         document.removeEventListener('keydown', onKey);
         timers.forEach(clearTimeout);
-        alive = false;
+        clearInterval(cycle);
       };
     }
   };

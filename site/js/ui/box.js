@@ -40,7 +40,7 @@
         ${modes ? `
           <div class="seg box-modes" role="group" aria-label="Про какой тип факты">
             <button type="button" data-m="any" aria-pressed="true">Любой тип</button>
-            <button type="button" data-m="mine"${mine ? '' : ' disabled title="Сначала пройди тест"'}>Мой тип${mine ? ' · ' + S.core.modelA.type(mine).mbti : ''}</button>
+            <button type="button" data-m="mine"${mine ? '' : ' disabled title="Сначала пройди тест"'}>Мой тип${mine ? ' · ' + S.core.modelA.type(mine).code : ''}</button>
             <button type="button" data-m="pick">Выбрать тип</button>
           </div>
           <div class="box-pick" hidden>${ui.typeSelect('boxtype', target, 'Тип')}</div>` : ''}
@@ -65,7 +65,7 @@
   // Текст и ссылка факта для шера: ссылка ведёт на страницу типа (или в коробку для общих фактов)
   const factText = f => {
     const t = f.type ? S.core.modelA.type(f.type) : null;
-    return `${t ? t.mbti + ' «' + t.title + '»: ' : ''}${f.text} — факт из mystery box Socio-Nik`;
+    return `${t ? t.code + ' «' + t.alias + '»: ' : ''}${f.text} — факт из mystery box Socio-Nik`;
   };
   const factUrl = f => {
     const base = S.config && S.config.SITE_URL;
@@ -77,14 +77,14 @@
     return `
       <div class="bx-card-in"${t ? ` style="${ui.qStyle(t.quadra)}"` : ''}>
         <header>
-          ${t ? `<span class="bx-em">${S.art.emblem(t, { cls: 'em-mini', label: false })}</span><span class="chip">${t.mbti} · ${esc(t.title)}</span>` : '<span class="chip">Соционика</span>'}
+          ${t ? `<span class="bx-em">${S.art.emblem(t, { cls: 'em-mini', label: false })}</span><span class="chip">${t.code} · ${esc(t.alias)}</span>` : '<span class="chip">Соционика</span>'}
           <span class="bx-cat">${esc(S.factCats[f.cat] || '')}</span>
         </header>
         <p class="bx-text">${esc(f.text)}</p>
         ${reset ? '<p class="bx-reset">Все факты этой колоды уже открыты — перемешали заново.</p>' : ''}
         <footer>
           <button class="btn btn-sm" type="button" data-more>Ещё факт</button>
-          ${t ? `<a class="link" href="#/types/${t.id}">Открыть ${t.mbti}</a>` : ''}
+          ${t ? `<a class="link" href="#/types/${t.id}">Открыть ${t.code}</a>` : ''}
         </footer>
         <div class="bx-share">
           <span class="bx-share-lab">Поделиться</span>
@@ -111,7 +111,7 @@
       busy = true;
       const { fact, reset } = draw(mode() === 'any' ? 'any' : 'type', typeFor());
       current = fact;
-      hint.classList.add('is-gone');
+      hint.hidden = true;
       stage.classList.remove('is-open');
       card.hidden = true;
       btn.classList.remove('shake');
@@ -120,10 +120,13 @@
       later(() => stage.classList.add('is-lid'), 420);
       later(() => {
         card.innerHTML = cardHTML(fact, reset);
-        S.dom.typo(card);
         card.hidden = false;
         stage.classList.add('is-open');
-        // конфетти — только у двух пиков сайта (раскрытие типа и открытие разбора); у коробки свой жест — крышка и переворот карточки
+        const t = fact.type ? S.core.modelA.type(fact.type) : null;
+        const colors = t ? [S.theme.quadraColor(t.quadra), '#ffffff', S.color.tone(S.theme.quadraColor(t.quadra), 0.4)]
+          : S.data.quadras.map(q => S.theme.quadraColor(q.id));
+        const r = stage.getBoundingClientRect();
+        S.fx.confetti(colors, { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height * 0.45) / innerHeight, n: 70 });
         count.innerHTML = counter();
         const more = card.querySelector('[data-more]');
         if (more && document.documentElement.classList.contains('kbd')) more.focus({ preventScroll: true });
@@ -131,16 +134,9 @@
       }, 900);
     }
 
-    // карточка уходит так же, как пришла, только быстрее; потом закрывается крышка
     function close(then) {
-      if (card.hidden) { stage.classList.remove('is-open', 'is-lid'); if (then) then(); return; }
-      card.classList.add('leaving');
-      later(() => {
-        card.hidden = true;
-        card.classList.remove('leaving');
-        stage.classList.remove('is-open', 'is-lid');
-        if (then) later(then, 320);
-      }, 180);
+      stage.classList.remove('is-open', 'is-lid');
+      later(() => { card.hidden = true; if (then) then(); }, 320);
     }
 
     btn.addEventListener('click', open);
@@ -164,9 +160,9 @@
         if (pick) pick.hidden = m !== 'pick';
         if (m === 'pick') box.dataset.type = pick.querySelector('select').value;
         close();
-        hint.classList.remove('is-gone');
+        hint.hidden = false;
       });
-      if (pick) pick.querySelector('select').addEventListener('change', e => { box.dataset.type = e.target.value; close(); hint.classList.remove('is-gone'); });
+      if (pick) pick.querySelector('select').addEventListener('change', e => { box.dataset.type = e.target.value; close(); hint.hidden = false; });
     }
     return () => { timers.forEach(clearTimeout); offSocial(); };
   };

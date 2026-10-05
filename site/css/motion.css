@@ -1,23 +1,18 @@
-/* Socio-Nik · движение. Восторг — в трёх сценах (карта пары, раскрытие типа после теста, открытие разбора),
-   остальное — тихо: короткие переходы, без вечных петель. Анимируем transform / opacity (clip-path — точечно).
-   Щадящий режим (prefers-reduced-motion или выключатель «Движение» → html.motion-off) — не «ноль»: мягкая смена прозрачности. */
+/* Socio-Nik · движение. Анимируем только transform / opacity (filter — точечно); всё гасится prefers-reduced-motion,
+   петли вне экрана ставятся на паузу (.is-off). */
 
-/* ---------- появление при прокрутке: только визуалы, 12 px за 0,5 с; очередь — не длиннее четырёх шагов ---------- */
-.js .reveal { opacity: 0; translate: 0 12px; transition: opacity 0.5s var(--out), translate 0.5s var(--out); transition-delay: calc(min(var(--i, 0), 4) * 60ms); }
+/* ---------- появление при прокрутке (translate, чтобы не спорить с transform у наклона) ---------- */
+.js .reveal { opacity: 0; translate: 0 26px; transition: opacity 0.9s var(--ease), translate 1.1s var(--out); transition-delay: calc(var(--i, 0) * 70ms); }
 .js .reveal.in { opacity: 1; translate: none; }
 
 /* ---------- переходы между экранами и смена темы ---------- */
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.24s; animation-timing-function: var(--out); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.38s; animation-timing-function: var(--ease); }
 ::view-transition-old(root) { animation-name: vt-out; }
 ::view-transition-new(root) { animation-name: vt-in; }
 @keyframes vt-out { to { opacity: 0; } }
 @keyframes vt-in { from { opacity: 0; transform: translateY(12px); } }
 .vt-theme::view-transition-old(root) { animation: none; }
-.vt-theme::view-transition-new(root) { animation: vt-circle 0.45s cubic-bezier(0.65, 0, 0.35, 1); }
-/* щадящий режим: экран меняется мягкой сменой прозрачности, без сдвига и без круга */
-.vt-gentle::view-transition-old(root) { animation: vt-out 0.15s ease both; }
-.vt-gentle::view-transition-new(root) { animation: vt-fade 0.15s ease both; }
-@keyframes vt-fade { from { opacity: 0; } }
+.vt-theme::view-transition-new(root) { animation: vt-circle 0.75s var(--ease); }
 @keyframes vt-circle { from { clip-path: circle(0 at var(--vt-x) var(--vt-y)); } to { clip-path: circle(150vmax at var(--vt-x) var(--vt-y)); } }
 
 /* ---------- общие ---------- */
@@ -31,14 +26,34 @@
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes wobble { 0%, 100% { transform: rotate(-6deg) translateY(0); } 50% { transform: rotate(8deg) translateY(-10px); } }
 
+/* ---------- hero ---------- */
+.aurora .b1 { animation: drift-a 24s var(--ease) infinite alternate; }
+.aurora .b2 { animation: drift-b 28s var(--ease) infinite alternate; }
+.aurora .b3 { animation: drift-c 26s var(--ease) infinite alternate; }
+.aurora .b4 { animation: drift-d 30s var(--ease) infinite alternate; }
+@keyframes drift-a { to { transform: translate(14%, 10%) scale(1.12); } }
+@keyframes drift-b { to { transform: translate(-12%, 14%) scale(0.9); } }
+@keyframes drift-c { to { transform: translate(-10%, -12%) scale(1.14); } }
+@keyframes drift-d { to { transform: translate(12%, -8%) scale(0.92); } }
+.hg-in { animation: assemble 1.5s var(--spring) both; animation-delay: calc(0.12s + var(--i) * 0.08s); }
+.hg-float { animation: float 7s ease-in-out infinite; animation-delay: calc(var(--i) * -0.9s); }
+@keyframes assemble { from { opacity: 0; transform: translate(var(--sx), var(--sy)) rotate(var(--sr)) scale(0.35); } to { opacity: 1; transform: none; } }
+.scroll-cue i { animation: cue 2s ease-in-out infinite; }
+@keyframes cue { 0% { opacity: 0; transform: translateY(0); } 30% { opacity: 1; } 80%, 100% { opacity: 0; transform: translateY(12px); } }
+
 /* ---------- эмблемы ---------- */
-/* Плитки, карточки и квадры стоят спокойно: вечное покачивание шестнадцати эмблем отвлекало и грело телефон.
-   Живёт одна большая эмблема на экране (.em-live: орбита на rAF и лёгкое покачивание) */
 .emblem .em-base, .emblem .em-creative, .emblem .em-shadow { transform-box: fill-box; transform-origin: center; }
-.em-live .em-base { animation: bob 6s ease-in-out infinite; }
-.em-live .em-shadow { animation: shadow-breath 6s ease-in-out infinite; }
-.qe-item { transform-box: fill-box; transform-origin: center; }
-.lost { animation: wobble 1.4s ease-in-out 1; }
+.em-float .em-base, .em-live .em-base { animation: bob 6s ease-in-out infinite; }
+.em-float .em-creative { animation: bob 6s ease-in-out infinite; animation-delay: -3s; }
+.em-float .em-shadow, .em-live .em-shadow { animation: shadow-breath 6s ease-in-out infinite; }
+.tile:nth-child(2) .em-base { animation-delay: -1.5s; }
+.tile:nth-child(3) .em-base { animation-delay: -3s; }
+.tile:nth-child(4) .em-base { animation-delay: -4.5s; }
+.qe-spin { transform-origin: 0 0; animation: spin 48s linear infinite; }
+.qe-item { transform-box: fill-box; transform-origin: center; animation: spin 48s linear infinite reverse; }
+.res-glow { animation: breathe 9s ease-in-out infinite; }
+.lost { animation: wobble 4.5s ease-in-out infinite; }
+.bx-glow { animation: spin 18s linear infinite; }
 
 /* ---------- калькулятор ---------- */
 .calc-out.pop .calc-scene { animation: pop-in 0.6s var(--out) both; }
@@ -46,29 +61,31 @@
 
 /* ---------- тест ---------- */
 /* Вопросы меняются по очереди (см. views/test.js): короткий уход, затем въезд; без размытия — оно мутнит текст */
-/* Ответ — самое частое действие: уход 120 мс, въезд 240 мс, без отскока. С клавиатуры — только прозрачность */
-.q-out-l { animation: q-out-l 0.12s cubic-bezier(0.4, 0, 1, 1) forwards; pointer-events: none; }
-.q-out-r { animation: q-out-r 0.12s cubic-bezier(0.4, 0, 1, 1) forwards; pointer-events: none; }
-.q-in-r { animation: q-in-r 0.24s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.q-in-l { animation: q-in-l 0.24s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.q-fade-out { animation: q-fade-out 0.09s linear forwards; pointer-events: none; }
-.q-fade-in { animation: q-fade-in 0.14s ease-out both; }
-@keyframes q-out-l { to { opacity: 0; transform: translateX(-12px); } }
-@keyframes q-out-r { to { opacity: 0; transform: translateX(12px); } }
-@keyframes q-in-r { from { opacity: 0; transform: translateX(16px); } }
-@keyframes q-in-l { from { opacity: 0; transform: translateX(-16px); } }
-@keyframes q-fade-out { to { opacity: 0; } }
-@keyframes q-fade-in { from { opacity: 0; } }
-.dot.pop { animation: dot-pop 0.16s var(--out); }
-.dot.pop span { animation: ring 0.5s var(--out); }
-@keyframes dot-pop { from { transform: scale(0.94); } }
-@keyframes ring { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--btn) 45%, transparent); } to { box-shadow: 0 0 0 12px transparent; } }
+.q-out-l { animation: q-out-l 0.2s var(--ease) forwards; pointer-events: none; }
+.q-out-r { animation: q-out-r 0.2s var(--ease) forwards; pointer-events: none; }
+.q-in-r { animation: q-in-r 0.45s var(--out) both; }
+.q-in-l { animation: q-in-l 0.45s var(--out) both; }
+@keyframes q-out-l { to { opacity: 0; transform: translateX(-36px); } }
+@keyframes q-out-r { to { opacity: 0; transform: translateX(36px); } }
+@keyframes q-in-r { from { opacity: 0; transform: translateX(44px); } }
+@keyframes q-in-l { from { opacity: 0; transform: translateX(-44px); } }
+.dot.pop { animation: dot-pop 0.45s var(--spring); }
+.dot.pop span { animation: ring 0.7s var(--out); }
+@keyframes dot-pop { 40% { transform: scale(1.2); } }
+@keyframes ring { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--btn) 55%, transparent); } to { box-shadow: 0 0 0 18px transparent; } }
 .counting { animation: fade-in 0.3s both; }
 .counting-orbs { animation: spin 1.6s linear infinite; }
 .counting-orbs i { animation: gather 1.3s var(--ease) infinite alternate; }
 @keyframes gather { from { transform: translate(var(--tx), var(--ty)) scale(1); } to { transform: translate(calc(var(--tx) * 0.25), calc(var(--ty) * 0.25)) scale(0.7); } }
 
 /* ---------- mystery box ---------- */
+.bx-cube { animation: bx-idle 6s ease-in-out infinite; }
+@keyframes bx-idle {
+  0%, 82%, 100% { transform: rotateX(-24deg) rotateY(-36deg); }
+  86% { transform: rotateX(-24deg) rotateY(-44deg) rotateZ(-3deg); }
+  90% { transform: rotateX(-24deg) rotateY(-28deg) rotateZ(3deg); }
+  94% { transform: rotateX(-24deg) rotateY(-38deg); }
+}
 .bx.shake { animation: bx-shake 0.42s ease-in-out; }
 @keyframes bx-shake {
   20% { transform: translateX(-8px) rotate(-5deg); }
@@ -78,9 +95,6 @@
 }
 .is-open .bx-cube { animation-play-state: paused; }
 .bx-card:not([hidden]) .bx-card-in { animation: card-in 0.85s var(--spring) both; }
-/* карточка факта уходит так же, как пришла, только быстрее: 180 мс вверх и в прозрачность */
-.bx-card.leaving .bx-card-in { animation: card-out 0.18s cubic-bezier(0.4, 0, 1, 1) both; }
-@keyframes card-out { to { opacity: 0; transform: translateY(-10px) scale(0.97); } }
 @keyframes card-in {
   0% { opacity: 0; transform: translateY(90px) scale(0.25) rotateY(-150deg); }
   55% { opacity: 1; }
@@ -88,10 +102,7 @@
 }
 
 /* ---------- сцены отношений (сдвиги — в единицах знака, масштаб 0.56) ---------- */
-/* История играется один раз, когда сцена попадает на экран; повтор — по наведению или нажатию (fx.scenes) */
 .scene .sf, .scene .sx { transform-box: fill-box; transform-origin: center; }
-.scene * { animation-iteration-count: 1 !important; }
-.scene { cursor: pointer; }
 
 .sc-dual .sa { animation: dual-a 4.2s var(--ease) infinite; }
 .sc-dual .sb { animation: dual-b 4.2s var(--ease) infinite; }
@@ -176,50 +187,28 @@
 @keyframes clash-b { 0%, 100% { transform: translateX(0); } 34% { transform: translateX(-58px); } 46% { transform: translateX(16px) rotate(8deg); } 70% { transform: translateX(0); } }
 @keyframes hit { 0%, 30%, 55%, 100% { opacity: 0; transform: scale(0.5); } 36% { opacity: 1; transform: scale(1.25); } }
 
-/* ---------- сцена-загадка на чужом результате: тоже один раз ---------- */
-.sc-mystery .sa { animation: bob 4s ease-in-out 1; }
-.sc-mystery .sb { animation: mystery 2.8s ease-in-out 1; }
-.sc-mystery .sc-q { transform-box: fill-box; transform-origin: center; }
+/* ---------- страница результата по ссылке ---------- */
+.sh-badge i { animation: sh-ping 2.2s var(--out) infinite; }
+@keyframes sh-ping { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--q) 55%, transparent); } to { box-shadow: 0 0 0 12px transparent; } }
+.sc-mystery .sa { animation: bob 4s ease-in-out infinite; }
+.sc-mystery .sb { animation: mystery 2.8s ease-in-out infinite; }
+.sc-mystery .sc-q { transform-box: fill-box; transform-origin: center; animation: q-pulse 2.8s ease-in-out infinite; }
+.sc-mystery .sx-arc { animation: arc-flow 1.6s linear infinite; }
 @keyframes mystery { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.09); } }
-
-/* ---------- раскрытие типа после теста — вторая сцена-подпись ---------- */
-/* шарики подсчёта перетекают в эмблему (View Transition), буквы кода встают по одной, потом считаются проценты */
-.just-finished .res-code span { animation: letter-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(0.28s + var(--k, 0) * 90ms); }
-@keyframes letter-up { from { opacity: 0; transform: translateY(0.32em); } }
-.just-finished .res-name, .just-finished .res-pct, .just-finished .res-pct-lab, .just-finished .res-cta { animation: fade-in 0.4s ease both; animation-delay: 0.72s; }
-.res-emblem.is-landing { view-transition-name: type-emblem; }
-::view-transition-group(type-emblem) { animation-duration: 0.6s; animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
-
-/* ---------- цель ссылки с якорем: карточка один раз отмечается кольцом и гаснет ---------- */
-.card.is-target { animation: target-ring 1.8s ease-out 0.25s 1 both; }
-@keyframes target-ring { 0%, 35% { box-shadow: 0 0 0 3px var(--focus); } 100% { box-shadow: 0 0 0 3px transparent; } }
-
-/* ---------- раскрывашки: содержимое не выпрыгивает, а проявляется ---------- */
-details[open] > :not(summary) { animation: details-in 0.24s cubic-bezier(0.22, 1, 0.36, 1); }
-@keyframes details-in { from { opacity: 0; transform: translateY(-4px); } }
+@keyframes q-pulse { 0%, 100% { opacity: 0.5; transform: scale(0.92); } 50% { opacity: 1; transform: scale(1.08); } }
+@keyframes arc-flow { to { stroke-dashoffset: -18; } }
 
 /* ---------- пауза вне экрана и щадящий режим ---------- */
 .is-off, .is-off * { animation-play-state: paused !important; }
 
-/* Щадящий режим — системная настройка или выключатель «Движение» в шапке. Всё сразу в итоговом состоянии,
-   петель нет; смена вопроса и шторка — короткой сменой прозрачности, чтобы было видно, что экран поменялся */
-html.motion-off *, html.motion-off *::before, html.motion-off *::after {
-  animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important;
-  transition-duration: 0.01ms !important; scroll-behavior: auto !important;
-}
-html.motion-off.js .reveal { opacity: 1; translate: none; }
-html.motion-off .q-in-r, html.motion-off .q-in-l, html.motion-off .q-fade-in { animation: q-fade-in 0.15s ease-out both !important; }
-html.motion-off .sheet .sheet-scrim, html.motion-off .sheet .sheet-panel { transition: opacity 0.15s ease !important; }
-html.motion-off .sheet .sheet-panel { opacity: 0; transform: none; }
-html.motion-off .sheet.in .sheet-panel { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important;
-    transition-duration: 0.01ms !important; scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
   .js .reveal { opacity: 1; translate: none; }
-  .q-in-r, .q-in-l, .q-fade-in { animation: q-fade-in 0.15s ease-out both !important; }
-  .sheet .sheet-scrim, .sheet .sheet-panel { transition: opacity 0.15s ease !important; }
-  .sheet .sheet-panel { opacity: 0; transform: none; }
-  .sheet.in .sheet-panel { opacity: 1; }
+  .hg { transform: none !important; }
 }

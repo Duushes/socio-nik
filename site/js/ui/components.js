@@ -22,11 +22,12 @@
     S.art.emblem(t, { cls: (live ? 'em-live ' : 'em-float ') + cls, label });
 
   ui.tile = (t, i = 0) => `
-    <a class="tile" href="#/types/${t.id}" style="${ui.qStyle(t.quadra)};--i:${i % 4}">
+    <a class="tile tilt reveal" href="#/types/${t.id}" style="${ui.qStyle(t.quadra)};--i:${i % 4}">
       <span class="tile-art">${ui.emblem(t, { label: false })}</span>
-      <span class="tile-code">${t.mbti}</span>
-      <span class="tile-alias">${esc(t.title)}</span>
-      <span class="tile-role">${t.code} · ${esc(t.alias)}</span>
+      <span class="tile-code">${t.code}</span>
+      <span class="tile-alias">${esc(t.alias)}</span>
+      <span class="tile-role">${esc(t.role)}</span>
+      <span class="glare" aria-hidden="true"></span>
     </a>`;
 
   ui.typesGrid = () => `
@@ -44,12 +45,12 @@
     <label class="pick"><span class="pick-lab">${esc(label)}</span>
       <span class="pick-box"><select name="${name}" data-${name}>
         ${S.data.quadras.map(q => `<optgroup label="${q.name}">${typesOf(q.id).map(t =>
-          `<option value="${t.id}"${t.id === selected ? ' selected' : ''}>${t.mbti}, ${esc(t.title)}</option>`).join('')}</optgroup>`).join('')}
+          `<option value="${t.id}"${t.id === selected ? ' selected' : ''}>${t.code} — ${esc(t.alias)}</option>`).join('')}</optgroup>`).join('')}
       </select></span>
     </label>`;
 
   ui.toneName = tone => S.data.tones[tone];
-  ui.toneChip = tone => `<span class="tone tone-${tone}">${ui.toneName(tone)}</span>`;
+  ui.toneChip = tone => `<span class="tone tone-${tone}"><i aria-hidden="true"></i>${ui.toneName(tone)}</span>`;
 
   // Полное название вида; для заказа и ревизии с парой — кто кому заказчик / ревизор
   const TITLES = {
@@ -62,10 +63,10 @@
   ui.kindTitle = kind => TITLES[kind];
   ui.relTitle = (r, a, b) => {
     if (a && b) {
-      if (r.id === 'benefactor') return `Социальный заказ: ${b.mbti} — заказчик для ${a.mbti}`;
-      if (r.id === 'beneficiary') return `Социальный заказ: ${a.mbti} — заказчик для ${b.mbti}`;
-      if (r.id === 'supervisor') return `Ревизия: ${b.mbti} — ревизор для ${a.mbti}`;
-      if (r.id === 'supervisee') return `Ревизия: ${a.mbti} — ревизор для ${b.mbti}`;
+      if (r.id === 'benefactor') return `Социальный заказ: ${b.code} — заказчик для ${a.code}`;
+      if (r.id === 'beneficiary') return `Социальный заказ: ${a.code} — заказчик для ${b.code}`;
+      if (r.id === 'supervisor') return `Ревизия: ${b.code} — ревизор для ${a.code}`;
+      if (r.id === 'supervisee') return `Ревизия: ${a.code} — ревизор для ${b.code}`;
     }
     return TITLES[r.kind];
   };
@@ -73,40 +74,37 @@
   // Сцена пары: слева всегда тот, от кого идёт действие (ревизор, заказчик)
   ui.pairScene = (a, b, { cls = '', labels } = {}) => {
     const r = M().relation(a, b);
-    let left = a, right = b, lab = labels || [a.mbti, b.mbti];
+    let left = a, right = b, lab = labels || [a.code, b.code];
     if (r.id === 'benefactor' || r.id === 'supervisor') { left = b; right = a; lab = [lab[1], lab[0]]; }
-    return S.art.scene(r.kind, left, right, { cls, labels: lab, label: `${a.mbti} и ${b.mbti}: ${ui.relTitle(r, a, b)}` });
+    return S.art.scene(r.kind, left, right, { cls, labels: lab, label: `${a.code} и ${b.code}: ${ui.relTitle(r, a, b)}` });
   };
 
   // ---------- калькулятор совместимости ----------
-  ui.calcOut = (aId, bId, level = 3) => {
+  ui.calcOut = (aId, bId) => {
     const a = M().type(aId), b = M().type(bId), r = M().relation(a, b), txt = relText(r.kind);
     const role = txt.roles && txt.roles[r.id];
-    const human = (S.content.pair && S.content.pair.titles && S.content.pair.titles[r.id]) || '';
     return `
       <div class="calc-scene" data-anim>${ui.pairScene(a, b)}</div>
       <div class="calc-text">
-        <p class="calc-kicker">${a.mbti} и ${b.mbti}</p>
-        <h${level} class="calc-title">${esc(human || ui.relTitle(r, a, b))}</h${level}>
-        <p class="calc-term">${esc(ui.relTitle(r, a, b))} в соционике</p>
+        <p class="calc-kicker">${a.code} и ${b.code}</p>
+        <h3 class="calc-title">${esc(ui.relTitle(r, a, b))}</h3>
         ${ui.toneChip(r.tone)}
         <p class="calc-line">${esc(txt.line || '')}</p>
         ${role ? `<p class="calc-role">${esc(role)}</p>` : ''}
-        <a class="link" href="#/pair/${a.mbti.toLowerCase()}/${b.mbti.toLowerCase()}">Открыть экран пары</a>
+        <a class="link" href="#/relations/${a.id}/${b.id}">Подробнее об этой паре</a>
       </div>`;
   };
 
-  // level — уровень заголовка результата: 3 под заголовком секции, 2 — сразу под заголовком страницы
-  ui.calc = (aId, bId, { level = 3 } = {}) => `
-    <div class="calc" data-calc data-level="${level}">
+  ui.calc = (aId, bId) => `
+    <div class="calc" data-calc>
       <div class="calc-pick">
         ${ui.typeSelect('a', aId, 'Ты')}
         <button class="swap" type="button" data-swap aria-label="Поменять местами">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        ${ui.typeSelect('b', bId, 'Партнёр или друг')}
+        ${ui.typeSelect('b', bId, 'Друг или подруга')}
       </div>
-      <div class="calc-out" aria-live="polite">${ui.calcOut(aId, bId, level)}</div>
+      <div class="calc-out" aria-live="polite">${ui.calcOut(aId, bId)}</div>
     </div>`;
 
   ui.mountCalc = scope => {
@@ -115,8 +113,7 @@
     const a = el.querySelector('[data-a]'), b = el.querySelector('[data-b]'), out = el.querySelector('.calc-out');
     const update = () => {
       out.classList.remove('pop');
-      out.innerHTML = ui.calcOut(a.value, b.value, Number(el.dataset.level) || 3);
-      S.dom.typo(out);
+      out.innerHTML = ui.calcOut(a.value, b.value);
       void out.offsetWidth;
       out.classList.add('pop');
     };
@@ -134,9 +131,9 @@
       <div class="rel-group reveal">
         <h3>${ui.toneChip(tone)}</h3>
         <ul>${rows.filter(x => x.r.tone === tone).map(({ b, r }) => `
-          <li><a href="#/pair/${t.mbti.toLowerCase()}/${b.mbti.toLowerCase()}" style="${ui.qStyle(b.quadra)}">
+          <li><a href="#/relations/${t.id}/${b.id}" style="${ui.qStyle(b.quadra)}">
             <span class="mini-em">${S.art.emblem(b, { cls: 'em-mini', label: false })}</span>
-            <span class="rl-code">${b.mbti}</span>
+            <span class="rl-code">${b.code}</span>
             <span class="rl-name">${esc(r.role ? `${r.name} · ${r.role}` : r.name)}</span>
           </a></li>`).join('')}</ul>
       </div>`).join('')}</div>`;
@@ -145,9 +142,9 @@
   // ---------- графики результата ----------
   const AXES = [
     ['EI', 'Экстраверсия', 'Интроверсия'],
-    ['NS', 'Интуиция', 'Ощущения'],
-    ['TF', 'Логика', 'Чувства'],
-    ['RP', 'План', 'Импровизация']
+    ['NS', 'Интуиция', 'Сенсорика'],
+    ['TF', 'Логика', 'Этика'],
+    ['RP', 'Рациональность', 'Иррациональность']
   ];
   ui.AXES = AXES;
 
@@ -156,7 +153,7 @@
     return `<div class="axis reveal" style="--i:${i}">
       <div class="axis-labs"><span class="${first ? 'on' : ''}">${a} <b>${v} %</b></span><span class="${first ? '' : 'on'}"><b>${100 - v} %</b> ${b}</span></div>
       <div class="axis-track" role="img" aria-label="${a} ${v} %, ${b.toLowerCase()} ${100 - v} %">
-        <i class="seg ${first ? 'on' : ''}" style="width:max(0px, calc(${v}% - 1px))"></i><i class="seg ${first ? '' : 'on'}" style="width:max(0px, calc(${100 - v}% - 1px))"></i>
+        <i class="seg ${first ? 'on' : ''}" data-w="${v}"></i><i class="seg ${first ? '' : 'on'}" data-w="${100 - v}"></i>
       </div>
     </div>`;
   }).join('')}</div>`;
@@ -171,9 +168,9 @@
           <div class="dist-head"><span><i class="qdot" aria-hidden="true"></i>${q.name}</span><b>${res.quadras[q.id]} %</b></div>
           ${typesOf(q.id).map(t => {
             const v = byId[t.id].pct;
-            return `<a class="dist-row${t.id === res.top.id ? ' top' : ''}" href="#/types/${t.id}" data-tip="${v} %|${t.mbti} «${esc(t.title)}» · ${t.code}" aria-label="${t.mbti}: ${v} %">
-              <span class="dist-code">${t.mbti}</span>
-              <span class="dist-track"><i class="dist-bar" style="width:${v}%"></i></span>
+            return `<a class="dist-row${t.id === res.top.id ? ' top' : ''}" href="#/types/${t.id}" data-tip="${v} %|${t.code} «${esc(t.alias)}» · ${esc(t.role)}" aria-label="${t.code}: ${v} %">
+              <span class="dist-code">${t.code}</span>
+              <span class="dist-track"><i class="dist-bar" data-w="${v}"></i></span>
               <span class="dist-val">${v} %</span>
             </a>`;
           }).join('')}
@@ -182,7 +179,7 @@
       <details class="table-view">
         <summary>Показать таблицей</summary>
         <table><thead><tr><th>Тип</th><th>Квадра</th><th>Вероятность</th></tr></thead><tbody>
-          ${res.dist.map(r => { const t = M().type(r.id); return `<tr><td>${t.mbti} «${esc(t.title)}» · ${t.code}</td><td>${quadra(t.quadra).name}</td><td>${r.pct} %</td></tr>`; }).join('')}
+          ${res.dist.map(r => { const t = M().type(r.id); return `<tr><td>${t.code} «${esc(t.alias)}»</td><td>${quadra(t.quadra).name}</td><td>${r.pct} %</td></tr>`; }).join('')}
         </tbody></table>
       </details>`;
   };
@@ -199,7 +196,7 @@
     const ic = S.art.celebIcon ? S.art.celebIcon(c.icon) : '';
     return `<span class="celeb-ava${c.kind === 'fiction' ? ' fic' : ''}${ic ? ' has-ic' : ''}${cls}" aria-hidden="true">${ic || esc(initials(c.name))}</span>`;
   };
-  const INFO = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.75"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><circle cx="10" cy="6.2" r="1.1" fill="currentColor"/></svg>';
+  const INFO = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="10" cy="6.2" r="1.1" fill="currentColor"/></svg>';
 
   ui.celebs = t => {
     const list = celebsOf(t.id);
@@ -214,10 +211,10 @@
       </div>`;
     return `
       <div class="wrap celebs" id="celebs" style="${ui.qStyle(t.quadra)}">
-        <h2 class="title-sm">Похожий тип у знаменитостей</h2>
-        <p class="sub">Кого из известных людей и героев книг и фильмов в соционике часто относят к ${t.code}, то есть к ${t.mbti}. В MBTI-сообществе знаменитостей типируют по-своему, и код там бывает другим.</p>
+        <h2 class="title-sm reveal">Похожий тип у знаменитостей</h2>
+        <p class="sub reveal">Кого из известных людей и героев книг и фильмов часто относят к ${t.code}.</p>
         <div class="grid2 celeb-grid">${col('real', 'Люди', 0)}${col('fiction', 'Персонажи', 1)}</div>
-        <p class="celeb-disc">${INFO}<span>Так их типируют в соционике — по публичному образу, а не по тесту. Это не диагноз: сами знаменитости тест не проходили, а разные школы иногда называют для них другой тип.</span></p>
+        <p class="celeb-disc reveal">${INFO}<span>Это популярные типировки по публичному образу, а не диагноз: сами знаменитости тест не проходили, а разные школы соционики иногда называют для них другой тип.</span></p>
       </div>`;
   };
 
@@ -227,7 +224,7 @@
     if (!list.length) return '';
     const real = list.filter(c => c.kind === 'real'), fic = list.filter(c => c.kind === 'fiction');
     const pick = [real[0], real[1], fic[0]].filter(Boolean);
-    return `<a class="celeb-line" href="#/types/${t.id}#celebs" style="${ui.qStyle(t.quadra)}">
+    return `<a class="celeb-line reveal" href="#/types/${t.id}#celebs" style="${ui.qStyle(t.quadra)}">
       <span class="celeb-stack" aria-hidden="true">${pick.map(c => ava(c, ' sm')).join('')}</span>
       <span class="celeb-line-txt"><span class="celeb-line-k">Похожий тип — у знаменитостей</span> <b>${pick.map(c => esc(c.name)).join(', ')}</b> и ещё ${list.length - pick.length}</span>
       <span class="celeb-go" aria-hidden="true">›</span>
@@ -238,7 +235,7 @@
   ui.mountTips = scope => {
     const tip = document.createElement('div');
     tip.className = 'tip';
-    tip.setAttribute('aria-hidden', 'true');   // то же самое уже есть в aria-label строки или клетки
+    tip.setAttribute('role', 'tooltip');
     document.body.appendChild(tip);
     const showTip = (el, x, y) => {
       const [val, lab] = el.dataset.tip.split('|');
@@ -266,12 +263,10 @@
       const el = e.target.closest && e.target.closest('[data-tip]');
       if (el && (!e.relatedTarget || !el.contains(e.relatedTarget))) tip.classList.remove('on');
     };
-    const esc = e => { if (e.key === 'Escape') tip.classList.remove('on'); };
     scope.addEventListener('pointermove', over);
     scope.addEventListener('focusin', over);
     scope.addEventListener('pointerout', out);
     scope.addEventListener('focusout', out);
-    document.addEventListener('keydown', esc);
-    return () => { tip.remove(); document.removeEventListener('keydown', esc); };
+    return () => tip.remove();
   };
 })(window);

@@ -7,7 +7,7 @@
   const { esc, reducedMotion } = S.dom;
   const M = () => S.core.modelA;
 
-  const CLOSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>';
+  const CLOSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 
   // render() → HTML тела; вернёт { body, swap(html, dir), close() }
   ui.openSheet = ({ label, render, from, onKey }) => {
@@ -23,108 +23,66 @@
     document.body.appendChild(dlg);
     const panel = dlg.querySelector('.sheet-panel'), body = dlg.querySelector('.sheet-body');
     body.innerHTML = render();
-    S.dom.typo(body);
     dlg.showModal();
     // фокус — на саму панель (без рамки): иначе браузер ставит его на крестик и рисует кольцо
     panel.focus({ preventScroll: true });
     document.documentElement.classList.add('sheet-open');
     requestAnimationFrame(() => requestAnimationFrame(() => dlg.classList.add('in')));
 
-    // close() возвращает обещание: оно выполнится, когда шторка уехала и фокус вернулся на кнопку, которая её открыла
-    let closing = null;
+    let closed = false;
     const close = () => {
-      if (closing) return closing;
+      if (closed) return;
+      closed = true;
       dlg.classList.remove('in');
       dlg.classList.add('out');
-      closing = new Promise(resolve => setTimeout(() => {
+      setTimeout(() => {
         dlg.close();
         dlg.remove();
         document.documentElement.classList.remove('sheet-open');
         if (from && document.body.contains(from)) from.focus({ preventScroll: true });
-        resolve();
-      }, reducedMotion() ? 150 : 340));
-      return closing;
+      }, reducedMotion() ? 0 : 340);
     };
     dlg.addEventListener('cancel', e => { e.preventDefault(); close(); });
     dlg.addEventListener('click', e => { if (e.target.closest('[data-close]')) close(); });
     if (onKey) dlg.addEventListener('keydown', onKey);
 
-    // свайп вниз за ручку или шапку — закрыть. Решает скорость, а не только расстояние: быстрый короткий
-    // жест тоже закрывает, и шторка докатывается с той же скоростью. Вверх — с сопротивлением
-    let startY = null, dy = 0, lastY = 0, lastT = 0, v = 0;
+    // свайп вниз за ручку или шапку — закрыть
+    let startY = null, dy = 0;
     panel.addEventListener('pointerdown', e => {
       if (!e.target.closest('.sheet-grab, .sheet-drag') || panel.scrollTop > 0 || innerWidth > 734) return;
-      startY = lastY = e.clientY;
-      lastT = performance.now();
+      startY = e.clientY;
       dy = 0;
-      v = 0;
       dlg.classList.add('dragging');
       panel.setPointerCapture(e.pointerId);
     });
     panel.addEventListener('pointermove', e => {
       if (startY == null) return;
-      const now = performance.now(), raw = e.clientY - startY;
-      dy = raw < 0 ? raw * 0.2 : raw;
-      v = (e.clientY - lastY) / Math.max(1, now - lastT);
-      lastY = e.clientY;
-      lastT = now;
+      dy = Math.max(0, e.clientY - startY);
       panel.style.setProperty('--drag', dy + 'px');
     });
     const end = () => {
       if (startY == null) return;
       startY = null;
       dlg.classList.remove('dragging');
-      if (dy > 110 || (v > 0.4 && dy > 12)) {
-        const rest = Math.max(0, panel.offsetHeight - dy), dur = Math.round(Math.min(320, Math.max(180, rest / Math.max(v, 0.5))));
-        panel.style.transition = `transform ${dur}ms cubic-bezier(0.32, 0.72, 0, 1)`;
-        close();
-      } else panel.style.setProperty('--drag', '0px');
+      if (dy > 110) close(); else panel.style.setProperty('--drag', '0px');
     };
     panel.addEventListener('pointerup', end);
     panel.addEventListener('pointercancel', end);
 
-    // смена содержимого по очереди: старое гаснет, новое въезжает — без наложения, даже при быстрых нажатиях.
-    // Фокус не теряется: если он был на кнопке листания, встаёт на ту же по счёту кнопку в новом содержимом.
-    // С клавиатуры (instant) — без анимации: стрелки должны отвечать сразу
-    let t1 = 0, t2 = 0;
-    const swap = (html, dir = 1, instant = false) => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      body.classList.remove('sw-out-l', 'sw-out-r', 'sw-in-r', 'sw-in-l');
-      const act = document.activeElement;
-      const navBtns = () => Array.from(body.querySelectorAll('[data-fn-go]'));
-      const at = act && body.contains(act) ? navBtns().indexOf(act) : -2;
-      const put = () => {
-        body.innerHTML = html;
-        S.dom.typo(body);
-        if (at === -2) return;
-        const target = at >= 0 ? navBtns()[at] : null;
-        (target || panel).focus({ preventScroll: true });
-      };
-      if (instant || reducedMotion()) { put(); panel.scrollTop = 0; return; }
+    // смена содержимого по очереди: старое гаснет, новое въезжает — без наложения
+    const swap = (html, dir = 1) => {
+      if (reducedMotion()) { body.innerHTML = html; return; }
       body.classList.add(dir > 0 ? 'sw-out-l' : 'sw-out-r');
-      t1 = setTimeout(() => {
+      setTimeout(() => {
         body.classList.remove('sw-out-l', 'sw-out-r');
-        put();
+        body.innerHTML = html;
         panel.scrollTop = 0;
         body.classList.add(dir > 0 ? 'sw-in-r' : 'sw-in-l');
-        t2 = setTimeout(() => body.classList.remove('sw-in-r', 'sw-in-l'), 380);
+        setTimeout(() => body.classList.remove('sw-in-r', 'sw-in-l'), 380);
       }, 160);
     };
     return { dlg, body, swap, close };
   };
-
-  // Подтверждение необратимого действия: шторка с названием действия на кнопке. Вернёт true, если подтвердили
-  ui.confirm = ({ title, text = '', yes, no = 'Отмена', danger = false, from }) => new Promise(resolve => {
-    let ok = false;
-    const sheet = ui.openSheet({ label: title, from, render: () => `<div class="confirm-sheet">
-      <h2 class="title-sm">${esc(title)}</h2>
-      ${text ? `<p class="sub">${esc(text)}</p>` : ''}
-      <div class="offer-actions"><button class="btn${danger ? ' btn-danger' : ''}" type="button" data-yes>${esc(yes)}</button><button class="ghost-btn" type="button" data-close>${esc(no)}</button></div>
-    </div>` });
-    sheet.dlg.addEventListener('click', e => { if (e.target.closest('[data-yes]')) { ok = true; sheet.close(); } });
-    sheet.dlg.addEventListener('close', () => resolve(ok));
-  });
 
   // ---------- шторка функции модели А ----------
   const BLOCKS = { 1: 'Эго', 2: 'Эго', 3: 'Суперэго', 4: 'Суперэго', 5: 'Суперид', 6: 'Суперид', 7: 'Ид', 8: 'Ид' };
@@ -151,13 +109,13 @@
         <header class="fn-head sheet-drag">
           <div class="fn-art"><span class="fn-float">${S.art.glyphSVG(id, S.theme.quadraColor(t.quadra), 'fn-svg')}</span></div>
           <div class="fn-titles">
-            <p class="fn-kicker">${t.mbti} · ${BLOCKS[n]} · функция ${n} из 8</p>
+            <p class="fn-kicker">${t.code} · ${BLOCKS[n]} · функция ${n} из 8</p>
             <h2 class="fn-title">${F[n - 1].name}</h2>
             <p class="fn-aspect">${S.art.symbol(id)}<b>${a.short}</b> ${esc(a.name)}</p>
           </div>
         </header>
         <section class="fn-sec fn-main">
-          <h3>Как это у ${t.mbti}</h3>
+          <h3>Как это у ${t.code}</h3>
           <p>${esc(own ? own.text : C.positions[n] + ' ' + C.aspectsLong[id])}</p>
           ${own ? `<p class="fn-tip"><b>Совет.</b> ${esc(own.tip)}</p>` : ''}
         </section>
@@ -165,9 +123,9 @@
         <section class="fn-sec"><h3>Что это за аспект</h3><p>${esc(C.aspectsLong[id])}</p></section>
         <a class="fn-rel" href="#/relations/${t.id}/${rt.id}" style="--rq:var(--q-${rt.quadra})">
           <span class="fn-rel-em">${S.art.emblem(rt, { cls: 'em-mini', label: false })}</span>
-          <span>${esc(relText(`${rt.mbti} «${rt.title}»`))}</span>
+          <span>${esc(relText(`${rt.code} «${rt.alias}»`))}</span>
         </a>
-        <nav class="fn-nav" aria-label="Другие функции ${t.mbti}">
+        <nav class="fn-nav" aria-label="Другие функции ${t.code}">
           <button type="button" data-fn-go="${prev}" aria-label="Предыдущая: ${F[prev - 1].name}">‹ ${F[prev - 1].name}</button>
           <span class="fn-dots" aria-hidden="true">${[1, 2, 3, 4, 5, 6, 7, 8].map(k => `<i class="${k === n ? 'on' : ''}"></i>`).join('')}</span>
           <button type="button" data-fn-go="${next}" aria-label="Следующая: ${F[next - 1].name}">${F[next - 1].name} ›</button>
@@ -178,18 +136,18 @@
   ui.openFunction = (t, n, from) => {
     let cur = n;
     const sheet = ui.openSheet({
-      label: `${t.mbti}: ${S.data.functions[n - 1].name.toLowerCase()} функция`,
+      label: `${t.code}: ${S.data.functions[n - 1].name.toLowerCase()} функция`,
       from,
       render: () => fnHTML(t, cur),
       onKey: e => {
-        if (e.key === 'ArrowRight') go(cur === 8 ? 1 : cur + 1, 1, true);
-        if (e.key === 'ArrowLeft') go(cur === 1 ? 8 : cur - 1, -1, true);
+        if (e.key === 'ArrowRight') go(cur === 8 ? 1 : cur + 1, 1);
+        if (e.key === 'ArrowLeft') go(cur === 1 ? 8 : cur - 1, -1);
       }
     });
-    function go(k, dir, instant = false) {
+    function go(k, dir) {
       cur = k;
-      sheet.dlg.setAttribute('aria-label', `${t.mbti}: ${S.data.functions[k - 1].name.toLowerCase()} функция`);
-      sheet.swap(fnHTML(t, k), dir, instant);
+      sheet.dlg.setAttribute('aria-label', `${t.code}: ${S.data.functions[k - 1].name.toLowerCase()} функция`);
+      sheet.swap(fnHTML(t, k), dir);
     }
     sheet.dlg.addEventListener('click', e => {
       const b = e.target.closest('[data-fn-go]');

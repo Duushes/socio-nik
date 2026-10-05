@@ -1,138 +1,152 @@
-/* Socio-Nik · главная — посадочная для пар.
-   Первый экран: слева обещание и две кнопки, справа живая карта пары-примера (она и есть «движение-рассказ»:
-   круги встречаются, фишки разлетаются к тому, кто ведёт сферу). Дальше: узнаваемые ситуации, что будет
-   (шаги и «бесплатно / в разборе»), почему не таблица совместимости, первый шаг и библиотека на втором плане.
-   Надзаголовков, нумерации и декоративных знаков нет: смысл несут заголовки и сама карта. */
+/* Socio-Nik · главная: hero → четыре пары признаков → 16 типов → квадры → калькулятор → mystery box → призыв */
 (function (root) {
   const S = root.Socio;
   const V = S.views = S.views || {};
   const ui = S.ui;
   const { esc } = S.dom;
-  const M = () => S.core.modelA;
-  const P = () => (S.content && S.content.pair) || {};
-  const enc = axes => S.core.payload.encode(axes);
 
-  // Узнаваемые ситуации: разница типов в быту, без «кто прав»
-  const SCENES = [
-    'Ты бронируешь отпуск в феврале, партнёр — за два дня до вылета.',
-    'Один хочет обсудить ссору сразу, второй — остыть до утра.',
-    'Ты считаешь бюджет до рубля, а партнёр считает, что деньги нужны для радости.'
+  // 8 парящих знаков героя: аспект, квадра-цвет, место (%), глубина параллакса, размер, откуда «прилетает»
+  const HERO = [
+    { a: 'Ne', q: 'alpha', x: 10, y: 22, d: 1.2, s: 1.0, sx: -260, sy: -160, sr: -50 },
+    { a: 'Fe', q: 'beta', x: 86, y: 18, d: 1.0, s: 0.92, sx: 280, sy: -200, sr: 50 },
+    { a: 'Ti', q: 'beta', x: 13, y: 72, d: 0.9, s: 0.86, sx: -280, sy: 200, sr: -30 },
+    { a: 'Si', q: 'alpha', x: 88, y: 68, d: 0.8, s: 0.82, sx: 240, sy: 160, sr: 30 },
+    { a: 'Se', q: 'gamma', x: 27, y: 90, d: 0.6, s: 0.62, sx: -120, sy: 260, sr: 20 },
+    { a: 'Ni', q: 'gamma', x: 72, y: 91, d: 0.7, s: 0.66, sx: 140, sy: 280, sr: -24 },
+    { a: 'Te', q: 'delta', x: 4, y: 47, d: 0.5, s: 0.56, sx: -320, sy: 0, sr: 60 },
+    { a: 'Fi', q: 'delta', x: 96, y: 43, d: 0.55, s: 0.6, sx: 320, sy: -40, sr: -60 }
   ];
 
-  const STEPS = [
-    ['Пройти тест', '20 вопросов, около 4 минут. Узнаешь свой тип из шестнадцати, с кодом MBTI.'],
-    ['Позвать партнёра', 'По ссылке у себя или на твоём телефоне, по очереди. Ответы не смешаются.'],
-    ['Увидеть вашу пару', 'Вид отношений, как вы устроены и один совет. Сразу и бесплатно.']
-  ];
-  const FREE = ['Ваши типы и вид отношений', 'Как вы устроены и один совет', 'Одна сфера на карте пары', 'Картинка пары для сторис'];
-  const PAID = ['Все 8 сфер: кто что ведёт', 'Пять договорённостей на неделю', 'Как мириться: три фразы', 'Ритуал и вопросы на вечер'];
+  const accent = () => (S.theme.resolved() === 'dark' ? '#2997ff' : '#0071e3');
 
-  const DEMO = ['iee', 'sei'];   // ENFP и ISFP: «почти дополнение» — на карте видны три группы зон
+  function morphArt(kind) {
+    const c = accent();
+    const g = (id, cls) => `<g class="${cls}">${S.art.toSVG(S.art.glyphOf(id, c))}</g>`;
+    if (kind === 'RP') {
+      return `<svg class="morph" viewBox="-70 -70 140 140" aria-hidden="true">
+        <g class="m-a"><path d="M-56 42 H-28 V14 H0 V-14 H28 V-42 H56" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g>
+        <g class="m-b"><path d="M-58 0 C-44 -46 -26 -46 -14 0 S16 46 30 0 S52 -40 58 -18" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round"/></g>
+      </svg>`;
+    }
+    const pair = { EI: ['Te', 'Ti'], NS: ['Ne', 'Se'], TF: ['Te', 'Fe'] }[kind];
+    return `<svg class="morph" viewBox="-70 -70 140 140" aria-hidden="true">${g(pair[0], 'm-a')}${g(pair[1], 'm-b')}</svg>`;
+  }
+
+  const DICH = [
+    { k: 'EI', title: 'Экстраверсия или интроверсия', text: 'Куда направлено внимание: на внешний мир и действия — или на отношения и внутренние состояния.', a: 'Плотный знак', b: 'Стеклянный знак' },
+    { k: 'NS', title: 'Интуиция или сенсорика', text: 'Что замечаешь первым: возможности и смыслы — или то, что можно увидеть и потрогать.', a: 'Пирамида', b: 'Шар' },
+    { k: 'TF', title: 'Логика или этика', text: 'На что опираешься в решениях: на факты и системы — или на чувства и отношения людей.', a: 'Куб', b: 'Уголок' },
+    { k: 'RP', title: 'Рациональность или иррациональность', text: 'Как устроена жизнь: по плану и с решениями заранее — или по ситуации, с подстройкой на ходу.', a: 'Ступени', b: 'Волна' }
+  ];
 
   V.home = {
-    title: () => 'Совместимость пары по 16 типам личности',
+    title: () => 'Соционический тип за 4 минуты',
     render() {
-      const mine = S.state.result(), me = mine ? M().type(S.state.myType()) : null;
-      const p = S.core.couple.partner();
-      const saved = mine && p ? `#/pair/${enc(mine)}/${p.code}` : '';
-      const pt = p ? S.core.couple.side(p.code) : null;
-      const [da, db] = DEMO.map(id => M().type(id));
-      const dr = M().relation(da, db), title = (P().titles || {})[dr.id] || '';
-      const demoHref = `#/pair/${da.mbti.toLowerCase()}/${db.mbti.toLowerCase()}`;
-      // «Позвать по ссылке» без своего результата ведёт в тест: ссылку для партнёра дадим сразу после него
-      const invite = mine ? '<a class="btn btn-lg btn-ghost" href="#/pair#invite">Позвать по ссылке</a>'
-                          : '<a class="btn btn-lg btn-ghost" href="#/test" data-intent="invite">Позвать по ссылке</a>';
+      const mine = S.state.myType();
+      const me = mine ? S.core.modelA.type(mine) : null;
+      const a = mine || 'ile';
+      const b = S.core.modelA.partner(S.core.modelA.type(a), 'dual').id;
       return `
-      <section class="hero-split">
-        <div class="wrap-wide hero-grid">
-          <div class="hero-copy">
-            <h1 class="display">Как устроена ваша пара.</h1>
-            <p class="lead">Каждый проходит тест за 4 минуты. Совместимость покажем сразу и бесплатно.</p>
-            <div class="cta">
-              <a class="btn btn-lg" href="#/duo">Пройти вдвоём</a>
-              ${invite}
-            </div>
-          </div>
-          <div class="hero-map" data-demo-href="${demoHref}">
-            ${ui.pairVenn(da, db, { mode: 'demo', label: `Пример карты пары ${da.mbti} и ${db.mbti}: у кого какая сфера жизни` })}
-            <p class="hero-map-cap"><a class="link" href="${demoHref}">Пример: ${da.mbti} и ${db.mbti}, ${esc(title.toLowerCase())}</a></p>
-          </div>
+      <section class="hero" data-parallax data-anim>
+        <div class="aurora" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div>
+        <div class="hero-glyphs" aria-hidden="true">
+          ${HERO.map((g, i) => `<span class="hg" style="--x:${g.x}%;--y:${g.y}%;--d:${g.d};--s:${g.s};--i:${i};--sx:${g.sx}px;--sy:${g.sy}px;--sr:${g.sr}deg">
+            <span class="hg-in"><span class="hg-float">${S.art.glyphSVG(g.a, S.theme.quadraColor(g.q), 'hg-svg')}</span></span></span>`).join('')}
         </div>
+        <div class="wrap hero-copy">
+          <p class="eyebrow reveal">Socio-Nik</p>
+          <h1 class="display reveal" style="--i:1">Узнай свой<br><span class="grad">соционический тип.</span></h1>
+          <p class="lead reveal" style="--i:2">20 вопросов и около 4 минут. Узнаешь свой тип, квадру и то, как складываются отношения с остальными пятнадцатью типами.</p>
+          <div class="cta reveal" style="--i:3">
+            <a class="btn btn-lg" href="#/test">Пройти тест</a>
+            <a class="link" href="#/about">Что такое соционика</a>
+          </div>
+          ${me ? `<a class="mine reveal" style="--i:4;${ui.qStyle(me.quadra)}" href="#/result"><i class="qdot" aria-hidden="true"></i>Твой тип — ${me.code} «${esc(me.alias)}»</a>` : ''}
+        </div>
+        <div class="scroll-cue" aria-hidden="true"><i></i></div>
       </section>
-      <div class="hero-after">
-        <div class="wrap-wide hero-after-in">
-          <a class="link" href="#/pair#codes">Мы знаем свои коды</a>
-          ${saved && pt ? `<a class="mine" href="${saved}">Ваша пара: ${me.mbti} и ${pt.type.mbti} ›</a>`
-                        : me ? `<a class="mine" href="#/result">Твой тип: ${me.mbti}, ${esc(me.title)} ›</a>` : ''}
-        </div>
-      </div>
 
       <section class="sec sec-alt">
         <div class="wrap">
-          <div class="measure">
-            <h2 class="title">Спорите об одном и том же?</h2>
-            <ul class="scene-list">${SCENES.map(s => `<li>${esc(s)}</li>`).join('')}</ul>
-            <p class="lead">Просто у вас разные типы, и у каждой пары своя карта: где один легко делает то, что второму трудно.</p>
+          <p class="eyebrow reveal">Как это устроено</p>
+          <h2 class="title reveal">Четыре пары.<br>Шестнадцать типов.</h2>
+          <p class="lead reveal">Соционика описывает, какую информацию ты замечаешь первой и как с ней обходишься. Тип складывается из четырёх пар признаков — у каждой свой знак.</p>
+          <div class="dich-grid">
+            ${DICH.map((d, i) => `
+              <article class="card dich reveal" style="--i:${i}" data-morph>
+                <div class="dich-art">${morphArt(d.k)}</div>
+                <h3>${d.title}</h3>
+                <p>${d.text}</p>
+                <div class="dich-poles"><span class="pa">${d.a}</span><span class="pb">${d.b}</span></div>
+              </article>`).join('')}
           </div>
         </div>
       </section>
 
       <section class="sec">
-        <div class="wrap">
-          <h2 class="title">Три шага, около десяти минут.</h2>
-          <div class="plan">
-            <ol class="plan-steps">${STEPS.map(([h, t]) => `<li><h3>${h}</h3><p>${esc(t)}</p></li>`).join('')}</ol>
-            <div class="plan-tiers">
-              <div class="tier reveal"><h3>Бесплатно</h3><ul class="tick-list">${FREE.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
-              <div class="tier tier-paid reveal" style="--i:1"><h3>В разборе</h3><ul class="tick-list">${PAID.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
-            </div>
+        <div class="wrap-wide">
+          <div class="wrap-inner">
+            <p class="eyebrow reveal">16 типов</p>
+            <h2 class="title reveal">Шестнадцать типов.<br>Четыре квадры.</h2>
+            <p class="lead reveal">У каждого типа своя эмблема: крупный знак — базовая функция, маленький на орбите — творческая. Цвет — квадра, то есть компания типов с общими ценностями.</p>
           </div>
+          ${ui.typesGrid()}
+          <p class="more reveal"><a class="link" href="#/types">Все типы подробно</a></p>
+        </div>
+      </section>
+
+      <section class="sec sec-alt">
+        <div class="wrap-wide">
+          <div class="wrap-inner">
+            <p class="eyebrow reveal">Квадры</p>
+            <h2 class="title reveal">Четыре компании<br>с общими ценностями.</h2>
+          </div>
+          <div class="qgrid">
+            ${S.data.quadras.map((q, i) => {
+              const c = (S.content.quadras || {})[q.id] || {};
+              return `<a class="qcard tilt reveal" style="${ui.qStyle(q.id)};--i:${i}" href="#/quadras#${q.id}">
+                <span class="qcard-art" data-anim>${S.art.quadraEmblem(q)}</span>
+                <span class="qcard-name">${q.name}</span>
+                <span class="qcard-motto">${esc(c.motto || '')}</span>
+                <span class="qcard-types">${ui.typesOf(q.id).map(t => t.code).join(' · ')}</span>
+                <span class="glare" aria-hidden="true"></span>
+              </a>`;
+            }).join('')}
+          </div>
+          <p class="more reveal"><a class="link" href="#/quadras">Подробнее о квадрах</a></p>
+        </div>
+      </section>
+
+      <section class="sec">
+        <div class="wrap">
+          <p class="eyebrow reveal">Отношения</p>
+          <h2 class="title reveal">Почему с одними легко,<br>а с другими — нет.</h2>
+          <p class="lead reveal">Выбери свой тип и тип близкого человека — посмотрим, как устроены ваши отношения.</p>
+          <div class="reveal">${ui.calc(a, b)}</div>
+          <p class="more reveal"><a class="link" href="#/relations">Все 14 видов отношений</a></p>
         </div>
       </section>
 
       <section class="sec sec-alt">
         <div class="wrap">
-          <div class="measure">
-            <h2 class="title-sm">Таблицы говорят «64 %» и молчат, что делать.</h2>
-            <p class="body">Таблица совместимости MBTI сравнивает буквы, гороскоп — звёзды. Мы считаем по двум настоящим прохождениям теста и по теории отношений соционики: в ней 14 видов отношений, а не одна цифра. А дальше даём конкретные шаги для вашей пары.</p>
-            <ul class="tick-list trust">
-              <li>Без регистрации</li><li>Ответы остаются на телефоне</li><li>Имён нет в ссылках</li>
-            </ul>
-            <p class="gap-sm"><a class="link" href="#/about">Насколько это научно</a></p>
-          </div>
+          <p class="eyebrow reveal">Mystery box</p>
+          <h2 class="title reveal">Открой коробку.</h2>
+          <p class="lead reveal">Внутри — случайный факт об одном из 16 типов или о соционике. Факты не повторяются, пока колода не кончится.</p>
+          <div class="reveal">${ui.box()}</div>
         </div>
       </section>
 
       <section class="sec final">
         <div class="wrap center">
-          <h2 class="title">Меньше одинаковых ссор. Больше «а, вот почему».</h2>
-          <p class="lead">Начните вдвоём на одном телефоне или позовите партнёра ссылкой.</p>
-          <div class="cta center">
-            <a class="btn btn-lg" href="#/duo">Пройти вдвоём</a>
-            ${invite}
-          </div>
-          <p><a class="link" href="#/test">Узнать свой тип</a></p>
-        </div>
-      </section>
-
-      <section class="sec sec-alt lib-teaser">
-        <div class="wrap">
-          <h2 class="title-sm">Шестнадцать типов, четыре квадры и все виды отношений.</h2>
-          <p class="sub">Для тех, кто хочет глубже: описания типов, модель А, отношения со всеми типами и mystery box со случайными фактами.</p>
-          <p class="links-row"><a class="link" href="#/types">16 типов</a><a class="link" href="#/quadras">Квадры</a><a class="link" href="#/relations">Отношения</a><a class="link" href="#/box">Mystery box</a><a class="link" href="#/about">О методике</a></p>
+          <h2 class="title reveal">Узнаем твой тип?</h2>
+          <p class="lead reveal">20 вопросов, никаких регистраций. Ответы остаются только на этом устройстве.</p>
+          <p class="reveal"><a class="btn btn-lg" href="#/test">Пройти тест</a></p>
         </div>
       </section>`;
     },
     mount(root) {
-      const offVenn = ui.mountVenn(root);
-      // карта-пример: нажатие ведёт в пример пары (с клавиатуры — ссылка под картой)
-      const onClick = e => {
-        const map = e.target.closest('[data-demo-href]');
-        if (map && !e.target.closest('a')) location.hash = map.dataset.demoHref;
-        if (e.target.closest('[data-intent="invite"]')) S.store.set('intent', 'invite');
-      };
-      root.addEventListener('click', onClick);
-      return () => { offVenn(); root.removeEventListener('click', onClick); };
+      const offs = [ui.mountCalc(root), ui.mountBox(root)];
+      return () => offs.forEach(f => f && f());
     }
   };
 })(window);

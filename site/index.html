@@ -3,20 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Совместимость пары по 16 типам личности · Socio-Nik</title>
-<meta name="description" content="Тест на 16 типов личности для двоих: по 4 минуты каждому, и сразу видно, где вы дополняете друг друга, а где нужна бережность.">
-<link rel="canonical" href="https://duushes.github.io/socio-nik/">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<title>Socio-Nik — соционический тип за 4 минуты</title>
+<meta name="description" content="Тест из 20 вопросов покажет твой соционический тип в процентах. Описания 16 типов, квадры, отношения между типами и mystery box со случайными фактами.">
+<meta name="theme-color" content="#ffffff">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Socio-Nik">
-<meta property="og:title" content="Как устроена ваша пара · Socio-Nik">
-<meta property="og:description" content="Тест на 16 типов личности для двоих. Совместимость сразу и бесплатно: где вы дополняете друг друга, а где нужна бережность.">
+<meta property="og:title" content="Socio-Nik — узнай свой соционический тип">
+<meta property="og:description" content="20 вопросов и около 4 минут: тип в процентах, квадра, отношения с остальными 15 типами и mystery box с фактами.">
 <meta property="og:url" content="https://duushes.github.io/socio-nik/">
 <meta property="og:image" content="https://duushes.github.io/socio-nik/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Карта пары: два круга, у кого какая сфера жизни, и заголовок «Как устроена ваша пара»">
 <meta property="og:locale" content="ru_RU">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://duushes.github.io/socio-nik/og.jpg">
@@ -33,16 +30,11 @@
       document.documentElement.setAttribute('data-theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     }
     document.documentElement.classList.add('js');
-    // выключатель «Движение»: сохранённый выбор применяем до первой отрисовки
-    try { if (JSON.parse(localStorage.getItem('socio.motion') || '"on"') === 'off') document.documentElement.classList.add('motion-off'); } catch (e) { /* без хранилища — движение включено */ }
-    // каркас первого экрана в <main> — только для главной; по глубокой ссылке его не показываем
-    if (location.hash && location.hash !== '#' && location.hash !== '#/') document.documentElement.classList.add('deep');
   })();
 </script>
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
-<link rel="stylesheet" href="css/pair.css">
 <link rel="stylesheet" href="css/motion.css">
 </head>
 <body>
@@ -54,94 +46,80 @@
       <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="4" fill="var(--q-alpha)"/><circle cx="16" cy="8" r="4" fill="var(--q-beta)"/><circle cx="8" cy="16" r="4" fill="var(--q-delta)"/><circle cx="16" cy="16" r="4" fill="var(--q-gamma)"/></svg>
       <span>Socio-Nik</span>
     </a>
-    <nav class="nav-links" id="nav-links" aria-label="Разделы сайта">
-      <a href="#/pair" data-nav="pair">Совместимость</a>
+    <nav class="nav-links" aria-label="Разделы">
       <a href="#/test" data-nav="test">Тест</a>
-      <a href="#/library" data-nav="library">Библиотека</a>
-      <a href="#/about" data-nav="about">О методике</a>
+      <a href="#/types" data-nav="types">Типы</a>
+      <a href="#/quadras" data-nav="quadras">Квадры</a>
+      <a href="#/relations" data-nav="relations">Отношения</a>
+      <a href="#/box" data-nav="box">Mystery box</a>
+      <a href="#/about" data-nav="about">О соционике</a>
     </nav>
     <div class="nav-tools">
-      <button class="icon-btn" type="button" data-motion-toggle aria-pressed="false" aria-label="Остановить анимацию" title="Остановить анимацию">
-        <svg class="i-motion" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12c2.2-4.6 4.4-4.6 6.6 0s4.4 4.6 6.6 0 2.4-3.4 3.8-2.4" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
-        <svg class="i-still" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M9 8.5v7M15 8.5v7" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
-      </button>
       <button class="icon-btn" type="button" data-theme-toggle aria-label="Сменить тему">
-        <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.75"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
-        <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.2A8 8 0 1 1 9.8 4a6.4 6.4 0 0 0 10.2 10.2z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.2A8 8 0 1 1 9.8 4a6.4 6.4 0 0 0 10.2 10.2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
       </button>
-      <button class="icon-btn menu-btn" type="button" data-menu aria-label="Меню" aria-expanded="false" aria-controls="nav-links">
+      <button class="icon-btn menu-btn" type="button" data-menu aria-label="Меню" aria-expanded="false">
         <span class="burger" aria-hidden="true"><i></i><i></i></span>
       </button>
     </div>
   </div>
 </header>
 
-<main id="app" tabindex="-1">
-  <!-- Каркас первого экрана главной: виден сразу, пока грузятся скрипты; приложение заменит его тем же экраном -->
-  <section class="hero-split" data-shell>
-    <div class="wrap-wide hero-grid">
-      <div class="hero-copy">
-        <h1 class="display">Как устроена ваша пара.</h1>
-        <p class="lead">Каждый проходит тест за 4 минуты. Совместимость покажем сразу и бесплатно.</p>
-        <div class="cta"><a class="btn btn-lg" href="#/duo">Пройти вдвоём</a><a class="btn btn-lg btn-ghost" href="#/test">Позвать по ссылке</a></div>
-      </div>
-      <div class="hero-map" aria-hidden="true"><div class="shell-map"></div></div>
-    </div>
-  </section>
-</main>
+<main id="app" tabindex="-1"></main>
 
 <footer class="footer">
   <div class="wrap">
     <div class="footer-top">
       <a class="brand" href="#/"><svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="4" fill="var(--q-alpha)"/><circle cx="16" cy="8" r="4" fill="var(--q-beta)"/><circle cx="8" cy="16" r="4" fill="var(--q-delta)"/><circle cx="16" cy="16" r="4" fill="var(--q-gamma)"/></svg><span>Socio-Nik</span></a>
-      <nav class="footer-links" aria-label="Разделы сайта, подвал">
-        <a href="#/pair">Совместимость</a><a href="#/test">Тест</a><a href="#/library">Библиотека</a><a href="#/types">16 типов</a><a href="#/quadras">Квадры</a><a href="#/relations">Отношения</a><a href="#/box">Mystery box</a><a href="#/about">О методике</a>
+      <nav class="footer-links" aria-label="Разделы">
+        <a href="#/test">Тест</a><a href="#/types">Типы</a><a href="#/quadras">Квадры</a><a href="#/relations">Отношения</a><a href="#/box">Mystery box</a><a href="#/about">О соционике</a>
       </nav>
     </div>
-    <p class="footer-note">MBTI и соционика — популярные типологии, а не проверенные научные методы. Результат теста и разбор пары — повод поговорить и понаблюдать за собой, а не диагноз. Ответы и имена хранятся только на этом устройстве.</p>
-    <p class="footer-note">MBTI — товарный знак The Myers-Briggs Company. Socio-Nik с ней не связан и упоминает коды MBTI только для описания типов.</p>
+    <p class="footer-note">Соционика — популярная типологическая модель, а не проверенный научный метод. Результат теста — повод понаблюдать за собой, а не диагноз. Ответы хранятся только на этом устройстве.</p>
   </div>
 </footer>
 
-<script src="config.js" defer></script>
-<script src="js/lib/base.js" defer></script>
-<script src="js/lib/track.js" defer></script>
-<script src="js/lib/lazy.js" defer></script>
-<script src="js/data/aspects.js" defer></script>
-<script src="js/data/types.js" defer></script>
-<script src="js/data/quadras.js" defer></script>
-<script src="js/data/relations.js" defer></script>
-<script src="js/data/questions.js" defer></script>
-<script src="js/core/modelA.js" defer></script>
-<script src="js/core/scoring.js" defer></script>
-<script src="js/core/payload.js" defer></script>
-<script src="js/core/pair.js" defer></script>
-<script src="js/core/couple.js" defer></script>
-<script src="js/content/pair.js" defer></script>
-<script src="js/art/prims.js" defer></script>
-<script src="js/art/glyphs.js" defer></script>
-<script src="js/art/emblem.js" defer></script>
-<script src="js/art/scenes.js" defer></script>
-<script src="js/art/celeb-icons.js" defer></script>
-<script src="js/art/pairmap.js" defer></script>
-<script src="js/fx/fx.js" defer></script>
-<script src="js/share/card.js" defer></script>
-<script src="js/share/social.js" defer></script>
-<script src="js/share/pair-card.js" defer></script>
-<script src="js/ui/components.js" defer></script>
-<script src="js/ui/box.js" defer></script>
-<script src="js/ui/sheet.js" defer></script>
-<script src="js/ui/paywall.js" defer></script>
-<script src="js/views/home.js" defer></script>
-<script src="js/views/test.js" defer></script>
-<script src="js/views/result.js" defer></script>
-<script src="js/views/types.js" defer></script>
-<script src="js/views/quadras.js" defer></script>
-<script src="js/views/relations.js" defer></script>
-<script src="js/views/misc.js" defer></script>
-<script src="js/views/pair.js" defer></script>
-<script src="js/views/library.js" defer></script>
-<!-- Тексты типов, отношений, модели А, знаменитостей и фактов, а также разбора пары грузятся по требованию — см. app.js (PACKS) и views/pair.js -->
-<script src="js/app.js" defer></script>
+<script src="config.js"></script>
+<script src="js/lib/base.js"></script>
+<script src="js/data/aspects.js"></script>
+<script src="js/data/types.js"></script>
+<script src="js/data/quadras.js"></script>
+<script src="js/data/relations.js"></script>
+<script src="js/data/questions.js"></script>
+<script src="js/core/modelA.js"></script>
+<script src="js/core/scoring.js"></script>
+<script src="js/core/payload.js"></script>
+<script src="js/content/types-alpha.js"></script>
+<script src="js/content/types-beta.js"></script>
+<script src="js/content/types-gamma.js"></script>
+<script src="js/content/types-delta.js"></script>
+<script src="js/content/relations.js"></script>
+<script src="js/content/functions.js"></script>
+<script src="js/content/modelA-alpha.js"></script>
+<script src="js/content/modelA-beta.js"></script>
+<script src="js/content/modelA-gamma.js"></script>
+<script src="js/content/modelA-delta.js"></script>
+<script src="js/content/celebs.js"></script>
+<script src="js/content/facts.js"></script>
+<script src="js/art/prims.js"></script>
+<script src="js/art/glyphs.js"></script>
+<script src="js/art/emblem.js"></script>
+<script src="js/art/scenes.js"></script>
+<script src="js/art/celeb-icons.js"></script>
+<script src="js/fx/fx.js"></script>
+<script src="js/share/card.js"></script>
+<script src="js/share/social.js"></script>
+<script src="js/ui/components.js"></script>
+<script src="js/ui/box.js"></script>
+<script src="js/ui/sheet.js"></script>
+<script src="js/views/home.js"></script>
+<script src="js/views/test.js"></script>
+<script src="js/views/result.js"></script>
+<script src="js/views/types.js"></script>
+<script src="js/views/quadras.js"></script>
+<script src="js/views/relations.js"></script>
+<script src="js/views/misc.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>

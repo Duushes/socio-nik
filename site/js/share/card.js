@@ -41,14 +41,14 @@
     const res = S.core.scoring.result(axes);
     const M = S.core.modelA;
     const t = M.type(res.top.id), q = S.data.quadras.find(x => x.id === t.quadra);
-    const c = S.theme.quadraColor(q.id, 'dark');
+    const c = q.color.dark;
 
     // фон: чёрный + «аврора» из цветов квадр
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
     S.data.quadras.forEach((qq, i) => {
       const pos = [[0.08, 0.06], [0.95, 0.12], [0.05, 0.92], [0.92, 0.88]][i];
-      blob(ctx, W * pos[0], H * pos[1], W * 0.55, S.theme.quadraColor(qq.id, 'dark'), qq.id === q.id ? 0.0 : 0.16);
+      blob(ctx, W * pos[0], H * pos[1], W * 0.55, qq.color.dark, qq.id === q.id ? 0.0 : 0.16);
     });
     // Сетка координат по форматам: сверху вниз, без наложений (сторис 1920, пост 1350)
     const L = story
@@ -63,7 +63,7 @@
     ctx.fillText('SOCIO-NIK', W / 2, L.brand);
     ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.font = font(600, 40);
-    ctx.fillText('Мой тип личности', W / 2, L.title);
+    ctx.fillText('Мой соционический тип', W / 2, L.title);
 
     // эмблема
     ctx.save();
@@ -75,11 +75,11 @@
     // код и имя
     ctx.fillStyle = '#fff';
     ctx.font = font(800, L.codePx);
-    ctx.fillText(t.mbti, W / 2, L.code);
+    ctx.fillText(t.code, W / 2, L.code);
     ctx.fillStyle = 'rgba(255,255,255,0.86)';
-    fit(ctx, t.title, W - 160, 600, 52);
-    ctx.fillText(t.title, W / 2, L.name);
-    const sub = `${t.code} «${t.alias}» в соционике · квадра ${q.name}`;
+    fit(ctx, t.name, W - 160, 600, 46);
+    ctx.fillText(t.name, W / 2, L.name);
+    const sub = `«${t.alias}» · ${t.role} · квадра ${q.name}`;
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
     fit(ctx, sub, W - 160, 500, 38);
     ctx.fillText(sub, W / 2, L.alias);
@@ -103,12 +103,12 @@
     const x0 = 150, x1 = W - 150;
     if (L.top3) {
       res.dist.slice(0, 3).forEach((row, i) => {
-        const tt = M.type(row.id), qc = S.theme.quadraColor(tt.quadra, 'dark');
+        const tt = M.type(row.id), qc = S.data.quadras.find(x => x.id === tt.quadra).color.dark;
         const yy = L.top3 + i * L.topRow;
         ctx.textAlign = 'left';
         ctx.fillStyle = 'rgba(255,255,255,0.92)';
         ctx.font = font(700, 34);
-        ctx.fillText(tt.mbti, x0, yy + 12);
+        ctx.fillText(tt.code, x0, yy + 12);
         ctx.textAlign = 'right';
         ctx.font = font(600, 32);
         ctx.fillText(row.pct + ' %', x1, yy + 12);
@@ -121,7 +121,7 @@
     }
 
     // 4 шкалы
-    const AX = S.ui && S.ui.AXES ? S.ui.AXES : [['EI', 'Экстраверсия', 'Интроверсия'], ['NS', 'Интуиция', 'Ощущения'], ['TF', 'Логика', 'Чувства'], ['RP', 'План', 'Импровизация']];
+    const AX = [['EI', 'Экстраверсия', 'Интроверсия'], ['NS', 'Интуиция', 'Сенсорика'], ['TF', 'Логика', 'Этика'], ['RP', 'Рациональность', 'Иррациональность']];
     AX.forEach(([ax, a, b], i) => {
       const v = res.axes[ax], yy = L.axes + i * L.axRow;
       ctx.font = font(600, 29);
@@ -143,7 +143,7 @@
     ctx.fillStyle = 'rgba(255,255,255,0.72)';
     ctx.font = font(600, 34);
     const site = S.config && S.config.SITE_URL ? S.config.SITE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '') : 'Socio-Nik';
-    ctx.fillText(`Узнай свой тип и проверь пару — ${site}`, W / 2, L.foot);
+    ctx.fillText(`Узнай свой тип — ${site}`, W / 2, L.foot);
     return canvas;
   }
 
@@ -156,7 +156,7 @@
   function text(axes, { withUrl = true } = {}) {
     const res = S.core.scoring.result(axes), t = S.core.modelA.type(res.top.id);
     const link = withUrl && url(axes) ? ' ' + url(axes) : '';
-    return `Мой тип личности — ${t.mbti} «${t.title}» (${res.top.pct} %). Узнай свой и проверь вашу пару на Socio-Nik${link}`;
+    return `Мой соционический тип — ${t.code}, «${t.alias}» (${res.top.pct} %). Узнай свой на Socio-Nik${link}`;
   }
 
   const toBlob = canvas => new Promise((ok, fail) => canvas.toBlob(b => (b ? ok(b) : fail(new Error('PNG не собрался'))), 'image/png'));
@@ -202,8 +202,8 @@
   async function share(canvas, axes, format) {
     const blob = await toBlob(canvas);
     const id = S.core.scoring.result(axes).top.id;
-    const file = new File([blob], `socio-nik-${S.core.modelA.type(id).mbti.toLowerCase()}-${format}.png`, { type: 'image/png' });
-    await navigator.share({ files: [file], text: text(axes), title: 'Мой тип личности' });
+    const file = new File([blob], `socio-nik-${id}-${format}.png`, { type: 'image/png' });
+    await navigator.share({ files: [file], text: text(axes), title: 'Мой соционический тип' });
   }
 
   // Перенос текста по словам под ширину
@@ -226,13 +226,13 @@
     const ctx = canvas.getContext('2d');
     const t = fact.type ? S.core.modelA.type(fact.type) : null;
     const q = t ? S.data.quadras.find(x => x.id === t.quadra) : null;
-    const c = S.theme.quadraColor(q ? q.id : 'alpha', 'dark');
+    const c = q ? q.color.dark : '#3987e5';
 
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
     S.data.quadras.forEach((qq, i) => {
       const pos = [[0.08, 0.06], [0.95, 0.12], [0.05, 0.92], [0.92, 0.88]][i];
-      blob(ctx, W * pos[0], H * pos[1], W * 0.55, S.theme.quadraColor(qq.id, 'dark'), q && qq.id === q.id ? 0 : 0.16);
+      blob(ctx, W * pos[0], H * pos[1], W * 0.55, qq.color.dark, q && qq.id === q.id ? 0 : 0.16);
     });
     blob(ctx, W / 2, 470, W * 0.6, c, 0.45);
 
@@ -253,16 +253,16 @@
       ctx.restore();
       ctx.fillStyle = '#fff';
       ctx.font = font(800, 170);
-      ctx.fillText(t.mbti, W / 2, 860);
-      const sub = `«${t.title}» · ${t.code} в соционике`;
+      ctx.fillText(t.code, W / 2, 860);
+      const sub = `«${t.alias}» · ${t.role}`;
       ctx.fillStyle = 'rgba(255,255,255,0.7)';
       fit(ctx, sub, W - 160, 500, 42);
       ctx.fillText(sub, W / 2, 924);
     } else {
       S.data.quadras.forEach((qq, i) => {
         const x = W / 2 + (i - 1.5) * 130, y = 500, g = ctx.createRadialGradient(x - 16, y - 18, 4, x, y, 52);
-        g.addColorStop(0, tone(S.theme.quadraColor(qq.id, 'dark'), 0.55));
-        g.addColorStop(1, tone(S.theme.quadraColor(qq.id, 'dark'), -0.35));
+        g.addColorStop(0, tone(qq.color.dark, 0.55));
+        g.addColorStop(1, tone(qq.color.dark, -0.35));
         ctx.fillStyle = g;
         ctx.beginPath();
         ctx.arc(x, y, 48, 0, Math.PI * 2);
@@ -302,7 +302,7 @@
     canvas.width = W;
     canvas.height = H;
     const ctx = canvas.getContext('2d');
-    const Q = id => S.theme.quadraColor(id, 'dark');
+    const Q = id => S.data.quadras.find(q => q.id === id).color.dark;
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
     [['alpha', 0.14, 0.2], ['gamma', 0.86, 0.16], ['beta', 0.82, 0.9], ['delta', 0.16, 0.9]].forEach(([q, x, y]) => blob(ctx, W * x, H * y, W * 0.5, Q(q), 0.4));
@@ -321,21 +321,20 @@
     ctx.fillText('Socio-Nik', W / 2, 196);
     ctx.fillStyle = '#fff';
     ctx.font = font(800, 80);
-    ctx.fillText('Как устроена', W / 2, 298);
+    ctx.fillText('Узнай свой', W / 2, 298);
     const g = ctx.createLinearGradient(W / 2 - 390, 0, W / 2 + 390, 0);
     g.addColorStop(0, Q('alpha'));
     g.addColorStop(0.52, Q('gamma'));
     g.addColorStop(1, Q('beta'));
     ctx.fillStyle = g;
-    ctx.fillText('ваша пара', W / 2, 392);
+    ctx.fillText('соционический тип', W / 2, 392);
     ctx.fillStyle = 'rgba(255,255,255,0.72)';
-    const tagline = 'Тест для двоих · совместимость бесплатно';
-    fit(ctx, tagline, 720, 500, 30);
-    ctx.fillText(tagline, W / 2, 462);
+    ctx.font = font(500, 30);
+    ctx.fillText('20 вопросов · 4 минуты · 16 типов и их отношения', W / 2, 462);
     return canvas;
   }
 
   const factImage = fact => toBlob(renderFact(document.createElement('canvas'), fact));
 
-  S.share = { render, renderFact, factImage, renderOG, url, text, toBlob, download, copy, canShareFiles, share, util: { FONT, font, fit, blob, roundRect, wrap } };
+  S.share = { render, renderFact, factImage, renderOG, url, text, toBlob, download, copy, canShareFiles, share };
 })(window);

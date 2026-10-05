@@ -24,43 +24,9 @@
   // ---------- DOM ----------
   const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ESC[c]);
-  const reducedMotion = () => Boolean((root.document && root.document.documentElement.classList.contains('motion-off')) ||
-    (root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches));
+  const reducedMotion = () => Boolean(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const pct = n => n + ' %';
-  // Короткое сообщение для скринридера: что изменилось на экране (например, «разбор открыт»)
-  let live = null;
-  const announce = msg => {
-    if (!root.document || !root.document.body) return;
-    if (!live) {
-      live = root.document.createElement('p');
-      live.className = 'sr';
-      live.setAttribute('aria-live', 'polite');
-      root.document.body.appendChild(live);
-    }
-    live.textContent = '';
-    setTimeout(() => { live.textContent = msg; }, 80);
-  };
-  // Русский типограф для текста на экране: неразрывный пробел после коротких слов («в», «и», «на»),
-  // перед тире и между числом и словом или знаком («64 %», «4 минуты»). Только текстовые узлы:
-  // разметку, SVG и поля ввода не трогаем. Зовётся после каждой вставки текста на экран
-  const NB = '\u00a0';
-  const SHORT = /(^|[\s(«"„])([а-яёА-ЯЁa-zA-Z]{1,2}) (?=\S)/g;
-  const typoText = s => s.replace(SHORT, '$1$2' + NB).replace(SHORT, '$1$2' + NB)
-    .replace(/ ([—–]) /g, NB + '$1 ')
-    .replace(/(\d) (?=[%₽а-яёА-ЯЁ])/g, '$1' + NB);
-  const TYPO_SKIP = 'script, style, textarea, select, code, pre, svg';
-  function typo(scope) {
-    const d = root.document;
-    if (!scope || !d || !d.createTreeWalker) return scope;
-    const walker = d.createTreeWalker(scope, 4 /* NodeFilter.SHOW_TEXT */, {
-      acceptNode: n => (/ /.test(n.nodeValue) && n.nodeValue.trim() && !(n.parentElement && n.parentElement.closest(TYPO_SKIP)) ? 1 : 3)
-    });
-    const nodes = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode);
-    nodes.forEach(n => { const v = typoText(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; });
-    return scope;
-  }
-  S.dom = { esc, reducedMotion, pct, announce, typo, typoText };
+  S.dom = { esc, reducedMotion, pct };
 
   // ---------- хранилище: localStorage с фолбэком в память (приватный режим, data:-снимок) ----------
   const memory = {};
@@ -95,34 +61,16 @@
     if (p === 'dark' || p === 'light') return p;
     return root.matchMedia && root.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
-  // Значение токена из css/tokens.css — для SVG и canvas, чтобы цвета жили в одном месте.
-  // Для другой темы читаем со скрытого «зонда» с нужным data-theme; значения кэшируем по теме
-  const cache = { light: {}, dark: {} };
-  let probe = null;
-  function token(name, theme) {
-    const d = root.document;
-    if (!d || !d.documentElement) return '';
-    const cur = d.documentElement.getAttribute('data-theme') || resolved();
-    const th = theme === 'dark' || theme === 'light' ? theme : cur;
-    if (cache[th][name]) return cache[th][name];
-    let el = d.documentElement;
-    if (th !== cur) {
-      if (!probe) { probe = d.createElement('i'); probe.className = 'theme-probe'; probe.hidden = true; d.body.appendChild(probe); }
-      probe.setAttribute('data-theme', th);
-      el = probe;
-    }
-    const v = root.getComputedStyle(el).getPropertyValue(name).trim();
-    if (v) cache[th][name] = v;
-    return v;
-  }
   function apply() {
     const t = resolved();
     document.documentElement.setAttribute('data-theme', t);
-    // цвет панели браузера — фон выбранной темы (в HTML два значения по системной теме — для первого кадра)
-    const bg = token('--bg', t);
-    if (bg) document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute('content', bg));
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', t === 'dark' ? '#000000' : '#ffffff');
     return t;
   }
-  const quadraColor = (qid, theme) => token('--q-' + qid, theme || resolved());
-  S.theme = { preferred, resolved, apply, token, quadraColor };
+  const quadraColor = (qid, theme) => {
+    const q = S.data.quadras.find(x => x.id === qid);
+    return q.color[(theme || resolved()) === 'dark' ? 'dark' : 'light'];
+  };
+  S.theme = { preferred, resolved, apply, quadraColor };
 })(typeof window !== 'undefined' ? window : globalThis);
