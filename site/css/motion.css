@@ -62,21 +62,18 @@
 .counting { animation: fade-in 0.3s both; }
 
 /* ---------- mystery box ---------- */
-.bx-cube { animation: bx-idle 6s ease-in-out infinite; }
-@keyframes bx-idle {
-  0%, 82%, 100% { transform: rotateX(-24deg) rotateY(-36deg); }
-  86% { transform: rotateX(-24deg) rotateY(-44deg) rotateZ(-3deg); }
-  90% { transform: rotateX(-24deg) rotateY(-28deg) rotateZ(3deg); }
-  94% { transform: rotateX(-24deg) rotateY(-38deg); }
-}
-.bx.shake { animation: bx-shake 0.42s ease-in-out; }
+.bx-float { animation: bx-bob 5s ease-in-out infinite; }
+.bx-shadow { animation: shadow-breath 5s ease-in-out infinite; }
+@keyframes bx-bob { 0%, 100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(-12px) rotate(1.5deg); } }
+.bx.shake .bx-float { animation: bx-shake 0.42s ease-in-out; }
 @keyframes bx-shake {
-  20% { transform: translateX(-8px) rotate(-5deg); }
-  40% { transform: translateX(8px) rotate(5deg); }
-  60% { transform: translateX(-6px) rotate(-3deg); }
+  20% { transform: translateX(-8px) rotate(-6deg); }
+  40% { transform: translateX(8px) rotate(6deg); }
+  60% { transform: translateX(-6px) rotate(-4deg); }
   80% { transform: translateX(4px) rotate(2deg); }
 }
-.is-open .bx-cube { animation-play-state: paused; }
+@keyframes bx-flash { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.9); } }
+.is-open .bx-float, .is-open .bx-shadow { animation-play-state: paused; }
 .bx-card:not([hidden]) .bx-card-in { animation: card-in 0.85s var(--spring) both; }
 @keyframes card-in {
   0% { opacity: 0; transform: translateY(90px) scale(0.25) rotateY(-150deg); }

@@ -51,6 +51,14 @@ function checkFact(where, f) {
   if (f && str(f.text) && f.text.length < 40) err(where, 'факт короче 40 знаков');
 }
 
+// ---------- отрисованные иконки знаменитостей ----------
+if (full) {
+  const IMG = path.join(__dirname, '..', 'site', 'img', 'celebs');
+  Object.keys(C.celebs || {}).forEach(id => (C.celebs[id] || []).forEach(c => {
+    if (c.icon && !fs.existsSync(path.join(IMG, c.icon + '.webp'))) err(`celebs.${id}`, `нет картинки img/celebs/${c.icon}.webp`);
+  }));
+}
+
 // ---------- короткие черты для героя ----------
 if (full) {
   const tr = C.traits || {};

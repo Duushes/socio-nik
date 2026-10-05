@@ -225,16 +225,16 @@
   };
 
   // ---------- знаменитости с похожим типом ----------
-  // Аватар героя: иконка вещи, с которой он ассоциируется; реальные люди — матовый круг, персонажи — стеклянный «кадр»
+  // Аватар героя: отрисованная 3D-иконка вещи, с которой он ассоциируется (img/celebs/<ключ>.webp, в цвете квадры);
+  // реальные люди — круглая плашка, персонажи — скруглённый «кадр»; иконки нет — инициалы
   const celebsOf = id => (S.content.celebs && S.content.celebs[id]) || [];
   const initials = name => {
     const w = name.split(/[\s-]+/).filter(x => /^[A-ZА-ЯЁ]/.test(x));
     return w.length ? (w[0][0] + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase() : name.slice(0, 1).toUpperCase();
   };
-  const ava = (c, cls = '') => {
-    const ic = S.art.celebIcon ? S.art.celebIcon(c.icon) : '';
-    return `<span class="celeb-ava${c.kind === 'fiction' ? ' fic' : ''}${ic ? ' has-ic' : ''}${cls}" aria-hidden="true">${ic || esc(initials(c.name))}</span>`;
-  };
+  const ava = (c, cls = '') => `<span class="celeb-ava${c.kind === 'fiction' ? ' fic' : ''}${cls}" aria-hidden="true">${c.icon
+    ? `<img class="celeb-ic" src="img/celebs/${c.icon}.webp" width="192" height="192" alt="" loading="lazy" decoding="async" draggable="false">`
+    : esc(initials(c.name))}</span>`;
   const INFO = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="6.2" r="1.1" fill="currentColor"/></svg>';
 
   ui.celebs = t => {

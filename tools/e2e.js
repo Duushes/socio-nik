@@ -325,7 +325,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
         real: cols[0] ? cols[0].querySelectorAll('.celeb .celeb-ava:not(.fic)').length : 0,
         fic: cols[1] ? cols[1].querySelectorAll('.celeb .celeb-ava.fic').length : 0,
         disc: /не диагноз/.test((box.querySelector('.celeb-disc') || {}).textContent || ''),
-        icons: Array.from(box.querySelectorAll('.celeb-ava')).filter(a => a.querySelector('svg.celeb-ic')).length,
+        icons: new Set(Array.from(box.querySelectorAll('.celeb-ava img.celeb-ic')).filter(i => i.complete && i.naturalWidth > 0).map(i => i.getAttribute('src'))).size,
         visible: Array.from(box.querySelectorAll('.celeb-ava')).every(a => getComputedStyle(a).opacity === '1')
       };
       location.hash = '#/result';

@@ -1,4 +1,4 @@
-/* Socio-Nik · mystery box: глянцевая 3D-коробка в цветах квадр → тряска → крышка → карточка со случайным фактом.
+/* Socio-Nik · mystery box: отрисованная коробка-подарок (img/box) → тряска → вспышка, крышка взлетает → карточка со случайным фактом.
    Факты без повторов, пока колода не кончится; счётчик «Открыто N из M» копится навсегда. */
 (function (root) {
   const S = root.Socio = root.Socio || {};
@@ -47,13 +47,12 @@
         <div class="box-stage" data-anim>
           <div class="bx-glow" aria-hidden="true"></div>
           <button class="bx" type="button" aria-label="Открыть коробку со случайным фактом">
-            <span class="bx-scene" aria-hidden="true">
-              <span class="bx-cube">
-                <i class="f f-front"></i><i class="f f-back"></i><i class="f f-left"></i><i class="f f-right"></i><i class="f f-bottom"></i>
-                <span class="bx-lid"><i class="l l-top"></i><i class="l l-front"></i><i class="l l-back"></i><i class="l l-left"></i><i class="l l-right"></i></span>
-              </span>
-            </span>
             <span class="bx-shadow" aria-hidden="true"></span>
+            <span class="bx-float" aria-hidden="true">
+              <img class="bx-img bx-closed" src="img/box/closed.webp" width="560" height="560" alt="" decoding="async" draggable="false">
+              <img class="bx-img bx-open" src="img/box/open.webp" width="560" height="560" alt="" decoding="async" draggable="false">
+            </span>
+            <span class="bx-flash" aria-hidden="true"></span>
           </button>
           <p class="bx-hint">Нажми на коробку</p>
           <article class="bx-card" aria-live="polite" hidden></article>
@@ -77,7 +76,7 @@
     return `
       <div class="bx-card-in"${t ? ` style="${ui.qStyle(t.quadra)}"` : ''}>
         <header>
-          ${t ? `<span class="bx-em">${S.art.emblem(t, { cls: 'em-mini', label: false })}</span><span class="chip">${t.code} · ${esc(t.alias)}</span>` : '<span class="chip">Соционика</span>'}
+          ${t ? `<span class="bx-ava">${ui.character(t, { sizes: ui.CHAR.ava, alt: '' })}</span><span class="chip">${t.code} · ${esc(t.alias)}</span>` : '<span class="chip">Соционика</span>'}
           <span class="bx-cat">${esc(S.factCats[f.cat] || '')}</span>
         </header>
         <p class="bx-text">${esc(f.text)}</p>
