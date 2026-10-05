@@ -7,7 +7,7 @@ const SITE = path.join(__dirname, '..', 'site');
 
 function scriptsOf(htmlFile) {
   const html = fs.readFileSync(path.join(SITE, htmlFile), 'utf8');
-  return [...html.matchAll(/<script src="([^"]+)"><\/script>/g)].map(m => m[1]);
+  return [...html.matchAll(/<script src="([^"]+)"><\/script>/g)].map(m => m[1].split('?')[0]);   // без ?v= — версии сборки
 }
 
 function load(htmlFile = 'tests.html') {
