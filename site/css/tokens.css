@@ -1,97 +1,90 @@
-/* Socio-Nik · дизайн-токены. База — Apple-кит ya_report; цвета квадр продублированы в js/data/quadras.js */
-:root {
-  color-scheme: light;
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif;
-
-  --bg: #ffffff;
-  --bg-alt: #f5f5f7;
-  --card: #f5f5f7;
-  --card-alt: #ffffff;
-  --elev: #ffffff;
-  --text: #1d1d1f;
-  --muted: #6e6e73;
-  --faint: #86868b;
-  --line: #d2d2d7;
-  --hair: rgba(0, 0, 0, 0.08);
-  --chip: rgba(0, 0, 0, 0.05);
-  --glass: rgba(255, 255, 255, 0.6);
-  --track: rgba(0, 0, 0, 0.05);
-  --seg-off: rgba(0, 0, 0, 0.1);
-  --dot-line: rgba(0, 0, 0, 0.22);
-
-  --btn: #0071e3;
-  --btn-hover: #0077ed;
-  --link: #0066cc;
-  --accent-soft: rgba(0, 113, 227, 0.1);
-  --focus: #0071e3;
-
-  --q-alpha: #2a78d6;
-  --q-beta: #e2571f;
-  --q-gamma: #b8479c;
-  --q-delta: #1baf7a;
-
-  /* Тон отношений — одна нейтральная шкала «темнее = легче», чтобы не спорить с цветами квадр */
-  --tone-support: #1d1d1f;
-  --tone-work: rgba(29, 29, 31, 0.3);
-  --tone-tense: rgba(29, 29, 31, 0.06);
-
-  --nav-bg: rgba(255, 255, 255, 0.72);
-  --nav-line: rgba(0, 0, 0, 0.1);
-  --tip-bg: rgba(29, 29, 31, 0.94);
-  --tip-fg: #ffffff;
-
-  --shadow: 0 2px 6px rgba(0, 0, 0, 0.04), 0 14px 36px rgba(0, 0, 0, 0.09);
-  --shadow-lg: 0 30px 80px rgba(0, 0, 0, 0.22);
-
-  --r: 20px;
-  --r-lg: 28px;
-  --r-pill: 980px;
-
-  --ease: cubic-bezier(0.28, 0.11, 0.32, 1);
-  --out: cubic-bezier(0.16, 1, 0.3, 1);
-  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-
-  --nav-h: 44px;
+/* Socio-Nik · дизайн-токены. Сайт только тёмный; белые секции переопределяют токены у себя (.on-white).
+   Цвета квадр продублированы в js/data/quadras.js (тёмный набор, проверен на различимость всех пар). */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url(../fonts/montserrat-cyrillic.woff2) format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url(../fonts/montserrat-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-:root[data-theme="dark"] {
+:root {
   color-scheme: dark;
-  --bg: #000000;
-  --bg-alt: #0c0c0d;
-  --card: #1c1c1e;
-  --card-alt: #161617;
-  --elev: #1c1c1e;
-  --text: #f5f5f7;
-  --muted: #a1a1a6;
-  --faint: #86868b;
-  --line: #3a3a3c;
-  --hair: rgba(255, 255, 255, 0.1);
-  --chip: rgba(255, 255, 255, 0.08);
-  --glass: rgba(28, 28, 30, 0.6);
-  --track: rgba(255, 255, 255, 0.06);
-  --seg-off: rgba(255, 255, 255, 0.14);
-  --dot-line: rgba(255, 255, 255, 0.3);
+  --font: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 
-  --btn: #0071e3;
-  --btn-hover: #0077ed;
-  --link: #2997ff;
-  --accent-soft: rgba(41, 151, 255, 0.14);
-  --focus: #2997ff;
+  --ink: #0c0c0c;
+  --paper: #d7e2ea;
+  --bg: var(--ink);
+  --text: var(--paper);
+  --muted: rgba(215, 226, 234, 0.6);       /* ≈5,6:1 */
+  --faint: rgba(215, 226, 234, 0.4);       /* только для декора */
+  --line: var(--paper);                     /* рамки карточек 2 px */
+  --hair: rgba(215, 226, 234, 0.15);
+  --chip: rgba(215, 226, 234, 0.08);
+  --chip-hover: rgba(215, 226, 234, 0.14);
+  --card: #141518;                          /* вложенные плашки */
+  --elev: #121316;                          /* шторки, карточка факта */
+  --track: rgba(215, 226, 234, 0.1);
+
+  --grad: linear-gradient(123deg, #18011f 7%, #b600a8 37%, #7621b0 72%, #be4c00 100%);
+  --grad-line: linear-gradient(90deg, #b600a8, #7621b0 55%, #be4c00);
+  --silver: linear-gradient(180deg, #646973, #bbccd7);
 
   --q-alpha: #3987e5;
   --q-beta: #e2652f;
   --q-gamma: #c85fa8;
   --q-delta: #17a774;
 
-  --tone-support: #f5f5f7;
-  --tone-work: rgba(245, 245, 247, 0.34);
-  --tone-tense: rgba(245, 245, 247, 0.07);
+  /* тон отношений: чем светлее, тем легче */
+  --tone-support: #d7e2ea;
+  --tone-work: rgba(215, 226, 234, 0.42);
+  --tone-tense: rgba(215, 226, 234, 0.1);
 
-  --nav-bg: rgba(22, 22, 23, 0.72);
-  --nav-line: rgba(255, 255, 255, 0.1);
-  --tip-bg: rgba(245, 245, 247, 0.96);
-  --tip-fg: #1d1d1f;
+  --tip-bg: #d7e2ea;
+  --tip-fg: #0c0c0c;
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
 
-  --shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 30px 80px rgba(0, 0, 0, 0.7);
+  --gutter: 20px;
+  --r-card: 40px;
+  --overlap: 40px;
+  --r-tile: 16px;
+  --r-in: 24px;
+  --r-pill: 999px;
+  --nav-h: 60px;
+
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --out: cubic-bezier(0.16, 1, 0.3, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@media (min-width: 768px) { :root { --gutter: 32px; --r-card: 50px; --overlap: 48px; --nav-h: 68px; } }
+@media (min-width: 1024px) { :root { --gutter: 48px; --r-card: 60px; --overlap: 56px; } }
+
+/* Белая секция: те же компоненты, другие токены */
+.on-white, .sec-white {
+  color-scheme: light;
+  --bg: #ffffff;
+  --text: #0c0c0c;
+  --muted: rgba(12, 12, 12, 0.6);          /* ≈5,2:1 */
+  --faint: rgba(12, 12, 12, 0.38);
+  --line: #0c0c0c;
+  --hair: rgba(12, 12, 12, 0.12);
+  --chip: rgba(12, 12, 12, 0.06);
+  --chip-hover: rgba(12, 12, 12, 0.1);
+  --card: #f1f3f5;
+  --elev: #ffffff;
+  --track: rgba(12, 12, 12, 0.08);
+  --tone-support: #0c0c0c;
+  --tone-work: rgba(12, 12, 12, 0.36);
+  --tone-tense: rgba(12, 12, 12, 0.07);
+  background: var(--bg);
+  color: var(--text);
 }

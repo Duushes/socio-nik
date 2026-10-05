@@ -1,19 +1,16 @@
-/* Socio-Nik · движение. Анимируем только transform / opacity (filter — точечно); всё гасится prefers-reduced-motion,
+/* Socio-Nik · движение. Анимируем только transform / opacity / clip-path; всё гасится prefers-reduced-motion,
    петли вне экрана ставятся на паузу (.is-off). */
 
-/* ---------- появление при прокрутке (translate, чтобы не спорить с transform у наклона) ---------- */
-.js .reveal { opacity: 0; translate: 0 26px; transition: opacity 0.9s var(--ease), translate 1.1s var(--out); transition-delay: calc(var(--i, 0) * 70ms); }
+/* ---------- FadeIn: один раз, 0,7 с, cubic-bezier(.25,.1,.25,1); сдвиг --fx / --fy, задержка --d + шаг --i ---------- */
+.js .reveal { opacity: 0; translate: var(--fx, 0) var(--fy, 30px); transition: opacity 0.7s var(--ease), translate 0.7s var(--ease); transition-delay: calc(var(--d, 0s) + var(--i, 0) * 80ms); }
 .js .reveal.in { opacity: 1; translate: none; }
 
-/* ---------- переходы между экранами и смена темы ---------- */
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.38s; animation-timing-function: var(--ease); }
+/* ---------- переходы между экранами ---------- */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.36s; animation-timing-function: var(--ease); }
 ::view-transition-old(root) { animation-name: vt-out; }
 ::view-transition-new(root) { animation-name: vt-in; }
 @keyframes vt-out { to { opacity: 0; } }
-@keyframes vt-in { from { opacity: 0; transform: translateY(12px); } }
-.vt-theme::view-transition-old(root) { animation: none; }
-.vt-theme::view-transition-new(root) { animation: vt-circle 0.75s var(--ease); }
-@keyframes vt-circle { from { clip-path: circle(0 at var(--vt-x) var(--vt-y)); } to { clip-path: circle(150vmax at var(--vt-x) var(--vt-y)); } }
+@keyframes vt-in { from { opacity: 0; } }
 
 /* ---------- общие ---------- */
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -26,20 +23,13 @@
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes wobble { 0%, 100% { transform: rotate(-6deg) translateY(0); } 50% { transform: rotate(8deg) translateY(-10px); } }
 
-/* ---------- hero ---------- */
-.aurora .b1 { animation: drift-a 24s var(--ease) infinite alternate; }
-.aurora .b2 { animation: drift-b 28s var(--ease) infinite alternate; }
-.aurora .b3 { animation: drift-c 26s var(--ease) infinite alternate; }
-.aurora .b4 { animation: drift-d 30s var(--ease) infinite alternate; }
-@keyframes drift-a { to { transform: translate(14%, 10%) scale(1.12); } }
-@keyframes drift-b { to { transform: translate(-12%, 14%) scale(0.9); } }
-@keyframes drift-c { to { transform: translate(-10%, -12%) scale(1.14); } }
-@keyframes drift-d { to { transform: translate(12%, -8%) scale(0.92); } }
-.hg-in { animation: assemble 1.5s var(--spring) both; animation-delay: calc(0.12s + var(--i) * 0.08s); }
-.hg-float { animation: float 7s ease-in-out infinite; animation-delay: calc(var(--i) * -0.9s); }
-@keyframes assemble { from { opacity: 0; transform: translate(var(--sx), var(--sy)) rotate(var(--sr)) scale(0.35); } to { opacity: 1; transform: none; } }
-.scroll-cue i { animation: cue 2s ease-in-out infinite; }
-@keyframes cue { 0% { opacity: 0; transform: translateY(0); } 30% { opacity: 1; } 80%, 100% { opacity: 0; transform: translateY(12px); } }
+/* ---------- герой: появление один раз ---------- */
+.hero.intro .h-in { animation: h-in 0.7s var(--ease) both; animation-delay: var(--d, 0s); }
+@keyframes h-in { from { opacity: 0; translate: 0 var(--y, 20px); } }
+.soc-float { animation: float 9s ease-in-out infinite; }
+.soc-tr .soc-float { animation-delay: -2.2s; }
+.soc-bl .soc-float { animation-delay: -4.5s; }
+.soc-br .soc-float { animation-delay: -6.7s; }
 
 /* ---------- эмблемы ---------- */
 .emblem .em-base, .emblem .em-creative, .emblem .em-shadow { transform-box: fill-box; transform-origin: center; }
@@ -210,5 +200,5 @@
     scroll-behavior: auto !important;
   }
   .js .reveal { opacity: 1; translate: none; }
-  .hg { transform: none !important; }
+  .stack-card, .mq-track, .hero-mag { transform: none !important; }
 }

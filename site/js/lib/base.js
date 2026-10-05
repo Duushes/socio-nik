@@ -1,4 +1,4 @@
-/* Socio-Nik · базовые утилиты: цвет, DOM, хранилище, тема */
+/* Socio-Nik · базовые утилиты: цвет, DOM, хранилище, тема (только тёмная) */
 (function (root) {
   const S = root.Socio = root.Socio || {};
 
@@ -49,28 +49,16 @@
     }
   };
 
-  // ---------- тема ----------
-  const query = () => (root.location ? new URLSearchParams(root.location.search) : new URLSearchParams());
-  function preferred() {
-    const q = query().get('theme');
-    if (q === 'dark' || q === 'light') return q;           // для проверок: ?theme=dark
-    return S.store.get('theme', 'auto');
-  }
-  function resolved() {
-    const p = preferred();
-    if (p === 'dark' || p === 'light') return p;
-    return root.matchMedia && root.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }
+  // ---------- тема: сайт только тёмный; белые секции рисуют свои эмблемы со светлой палитрой (theme: 'light') ----------
+  const preferred = () => 'dark';
+  const resolved = () => 'dark';
   function apply() {
-    const t = resolved();
-    document.documentElement.setAttribute('data-theme', t);
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', t === 'dark' ? '#000000' : '#ffffff');
-    return t;
+    document.documentElement.setAttribute('data-theme', 'dark');
+    return 'dark';
   }
   const quadraColor = (qid, theme) => {
     const q = S.data.quadras.find(x => x.id === qid);
-    return q.color[(theme || resolved()) === 'dark' ? 'dark' : 'light'];
+    return q.color[theme === 'light' ? 'light' : 'dark'];
   };
   S.theme = { preferred, resolved, apply, quadraColor };
 })(typeof window !== 'undefined' ? window : globalThis);

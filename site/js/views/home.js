@@ -1,152 +1,247 @@
-/* Socio-Nik · главная: hero → четыре пары признаков → 16 типов → квадры → калькулятор → mystery box → призыв */
+/* Socio-Nik · главная: герой «Привет, я …» с персонажем, лента 16 типов, «Соционика»,
+   белая «Что внутри», стопка квадр */
 (function (root) {
   const S = root.Socio;
   const V = S.views = S.views || {};
   const ui = S.ui;
   const { esc } = S.dom;
+  const M = () => S.core.modelA;
+  const NB = ' ';
 
-  // 8 парящих знаков героя: аспект, квадра-цвет, место (%), глубина параллакса, размер, откуда «прилетает»
-  const HERO = [
-    { a: 'Ne', q: 'alpha', x: 10, y: 22, d: 1.2, s: 1.0, sx: -260, sy: -160, sr: -50 },
-    { a: 'Fe', q: 'beta', x: 86, y: 18, d: 1.0, s: 0.92, sx: 280, sy: -200, sr: 50 },
-    { a: 'Ti', q: 'beta', x: 13, y: 72, d: 0.9, s: 0.86, sx: -280, sy: 200, sr: -30 },
-    { a: 'Si', q: 'alpha', x: 88, y: 68, d: 0.8, s: 0.82, sx: 240, sy: 160, sr: 30 },
-    { a: 'Se', q: 'gamma', x: 27, y: 90, d: 0.6, s: 0.62, sx: -120, sy: 260, sr: 20 },
-    { a: 'Ni', q: 'gamma', x: 72, y: 91, d: 0.7, s: 0.66, sx: 140, sy: 280, sr: -24 },
-    { a: 'Te', q: 'delta', x: 4, y: 47, d: 0.5, s: 0.56, sx: -320, sy: 0, sr: 60 },
-    { a: 'Fi', q: 'delta', x: 96, y: 43, d: 0.55, s: 0.6, sx: 320, sy: -40, sr: -60 }
-  ];
+  let introDone = false;
+  const heroType = () => M().type(document.documentElement.dataset.hero) || M().type('iee');
 
-  const accent = () => (S.theme.resolved() === 'dark' ? '#2997ff' : '#0071e3');
-
-  function morphArt(kind) {
-    const c = accent();
-    const g = (id, cls) => `<g class="${cls}">${S.art.toSVG(S.art.glyphOf(id, c))}</g>`;
-    if (kind === 'RP') {
-      return `<svg class="morph" viewBox="-70 -70 140 140" aria-hidden="true">
-        <g class="m-a"><path d="M-56 42 H-28 V14 H0 V-14 H28 V-42 H56" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g>
-        <g class="m-b"><path d="M-58 0 C-44 -46 -26 -46 -14 0 S16 46 30 0 S52 -40 58 -18" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round"/></g>
-      </svg>`;
-    }
-    const pair = { EI: ['Te', 'Ti'], NS: ['Ne', 'Se'], TF: ['Te', 'Fe'] }[kind];
-    return `<svg class="morph" viewBox="-70 -70 140 140" aria-hidden="true">${g(pair[0], 'm-a')}${g(pair[1], 'm-b')}</svg>`;
+  function caption(t) {
+    if (S.state.myType() === t.id) return `Это твой тип. Посмотри, с${NB}кем тебе легко`;
+    return `${t.alias} — так в${NB}соционике называют тип${NB}${t.code}. Узнай свой тип: 20${NB}вопросов, 4${NB}минуты`;
   }
 
-  const DICH = [
-    { k: 'EI', title: 'Экстраверсия или интроверсия', text: 'Куда направлено внимание: на внешний мир и действия — или на отношения и внутренние состояния.', a: 'Плотный знак', b: 'Стеклянный знак' },
-    { k: 'NS', title: 'Интуиция или сенсорика', text: 'Что замечаешь первым: возможности и смыслы — или то, что можно увидеть и потрогать.', a: 'Пирамида', b: 'Шар' },
-    { k: 'TF', title: 'Логика или этика', text: 'На что опираешься в решениях: на факты и системы — или на чувства и отношения людей.', a: 'Куб', b: 'Уголок' },
-    { k: 'RP', title: 'Рациональность или иррациональность', text: 'Как устроена жизнь: по плану и с решениями заранее — или по ситуации, с подстройкой на ходу.', a: 'Ступени', b: 'Волна' }
-  ];
-
-  V.home = {
-    title: () => 'Соционический тип за 4 минуты',
-    render() {
-      const mine = S.state.myType();
-      const me = mine ? S.core.modelA.type(mine) : null;
-      const a = mine || 'ile';
-      const b = S.core.modelA.partner(S.core.modelA.type(a), 'dual').id;
-      return `
-      <section class="hero" data-parallax data-anim>
-        <div class="aurora" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div>
-        <div class="hero-glyphs" aria-hidden="true">
-          ${HERO.map((g, i) => `<span class="hg" style="--x:${g.x}%;--y:${g.y}%;--d:${g.d};--s:${g.s};--i:${i};--sx:${g.sx}px;--sy:${g.sy}px;--sr:${g.sr}deg">
-            <span class="hg-in"><span class="hg-float">${S.art.glyphSVG(g.a, S.theme.quadraColor(g.q), 'hg-svg')}</span></span></span>`).join('')}
+  // ---------- герой ----------
+  function hero(t) {
+    const has = Boolean(S.state.result());
+    const intro = !introDone && !S.dom.reducedMotion();
+    return `
+      <section class="hero${intro ? ' intro' : ''}" data-hero style="${ui.qStyle(t.quadra)}">
+        <nav class="hero-menu h-in" style="--d:0s;--y:-20px" aria-label="Разделы">
+          <a href="#/test">Тест</a><a href="#/types">Типы</a><a href="#/relations">Отношения</a><a href="#/about">О${NB}соционике</a>
+        </nav>
+        <h1 class="hero-title display h-in" style="--d:.15s;--y:40px" data-fit data-min="12" data-max="17.5" data-maxh="21">
+          <span class="fit-in"><span class="fit-line"><span class="sv">Привет, я</span></span> <span class="fit-line"><span class="sv hero-name" data-hero-name>${esc(ui.short(t))}</span></span></span>
+        </h1>
+        <div class="hero-char h-in" style="--d:.6s;--y:30px">
+          <div class="hero-magnet" data-magnet><div class="hero-mag">
+            <div class="hero-fig" data-hero-next title="Показать другой тип">${ui.character(t, { sizes: ui.CHAR.hero, eager: true })}</div>
+          </div></div>
         </div>
-        <div class="wrap hero-copy">
-          <p class="eyebrow reveal">Socio-Nik</p>
-          <h1 class="display reveal" style="--i:1">Узнай свой<br><span class="grad">соционический тип.</span></h1>
-          <p class="lead reveal" style="--i:2">20 вопросов и около 4 минут. Узнаешь свой тип, квадру и то, как складываются отношения с остальными пятнадцатью типами.</p>
-          <div class="cta reveal" style="--i:3">
-            <a class="btn btn-lg" href="#/test">Пройти тест</a>
-            <a class="link" href="#/about">Что такое соционика</a>
+        <div class="hero-foot">
+          <p class="hero-cap caption h-in" style="--d:.35s;--y:20px" data-hero-cap>${esc(caption(t))}</p>
+          <div class="hero-actions h-in" style="--d:.5s;--y:20px">
+            <button class="btn-ghost hero-next" type="button" data-hero-next><span class="hero-next-l">Другой тип</span>${ui.ICON.cycle}</button>
+            ${has ? '<a class="btn" href="#/result">Мой результат</a>' : '<a class="btn" href="#/test">Пройти тест</a>'}
           </div>
-          ${me ? `<a class="mine reveal" style="--i:4;${ui.qStyle(me.quadra)}" href="#/result"><i class="qdot" aria-hidden="true"></i>Твой тип — ${me.code} «${esc(me.alias)}»</a>` : ''}
-        </div>
-        <div class="scroll-cue" aria-hidden="true"><i></i></div>
-      </section>
-
-      <section class="sec sec-alt">
-        <div class="wrap">
-          <p class="eyebrow reveal">Как это устроено</p>
-          <h2 class="title reveal">Четыре пары.<br>Шестнадцать типов.</h2>
-          <p class="lead reveal">Соционика описывает, какую информацию ты замечаешь первой и как с ней обходишься. Тип складывается из четырёх пар признаков — у каждой свой знак.</p>
-          <div class="dich-grid">
-            ${DICH.map((d, i) => `
-              <article class="card dich reveal" style="--i:${i}" data-morph>
-                <div class="dich-art">${morphArt(d.k)}</div>
-                <h3>${d.title}</h3>
-                <p>${d.text}</p>
-                <div class="dich-poles"><span class="pa">${d.a}</span><span class="pb">${d.b}</span></div>
-              </article>`).join('')}
-          </div>
-        </div>
-      </section>
-
-      <section class="sec">
-        <div class="wrap-wide">
-          <div class="wrap-inner">
-            <p class="eyebrow reveal">16 типов</p>
-            <h2 class="title reveal">Шестнадцать типов.<br>Четыре квадры.</h2>
-            <p class="lead reveal">У каждого типа своя эмблема: крупный знак — базовая функция, маленький на орбите — творческая. Цвет — квадра, то есть компания типов с общими ценностями.</p>
-          </div>
-          ${ui.typesGrid()}
-          <p class="more reveal"><a class="link" href="#/types">Все типы подробно</a></p>
-        </div>
-      </section>
-
-      <section class="sec sec-alt">
-        <div class="wrap-wide">
-          <div class="wrap-inner">
-            <p class="eyebrow reveal">Квадры</p>
-            <h2 class="title reveal">Четыре компании<br>с общими ценностями.</h2>
-          </div>
-          <div class="qgrid">
-            ${S.data.quadras.map((q, i) => {
-              const c = (S.content.quadras || {})[q.id] || {};
-              return `<a class="qcard tilt reveal" style="${ui.qStyle(q.id)};--i:${i}" href="#/quadras#${q.id}">
-                <span class="qcard-art" data-anim>${S.art.quadraEmblem(q)}</span>
-                <span class="qcard-name">${q.name}</span>
-                <span class="qcard-motto">${esc(c.motto || '')}</span>
-                <span class="qcard-types">${ui.typesOf(q.id).map(t => t.code).join(' · ')}</span>
-                <span class="glare" aria-hidden="true"></span>
-              </a>`;
-            }).join('')}
-          </div>
-          <p class="more reveal"><a class="link" href="#/quadras">Подробнее о квадрах</a></p>
-        </div>
-      </section>
-
-      <section class="sec">
-        <div class="wrap">
-          <p class="eyebrow reveal">Отношения</p>
-          <h2 class="title reveal">Почему с одними легко,<br>а с другими — нет.</h2>
-          <p class="lead reveal">Выбери свой тип и тип близкого человека — посмотрим, как устроены ваши отношения.</p>
-          <div class="reveal">${ui.calc(a, b)}</div>
-          <p class="more reveal"><a class="link" href="#/relations">Все 14 видов отношений</a></p>
-        </div>
-      </section>
-
-      <section class="sec sec-alt">
-        <div class="wrap">
-          <p class="eyebrow reveal">Mystery box</p>
-          <h2 class="title reveal">Открой коробку.</h2>
-          <p class="lead reveal">Внутри — случайный факт об одном из 16 типов или о соционике. Факты не повторяются, пока колода не кончится.</p>
-          <div class="reveal">${ui.box()}</div>
-        </div>
-      </section>
-
-      <section class="sec final">
-        <div class="wrap center">
-          <h2 class="title reveal">Узнаем твой тип?</h2>
-          <p class="lead reveal">20 вопросов, никаких регистраций. Ответы остаются только на этом устройстве.</p>
-          <p class="reveal"><a class="btn btn-lg" href="#/test">Пройти тест</a></p>
         </div>
       </section>`;
-    },
-    mount(root) {
-      const offs = [ui.mountCalc(root), ui.mountBox(root)];
-      return () => offs.forEach(f => f && f());
-    }
+  }
+
+  // Персонаж стоит под заголовком и закрывает нижнюю часть букв имени; ширина 280 / 360 / 440 / 520.
+  // Если места больше, чем нужно персонажу, заголовок опускается к нему — наложение остаётся одинаковым.
+  function layoutHero(el) {
+    const title = el.querySelector('.hero-title'), name = title.querySelector('.fit-line:last-child');
+    const fig = el.querySelector('.hero-char'), foot = el.querySelector('.hero-foot');
+    title.style.marginTop = '';
+    const W = innerWidth, phone = W < 640, wide = W >= 1024;
+    const maxW = wide ? 520 : W >= 768 ? 440 : phone ? 280 : 360;
+    const minW = Math.round(maxW * 0.62);
+    // offsetTop, а не getBoundingClientRect: на него не влияет анимация появления
+    const cs = getComputedStyle(title), fs = parseFloat(cs.fontSize);
+    const lh = parseFloat(cs.lineHeight) / fs || 0.88;
+    const base = title.offsetTop + name.offsetTop + fs * (lh / 2 + 0.3585);   // базовая линия имени (метрики Montserrat)
+    const top0 = base - 0.7 * fs * 0.36;                                      // макушка закрывает ~треть высоты букв
+    const limit = wide ? el.offsetHeight : foot.offsetTop - (phone ? 10 : 0);
+    const w = Math.max(minW, Math.min(maxW, (limit - top0) * 0.8)), h = w * 1.25;
+    let shift = Math.max(0, limit - top0 - h);
+    if (phone) shift /= 2;
+    let top = top0 + shift;
+    if (top + h > limit) top = limit - h;
+    title.style.marginTop = shift ? `calc(var(--title-mt) + ${shift.toFixed(1)}px)` : '';
+    fig.style.top = top.toFixed(1) + 'px';
+    fig.style.width = w.toFixed(1) + 'px';
+    el.style.setProperty('--side', Math.max(180, (W - w) / 2 - 24 - parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gutter'))).toFixed(0) + 'px');
+    el.classList.add('laid');
+  }
+
+  // Колода без повторов: следующий персонаж — случайный, пока не покажем всех
+  let deck = [];
+  function nextType(cur) {
+    if (!deck.length) deck = S.data.types.map(t => t.id).filter(id => id !== cur).sort(() => Math.random() - 0.5);
+    return M().type(deck.shift());
+  }
+  function prefetch(t) {
+    const img = new Image();
+    img.dataset.id = t.id;
+    img.sizes = ui.CHAR.hero;
+    img.srcset = ui.charSrc(t).srcset;
+    img.src = ui.charSrc(t).src;
+    return img;
+  }
+
+  function mountHero(root) {
+    const el = root.querySelector('[data-hero]');
+    if (!el) return () => {};
+    const de = document.documentElement, timers = [];
+    const later = (fn, ms) => timers.push(setTimeout(fn, S.dom.reducedMotion() ? 0 : ms));
+    const title = el.querySelector('.hero-title'), figEl = el.querySelector('.hero-fig');
+    const nameEl = el.querySelector('[data-hero-name]'), capEl = el.querySelector('[data-hero-cap]');
+    const layout = () => layoutHero(el);
+    el.addEventListener('fitted', layout);
+    addEventListener('resize', layout);
+    if (el.classList.contains('intro')) later(() => { introDone = true; el.classList.remove('intro'); }, 1400);
+    else introDone = true;
+
+    // шапка спрятана, пока на экране меню героя
+    const menu = el.querySelector('.hero-menu');
+    const io = new IntersectionObserver(([e]) => de.classList.toggle('hero-on', e.isIntersecting));
+    io.observe(menu);
+
+    let queued = prefetch(nextType(de.dataset.hero)), busy = false;
+    const swap = () => {
+      if (busy) return;
+      busy = true;
+      const img = queued, next = M().type(img.dataset.id);
+      const ready = img.decode ? img.decode().catch(() => {}) : Promise.resolve();
+      figEl.classList.add('is-out');
+      title.classList.add('is-fading');
+      capEl.classList.add('is-fading');
+      Promise.all([ready, new Promise(r => later(r, 160))]).then(() => {
+        de.dataset.hero = next.id;
+        S.store.set('hero', next.id);
+        const pic = figEl.querySelector('img'), src = ui.charSrc(next);
+        pic.srcset = src.srcset;
+        pic.src = src.src;
+        pic.alt = `Персонаж типа ${next.code} «${next.alias}»`;
+        nameEl.textContent = ui.short(next);
+        capEl.textContent = caption(next);
+        el.style.setProperty('--q', `var(--q-${next.quadra})`);
+        S.fx.fit(title);
+        figEl.classList.remove('is-out');
+        title.classList.remove('is-fading');
+        capEl.classList.remove('is-fading');
+        queued = prefetch(nextType(next.id));
+        later(() => { busy = false; }, 160);
+      });
+    };
+    const onClick = e => { if (e.target.closest('[data-hero-next]')) swap(); };
+    el.addEventListener('click', onClick);
+    return () => {
+      io.disconnect();
+      de.classList.remove('hero-on');
+      removeEventListener('resize', layout);
+      timers.forEach(clearTimeout);
+    };
+  }
+
+  // ---------- лента 16 типов ----------
+  function marquee() {
+    const qs = S.data.quadras;
+    const rows = [[qs[0], qs[1]], [qs[2], qs[3]]].map(pair => pair.flatMap(q => ui.typesOf(q.id)));
+    const tile = (t, live) => `<a class="mq-tile" href="#/types/${t.id}" style="${ui.qStyle(t.quadra)}"${live ? '' : ' tabindex="-1"'}>
+        <span class="mq-text"><span class="mq-code">${t.code}</span><span class="mq-alias">${esc(t.alias)}</span><span class="mq-role">${esc(t.role)} · ${ui.quadra(t.quadra).name}</span></span>
+        ${ui.character(t, { sizes: ui.CHAR.tile, alt: '', cls: 'mq-img' })}
+      </a>`;
+    const copy = (row, live) => `<div class="mq-copy"${live ? '' : ' inert aria-hidden="true"'}>${row.map(t => tile(t, live)).join('')}</div>`;
+    return `
+      <section class="mq-sec" data-marquee aria-labelledby="mq-h">
+        <div class="wrap mq-head reveal">
+          <h2 class="caption" id="mq-h">16 типов · 4 квадры</h2>
+          <a class="link" href="#/types">Все типы</a>
+        </div>
+        ${rows.map(row => `<div class="mq-row"><div class="mq-track">${copy(row, false)}${copy(row, true)}${copy(row, false)}</div></div>`).join('')}
+      </section>`;
+  }
+
+  // ---------- «Соционика»: четыре стихии по углам и текст, который проявляется по буквам ----------
+  const CORNERS = [['Se', 'beta', 'tl', -1, -1], ['Ni', 'gamma', 'tr', 1, -1], ['Ti', 'alpha', 'bl', -1, 1], ['Fe', 'delta', 'br', 1, 1]];
+  function socionics() {
+    return `
+      <section class="sec soc-sec">
+        ${CORNERS.map(([a, q, pos, sx, sy], i) => `<span class="soc-g soc-${pos} reveal" data-anim style="--fx:${sx * 90}px;--fy:${sy * 30}px;--d:${(i * 0.08).toFixed(2)}s" aria-hidden="true"><span class="soc-float">${S.art.glyphSVG(a, S.theme.quadraColor(q), 'soc-svg')}</span></span>`).join('')}
+        <div class="wrap center soc-in">
+          <h2 class="h2 soc-h" data-anim-text>Соционика</h2>
+          <p class="soc-text" data-anim-text>Соционика описывает 16${NB}типов: как человек замечает мир, принимает решения и${NB}с${NB}кем ему легко. Это не${NB}диагноз и${NB}не${NB}гороскоп, а${NB}язык, на${NB}котором проще понимать себя и${NB}близких. Двадцать вопросов — и${NB}узнаешь свой тип.</p>
+          <p class="reveal"><a class="btn" href="#/test">Пройти тест</a></p>
+        </div>
+      </section>`;
+  }
+
+  // ---------- «Что внутри» ----------
+  const INSIDE = [
+    ['Твой тип', 'Код из трёх букв и вероятность по всем 16 типам', '#/test'],
+    ['Модель А', 'Восемь функций: чем живёшь, что даётся легко, где нужна поддержка', '#/types'],
+    ['Квадра', 'Компания, в которой проще всего быть собой', '#/quadras'],
+    ['Отношения', '14 видов: с кем легко, с кем искрит и как договориться', '#/relations'],
+    ['Mystery box', 'Случайные факты о типах', '#/box']
+  ];
+  function inside() {
+    return `
+      <section class="sec sec-white">
+        <div class="wrap">
+          <h2 class="h2 reveal sec-head">Что внутри</h2>
+          <ol class="numlist">${INSIDE.map(([title, text, href], i) => `
+            <li class="reveal"><a class="nl-row" href="${href}">
+              <span class="nl-num" aria-hidden="true">0${i + 1}</span>
+              <span class="nl-body"><span class="nl-title">${esc(title)}</span><span class="nl-text">${esc(text)}</span></span>
+              <span class="nl-go" aria-hidden="true">${ui.ICON.arrow}</span>
+            </a></li>`).join('')}
+          </ol>
+        </div>
+      </section>`;
+  }
+
+  // ---------- стопка квадр ----------
+  ui.quadraCard = (q, i) => {
+    const qc = (S.content.quadras || {})[q.id] || {};
+    return `
+      <div class="stack-item" style="--i:${i}">
+        <article class="stack-card" style="${ui.qStyle(q.id)}" aria-labelledby="qc-${q.id}">
+          <header class="qc-head">
+            <span class="qc-num" aria-hidden="true">0${i + 1}</span>
+            <div class="qc-titles">
+              <p class="qc-kicker caption" id="qc-${q.id}">Квадра · ${q.name}</p>
+              <p class="qc-motto">${esc(qc.motto || '')}</p>
+            </div>
+            <a class="btn-ghost btn-sm qc-go" href="#/quadras#${q.id}">Смотреть квадру</a>
+          </header>
+          <div class="qc-grid">
+            <div class="qc-left">
+              <div class="qc-em" data-anim>${S.art.quadraEmblem(q)}</div>
+              <div class="qc-vals"><p class="caption">Ценит</p>
+                <ul>${q.values.map(v => `<li>${S.art.symbol(v)}<span>${esc(S.data.aspects[v].name)}</span></li>`).join('')}</ul>
+              </div>
+            </div>
+            <ul class="qc-types">${ui.typesOf(q.id).map(t => `
+              <li><a class="qc-type" href="#/types/${t.id}">
+                <span class="qc-art">${ui.character(t, { sizes: ui.CHAR.tile, alt: '' })}</span>
+                <span class="qc-code">${t.code}</span><span class="qc-alias">${esc(t.alias)}</span>
+              </a></li>`).join('')}</ul>
+          </div>
+        </article>
+      </div>`;
+  };
+  ui.quadraStack = () => `<div class="stack wrap" data-stack>${S.data.quadras.map(ui.quadraCard).join('')}</div>`;
+
+  function quadras() {
+    return `
+      <section class="sec qs-sec">
+        <div class="wrap sec-head">
+          <h2 class="h2 reveal"><span class="sv">Квадры</span></h2>
+          <p class="lead reveal">Четыре компании по${NB}ценностям. В${NB}своей квадре человеку проще всего: там ценят то${NB}же, что и${NB}он.</p>
+        </div>
+        ${ui.quadraStack()}
+      </section>`;
+  }
+
+  V.home = {
+    render: () => hero(heroType()) + marquee() + socionics() + inside() + quadras(),
+    mount: root => mountHero(root)
   };
 })(window);

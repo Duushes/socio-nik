@@ -1,10 +1,26 @@
-/* Socio-Nik · эффекты: появление при прокрутке, счёт чисел, рост столбиков, наклон карточек,
-   морфинг дихотомий, пауза анимаций вне экрана, конфетти, переходы между экранами. */
+/* Socio-Nik · эффекты: появление при прокрутке, счёт чисел и рост полос, пауза петель вне экрана,
+   магнит, лента по прокрутке, проявление текста по буквам, стопка карточек, подгонка заголовка по ширине,
+   конфетти и переходы между экранами. Всё уважает prefers-reduced-motion. */
 (function (root) {
   const S = root.Socio = root.Socio || {};
   const { reducedMotion } = S.dom;
+  const fineMouse = () => Boolean(root.matchMedia && root.matchMedia('(hover: hover) and (pointer: fine)').matches);
+  const clamp01 = v => Math.max(0, Math.min(1, v));
 
-  // ---------- счёт чисел и рост столбиков ----------
+  // Обработчик прокрутки и размера окна через один кадр; работает, только пока секция на экране
+  function onScrollFrame(target, fn) {
+    let raf = 0, on = true;
+    const tick = () => { raf = 0; fn(); };
+    const ask = () => { if (on && !raf) raf = requestAnimationFrame(tick); };
+    const io = 'IntersectionObserver' in root ? new IntersectionObserver(([e]) => { on = e.isIntersecting; if (on) ask(); }, { rootMargin: '200px 0px' }) : null;
+    if (io) io.observe(target);
+    addEventListener('scroll', ask, { passive: true });
+    addEventListener('resize', ask);
+    ask();
+    return () => { removeEventListener('scroll', ask); removeEventListener('resize', ask); cancelAnimationFrame(raf); if (io) io.disconnect(); };
+  }
+
+  // ---------- счёт чисел и рост полос ----------
   function countUp(el) {
     if (el.dataset.done) return;
     el.dataset.done = '1';
@@ -28,12 +44,13 @@
     bars.concat(Array.from(el.querySelectorAll('[data-w]'))).forEach(b => { b.style.setProperty('--w', b.dataset.w + '%'); });
   }
 
+  // FadeIn: один раз, 0,7 с; сдвиг и задержка — из --fx / --fy / --d
   function reveal(scope) {
     const els = Array.from(scope.querySelectorAll('.reveal'));
     if (reducedMotion() || !('IntersectionObserver' in root)) { els.forEach(show); return () => {}; }
     const io = new IntersectionObserver(entries => entries.forEach(e => {
       if (e.isIntersecting) { show(e.target); io.unobserve(e.target); }
-    }), { threshold: 0.12, rootMargin: '0px 0px -30px 0px' });
+    }), { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
     els.forEach(el => io.observe(el));
     return () => io.disconnect();
   }
@@ -47,71 +64,125 @@
     return () => io.disconnect();
   }
 
-  // ---------- наклон карточек и блик за курсором ----------
-  function tilt(scope) {
-    if (reducedMotion()) return () => {};
-    const move = e => {
-      if (e.pointerType === 'touch') return;
-      const el = e.target.closest && e.target.closest('.tilt');
-      if (!el || !scope.contains(el)) return;
-      const r = el.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
-      el.style.setProperty('--rx', ((0.5 - y) * 8).toFixed(2) + 'deg');
-      el.style.setProperty('--ry', ((x - 0.5) * 10).toFixed(2) + 'deg');
-      el.style.setProperty('--gx', (x * 100).toFixed(1) + '%');
-      el.style.setProperty('--gy', (y * 100).toFixed(1) + '%');
-      el.classList.add('tilting');
-    };
-    const out = e => {
-      const el = e.target.closest && e.target.closest('.tilt');
-      if (!el || (e.relatedTarget && el.contains(e.relatedTarget))) return;
-      el.classList.remove('tilting');
-      el.style.removeProperty('--rx');
-      el.style.removeProperty('--ry');
-    };
-    scope.addEventListener('pointermove', move);
-    scope.addEventListener('pointerout', out);
-    return () => { scope.removeEventListener('pointermove', move); scope.removeEventListener('pointerout', out); };
-  }
-
-  // ---------- морфинг «А ↔ Б» у карточек дихотомий ----------
-  function morph(scope) {
-    const cards = Array.from(scope.querySelectorAll('[data-morph]'));
-    if (!cards.length) return () => {};
-    const visible = new Set();
-    const io = 'IntersectionObserver' in root ? new IntersectionObserver(es => es.forEach(e => (e.isIntersecting ? visible.add(e.target) : visible.delete(e.target)))) : null;
-    cards.forEach(c => {
-      if (io) io.observe(c); else visible.add(c);
-      c.addEventListener('pointerenter', () => c.classList.add('hover'));
-      c.addEventListener('pointerleave', () => c.classList.remove('hover'));
-    });
-    const timer = reducedMotion() ? 0 : setInterval(() => cards.forEach(c => {
-      if (visible.has(c) && !c.classList.contains('hover')) c.classList.toggle('is-b');
-    }), 2600);
-    return () => { clearInterval(timer); if (io) io.disconnect(); };
-  }
-
-  // ---------- параллакс героя ----------
-  function parallax(scope) {
-    const hero = scope.querySelector('[data-parallax]');
-    if (!hero || reducedMotion()) return () => {};
-    let raf = 0, px = 0, py = 0;
-    const onMove = e => {
-      if (e.pointerType === 'touch') return;
-      px = e.clientX / innerWidth - 0.5;
-      py = e.clientY / innerHeight - 0.5;
-      if (!raf) raf = requestAnimationFrame(apply);
-    };
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(apply); };
+  // ---------- магнит: [data-magnet] — зона (её размер не меняется), сдвигается первый ребёнок ----------
+  function magnet(scope, { pad = 150, strength = 3 } = {}) {
+    const zones = Array.from(scope.querySelectorAll('[data-magnet]'));
+    if (!zones.length || reducedMotion() || !fineMouse()) return () => {};
+    let raf = 0, mx = -1e4, my = -1e4;
     const apply = () => {
       raf = 0;
-      hero.style.setProperty('--px', px.toFixed(3));
-      hero.style.setProperty('--py', py.toFixed(3));
-      hero.style.setProperty('--sy', Math.min(1, scrollY / innerHeight).toFixed(3));
+      zones.forEach(z => {
+        const el = z.firstElementChild;
+        if (!el) return;
+        const r = z.getBoundingClientRect();
+        const near = mx > r.left - pad && mx < r.right + pad && my > r.top - pad && my < r.bottom + pad;
+        if (near) {
+          const x = (mx - (r.left + r.width / 2)) / strength, y = (my - (r.top + r.height / 2)) / strength;
+          el.style.transition = 'transform 0.3s ease-out';
+          el.style.willChange = 'transform';
+          el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+          z.classList.add('pulled');
+        } else if (z.classList.contains('pulled')) {
+          z.classList.remove('pulled');
+          el.style.transition = 'transform 0.6s ease-in-out';
+          el.style.transform = 'translate3d(0, 0, 0)';
+          setTimeout(() => { if (!z.classList.contains('pulled')) el.style.willChange = ''; }, 650);
+        }
+      });
     };
-    addEventListener('pointermove', onMove);
-    addEventListener('scroll', onScroll, { passive: true });
-    return () => { removeEventListener('pointermove', onMove); removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); };
+    const move = e => { if (e.pointerType !== 'mouse') return; mx = e.clientX; my = e.clientY; if (!raf) raf = requestAnimationFrame(apply); };
+    const leave = () => { mx = my = -1e4; if (!raf) raf = requestAnimationFrame(apply); };
+    addEventListener('pointermove', move, { passive: true });
+    document.addEventListener('pointerleave', leave);
+    return () => { removeEventListener('pointermove', move); document.removeEventListener('pointerleave', leave); cancelAnimationFrame(raf); };
+  }
+
+  // ---------- лента: ряды едут в разные стороны по прокрутке ----------
+  // offset = (scrollY − верх секции + высота окна) × 0,3; первый ряд — offset − 200, второй — зеркально
+  function marquee(scope) {
+    const sec = scope.querySelector('[data-marquee]');
+    if (!sec || reducedMotion()) return () => {};
+    const rows = Array.from(sec.querySelectorAll('.mq-track'));
+    return onScrollFrame(sec, () => {
+      const offset = (scrollY - (sec.getBoundingClientRect().top + scrollY) + innerHeight) * 0.3;
+      rows.forEach((row, i) => {
+        const x = i % 2 ? -(offset - 200) : offset - 200;
+        row.style.transform = `translate3d(${x.toFixed(1)}px, 0, 0)`;
+      });
+    });
+  }
+
+  // ---------- проявление текста по буквам: 0,2 → 1 между 'start 0.8' и 'end 0.2' ----------
+  // Скринридер читает скрытую копию, буквы ему не видны; слова не рвутся
+  function splitText(el) {
+    if (el.dataset.split) return;
+    el.dataset.split = '1';
+    const text = el.textContent.replace(/\s+/g, ' ').trim();
+    let i = 0;
+    const words = text.split(' ').map(w => `<span class="at-w">${Array.from(w).map(ch => `<span class="at-c" style="--i:${i++}">${S.dom.esc(ch)}</span>`).join('')}</span>`);
+    el.innerHTML = `<span class="sr">${S.dom.esc(text)}</span><span aria-hidden="true">${words.join(' ')}</span>`;
+    el.style.setProperty('--n', i);
+  }
+  function animText(scope) {
+    const els = Array.from(scope.querySelectorAll('[data-anim-text]'));
+    if (!els.length) return () => {};
+    els.forEach(splitText);
+    if (reducedMotion()) { els.forEach(el => el.style.setProperty('--p', 1)); return () => {}; }
+    const offs = els.map(el => onScrollFrame(el, () => {
+      const r = el.getBoundingClientRect(), vh = innerHeight;
+      el.style.setProperty('--p', clamp01((0.8 * vh - r.top) / (0.6 * vh + r.height)).toFixed(4));
+    }));
+    return () => offs.forEach(f => f());
+  }
+
+  // ---------- стопка: карточки прилипают и уменьшаются до 1 − (n − 1 − i) × 0,03 ----------
+  function stack(scope) {
+    const box = scope.querySelector('[data-stack]');
+    if (!box || reducedMotion()) return () => {};
+    const cards = Array.from(box.querySelectorAll('.stack-card'));
+    const n = cards.length;
+    return onScrollFrame(box, () => {
+      const r = box.getBoundingClientRect();
+      const p = clamp01(-r.top / Math.max(1, r.height - innerHeight));
+      cards.forEach((c, i) => {
+        const k = clamp01((p - i / n) / (1 - i / n));
+        c.style.transform = `scale(${(1 - (n - 1 - i) * 0.03 * k).toFixed(4)})`;
+      });
+    });
+  }
+
+  // ---------- подгонка по ширине ----------
+  // [data-fit]: внутри .fit-in со строками .fit-line. Одна строка, пока кегль ≥ min·vw; иначе по строке на .fit-line.
+  // Кегль не больше max·vw и (если задано) maxh·высоты окна.
+  function fit(el) {
+    const inner = el.querySelector('.fit-in');
+    if (!inner || !el.clientWidth) return;
+    const cs = getComputedStyle(el);
+    const W = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const vw = innerWidth / 100, vh = innerHeight / 100;
+    const max = Number(el.dataset.max || 17.5) * vw, min = Number(el.dataset.min || 12) * vw;
+    const maxh = el.dataset.maxh ? Number(el.dataset.maxh) * vh : Infinity;
+    el.style.fontSize = '100px';
+    el.classList.remove('is-two');
+    let size = 100 * W / inner.scrollWidth;
+    const lines = el.querySelectorAll('.fit-line');
+    if (size < min && lines.length > 1) {
+      el.classList.add('is-two');
+      size = 100 * W / Math.max(...Array.from(lines, l => l.scrollWidth));
+    }
+    el.style.fontSize = Math.min(size * 0.985, max, maxh).toFixed(2) + 'px';
+    el.dispatchEvent(new CustomEvent('fitted', { bubbles: true }));
+  }
+  function fitAll(scope) {
+    const els = Array.from(scope.querySelectorAll('[data-fit]'));
+    if (!els.length) return () => {};
+    const run = () => els.forEach(fit);
+    run();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(run);
+    let raf = 0;
+    const onResize = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(run); };
+    addEventListener('resize', onResize);
+    return () => { removeEventListener('resize', onResize); cancelAnimationFrame(raf); };
   }
 
   // ---------- конфетти ----------
@@ -140,17 +211,11 @@
 
   // ---------- переходы между экранами ----------
   let active = null;
-  function transition(update, { theme = false, x = innerWidth / 2, y = 0 } = {}) {
+  function transition(update) {
     // Без API, в щадящем режиме и поверх уже идущего перехода — просто обновляем экран
     if (!document.startViewTransition || reducedMotion() || active || document.visibilityState !== 'visible') { update(); return; }
-    const de = document.documentElement;
-    if (theme) {
-      de.style.setProperty('--vt-x', x + 'px');
-      de.style.setProperty('--vt-y', y + 'px');
-      de.classList.add('vt-theme');
-    }
     const vt = active = document.startViewTransition(update);
-    const done = () => { active = null; de.classList.remove('vt-theme'); };
+    const done = () => { active = null; };
     vt.ready.catch(() => {});
     vt.updateCallbackDone.catch(() => {});
     vt.finished.then(done, done);
@@ -158,10 +223,10 @@
 
   // Подключить всё к только что отрисованному экрану; вернуть уборку
   function mountAll(scope) {
-    const offs = [reveal(scope), pauseOffscreen(scope), tilt(scope), morph(scope), parallax(scope)];
+    const offs = [fitAll(scope), reveal(scope), pauseOffscreen(scope), magnet(scope), marquee(scope), animText(scope), stack(scope)];
     scope.querySelectorAll('svg.em-live').forEach(svg => offs.push(S.art.animateOrbit(svg)));
     return () => offs.forEach(off => off && off());
   }
 
-  S.fx = { reveal, countUp, show, pauseOffscreen, tilt, morph, parallax, confetti, transition, mountAll };
+  S.fx = { reveal, countUp, show, pauseOffscreen, magnet, marquee, animText, stack, fit, fitAll, confetti, transition, mountAll, fineMouse };
 })(window);

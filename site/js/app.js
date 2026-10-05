@@ -1,4 +1,4 @@
-/* Socio-Nik · приложение: состояние, роутер на hash, навигация, тема, отладочный хук */
+/* Socio-Nik · приложение: состояние, роутер на hash, навигация, отладочный хук. Тема одна — тёмная. */
 (function (root) {
   const S = root.Socio;
 
@@ -107,7 +107,11 @@
       const c1 = view.mount ? view.mount(el, ...r.params) : null;
       const c2 = S.fx.mountAll(el);
       cleanup = () => { if (c1) c1(); if (c2) c2(); };
-      document.querySelectorAll('.nav-links a').forEach(a => a.classList.toggle('on', a.dataset.nav === NAV[r.name]));
+      document.querySelectorAll('.nav-links a, .menu a').forEach(a => {
+        const on = a.dataset.nav === NAV[r.name];
+        a.classList.toggle('on', on);
+        if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+      });
       closeMenu();
       if (r.anchor) scrollToAnchor(r.anchor, false);
       if (!instant && !keepScroll) el.focus({ preventScroll: true });
@@ -121,22 +125,15 @@
   }
 
   // ---------- навигация ----------
-  function closeMenu() {
-    const nav = document.querySelector('.nav');
-    if (nav) nav.classList.remove('open');
-    const b = document.querySelector('[data-menu]');
-    if (b) b.setAttribute('aria-expanded', 'false');
+  function setMenu(open) {
+    const de = document.documentElement, b = document.querySelector('[data-menu]');
+    de.classList.toggle('menu-open', open);
+    if (b) {
+      b.setAttribute('aria-expanded', String(open));
+      b.setAttribute('aria-label', open ? 'Закрыть меню' : 'Меню');
+    }
   }
-
-  function toggleTheme(btn) {
-    const next = S.theme.resolved() === 'dark' ? 'light' : 'dark';
-    S.store.set('theme', next);
-    const r = btn.getBoundingClientRect();
-    S.fx.transition(() => {
-      S.theme.apply();
-      render({ instant: true, keepScroll: true });
-    }, { theme: true, x: r.left + r.width / 2, y: r.top + r.height / 2 });
-  }
+  const closeMenu = () => setMenu(false);
 
   function init() {
     const q = new URLSearchParams(location.search);
@@ -144,17 +141,10 @@
     S.theme.apply();
     document.documentElement.classList.add('js');
 
-    document.querySelector('[data-theme-toggle]').addEventListener('click', e => toggleTheme(e.currentTarget));
-    document.querySelector('[data-menu]').addEventListener('click', e => {
-      const nav = document.querySelector('.nav'), open = !nav.classList.contains('open');
-      nav.classList.toggle('open', open);
-      e.currentTarget.setAttribute('aria-expanded', String(open));
-    });
-    if (root.matchMedia) {
-      root.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-        if (S.theme.preferred() === 'auto') { S.theme.apply(); render({ instant: true, keepScroll: true }); }
-      });
-    }
+    document.querySelector('[data-menu]').addEventListener('click', () => setMenu(!document.documentElement.classList.contains('menu-open')));
+    addEventListener('keydown', e => { if (e.key === 'Escape' && document.documentElement.classList.contains('menu-open')) { closeMenu(); document.querySelector('[data-menu]').focus(); } });
+    addEventListener('resize', () => { if (innerWidth >= 960) closeMenu(); });
+    S.fx.fitAll(document.querySelector('.footer'));
     // Фокус переносим программно только тем, кто пользуется клавиатурой, — мышь и палец не видят лишних рамок
     addEventListener('keydown', e => { if (e.key === 'Tab' || e.key.startsWith('Arrow') || /^[1-5]$/.test(e.key)) document.documentElement.classList.add('kbd'); }, true);
     addEventListener('pointerdown', () => document.documentElement.classList.remove('kbd'), true);
