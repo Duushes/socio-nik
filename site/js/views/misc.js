@@ -60,7 +60,7 @@
             <p class="lead sec-sub reveal">Каждая стихия бывает «чёрной» (экстравертной) и${NB}«белой» (интровертной). На${NB}сайте чёрные аспекты — плотные знаки, белые — стеклянные. Те${NB}же знаки носят персонажи на${NB}одежде.</p>
             <div class="aspect-grid">${Object.keys(A).map((id, i) => `
               <div class="aspect reveal" style="--i:${i % 4}">
-                <span class="aspect-art">${S.art.glyphSVG(id, '#7621b0', 'aspect-svg', 'light')}</span>
+                <span class="aspect-art">${S.art.aspectImg(id, 'violet', 'aspect-img')}</span>
                 <span class="aspect-code">${S.art.symbol(id)} ${A[id].short}</span>
                 <span class="aspect-name">${esc(A[id].name)}</span>
                 <span class="aspect-hint">${esc(A[id].hint)}</span>

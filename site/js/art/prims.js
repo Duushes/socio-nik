@@ -49,6 +49,7 @@
         case 'circle': return `<circle cx="${n2(n.cx)}" cy="${n2(n.cy)}" r="${n2(n.r)}"${attrs(n)}/>`;
         case 'ellipse': return `<ellipse cx="${n2(n.cx)}" cy="${n2(n.cy)}" rx="${n2(n.rx)}" ry="${n2(n.ry)}"${attrs(n)}/>`;
         case 'path': return `<path d="${n.d}"${attrs(n)}/>`;
+        case 'image': return `<image href="${esc(n.href)}" x="${n2(n.x)}" y="${n2(n.y)}" width="${n2(n.w)}" height="${n2(n.h)}"${n.cls ? ` class="${n.cls}"` : ''}/>`;
         case 'text': return `<text x="${n.x}" y="${n.y}" text-anchor="${n.anchor || 'middle'}"${attrs(n)}>${esc(n.text)}</text>`;
         case 'g': return `<g${tf(n.tf)}${attrs(n)}>${n.children.map(node).join('')}</g>`;
         default: return '';

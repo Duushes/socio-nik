@@ -77,7 +77,7 @@
             </div>
             <div class="res-links">
               <a class="link-card reveal" href="#/quadras#${q.id}" style="${ui.qStyle(q.id)}">
-                <span class="lc-art" data-anim>${S.art.quadraEmblem(q, { theme: 'light' })}</span>
+                <span class="lc-art" data-anim>${S.art.quadraEmblem(q)}</span>
                 <span class="lc-kicker">Твоя квадра</span>
                 <span class="lc-title">${q.name}</span>
                 <span class="lc-text">${esc(qc.motto || '')}</span>

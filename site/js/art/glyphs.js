@@ -133,6 +133,12 @@
     return `<svg class="${cls}" viewBox="0 0 20 20" aria-hidden="true" focusable="false">${shape}</svg>`;
   };
 
+  // Отрисованный знак (рендер в стиле персонажей): img/aspects/<аспект>-<оттенок>.webp, оттенок — id квадры или violet.
+  // Векторные знаки выше остаются для canvas (картинки для шера): растровый файл с file:// «пачкает» canvas.
+  art.aspectSrc = (id, tint) => `img/aspects/${id}-${tint}.webp`;
+  art.aspectImg = (id, tint, cls = 'asp', { eager = false } = {}) =>
+    `<img class="${cls}" src="${art.aspectSrc(id, tint)}" width="320" height="320" alt=""${eager ? '' : ' loading="lazy"'} decoding="async" draggable="false">`;
+
   art.glyph = glyph;
   art.glyphOf = glyphOf;
   art.D = D;

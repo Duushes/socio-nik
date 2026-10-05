@@ -22,7 +22,7 @@
     const cl = S.theme.quadraColor(left.quadra, th), cr = S.theme.quadraColor(right.quadra, th);
     const ink = th === 'dark' ? '#f5f5f7' : '#1d1d1f';
     const fig = (t, c, role, x, y, s = 0.56, extra = {}) => ({
-      t: 'g', tf: Object.assign({ x, y, s }, extra), children: [{ t: 'g', cls: 'sf ' + role, children: art.glyphOf(t.ego[0], c, th) }]
+      t: 'g', tf: Object.assign({ x, y, s }, extra), children: [{ t: 'g', cls: 'sf ' + role, children: [{ t: 'image', href: art.aspectSrc(t.ego[0], t.quadra), x: -56, y: -56, w: 112, h: 112 }] }]
     });
     let A = fig(left, cl, 'sa', LX, Y), B = fig(right, cr, 'sb', RX, Y);
     const back = [], front = [];

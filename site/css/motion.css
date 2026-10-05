@@ -39,8 +39,6 @@
 .tile:nth-child(2) .em-base { animation-delay: -1.5s; }
 .tile:nth-child(3) .em-base { animation-delay: -3s; }
 .tile:nth-child(4) .em-base { animation-delay: -4.5s; }
-.qe-spin { transform-origin: 0 0; animation: spin 48s linear infinite; }
-.qe-item { transform-box: fill-box; transform-origin: center; animation: spin 48s linear infinite reverse; }
 .bx-glow { animation: spin 18s linear infinite; }
 
 /* ---------- калькулятор ---------- */

@@ -59,21 +59,13 @@
     return () => { cancelAnimationFrame(raf); io.disconnect(); };
   };
 
-  // Эмблема квадры: 4 ценимых аспекта на общей орбите
-  art.quadraEmblem = (q, { cls = '', theme } = {}) => {
-    const th = theme || S.theme.resolved();
-    const c = q.color[th === 'dark' ? 'dark' : 'light'];
-    const R = 58;
-    const nodes = [
-      { t: 'circle', cx: 0, cy: 0, r: 98, fill: { rad: [0, 0, 98], stops: [[0, rgba(c, th === 'dark' ? 0.32 : 0.2)], [1, rgba(c, 0)]] } },
-      { t: 'circle', cx: 0, cy: 0, r: R, fill: 'none', stroke: rgba(c, 0.35), sw: 1.1 },
-      { t: 'g', cls: 'qe-spin', children: q.values.map((id, i) => {
-        const a = (-90 + i * 90) * Math.PI / 180;
-        return { t: 'g', tf: { x: R * Math.cos(a), y: R * Math.sin(a), s: 0.42 }, children: [{ t: 'g', cls: 'qe-item', children: art.glyphOf(id, c, th) }] };
-      }) }
-    ];
-    return art.svg(nodes, { cls: 'qemblem ' + cls, label: `Квадра ${q.name}: ценности — ${q.values.map(v => S.data.aspects[v].short).join(', ')}` });
-  };
+  // Эмблема квадры: 4 ценимых аспекта на общей орбите — отрисованные знаки; орбита медленно вращается, знаки стоят прямо
+  const ORBIT_POS = [[50, 18], [82, 50], [50, 82], [18, 50]];
+  art.quadraEmblem = (q, { cls = '' } = {}) => `
+    <div class="qorbit ${cls}" role="img" aria-label="Квадра ${q.name}: ценности — ${q.values.map(v => S.data.aspects[v].short).join(', ')}" style="--q:var(--q-${q.id})">
+      <span class="qo-glow" aria-hidden="true"></span><span class="qo-ring" aria-hidden="true"></span>
+      <span class="qo-spin" aria-hidden="true">${q.values.map((id, i) => `<span class="qo-item" style="left:${ORBIT_POS[i][0]}%;top:${ORBIT_POS[i][1]}%">${art.aspectImg(id, q.id, 'qo-img')}</span>`).join('')}</span>
+    </div>`;
 
   art.orbitPos = orbitPos;
 })(typeof window !== 'undefined' ? window : globalThis);

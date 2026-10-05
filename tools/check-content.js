@@ -51,6 +51,16 @@ function checkFact(where, f) {
   if (f && str(f.text) && f.text.length < 40) err(where, 'факт короче 40 знаков');
 }
 
+// ---------- короткие черты для героя ----------
+if (full) {
+  const tr = C.traits || {};
+  TYPES.forEach(id => {
+    const list = tr[id];
+    if (!Array.isArray(list) || list.length !== 3) return err(`traits.${id}`, 'нужно ровно 3 черты');
+    list.forEach((x, i) => checkText(`traits.${id}[${i}]`, x, 22));
+  });
+}
+
 // ---------- типы ----------
 const types = C.types || {};
 Object.keys(types).forEach(id => {

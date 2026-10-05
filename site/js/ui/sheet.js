@@ -107,7 +107,7 @@
     return `
       <article class="fn" style="${ui.qStyle(t.quadra)}">
         <header class="fn-head sheet-drag">
-          <div class="fn-art"><span class="fn-float">${S.art.glyphSVG(id, S.theme.quadraColor(t.quadra), 'fn-svg')}</span></div>
+          <div class="fn-art"><span class="fn-float">${S.art.aspectImg(id, t.quadra, 'fn-img', { eager: true })}</span></div>
           <div class="fn-titles">
             <p class="fn-kicker">${t.code} · ${BLOCKS[n]} · функция ${n} из 8</p>
             <h2 class="fn-title">${F[n - 1].name}</h2>

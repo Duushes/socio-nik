@@ -29,7 +29,7 @@
       const a = A[m[n - 1]];
       return `<button type="button" class="ma-cell reveal${n <= 2 ? ' ego' : ''}" style="--i:${n % 4}" data-fn="${n}" aria-haspopup="dialog" aria-label="${F[n - 1].name} функция — ${esc(a.name)}. Подробнее">
         <span class="ma-n">${n}</span>
-        <span class="ma-glyph">${S.art.glyphSVG(a.id, S.theme.quadraColor(t.quadra), 'ma-svg')}</span>
+        <span class="ma-glyph">${S.art.aspectImg(a.id, t.quadra, 'ma-img')}</span>
         <span class="ma-fn">${F[n - 1].name}</span>
         <span class="ma-asp">${a.short} · ${esc(a.name)}</span>
         <span class="ma-more" aria-hidden="true">${ui.ICON.arrow}</span>

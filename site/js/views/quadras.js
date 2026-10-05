@@ -36,7 +36,7 @@
                 <p class="body reveal">${esc(c.about || '')}</p>
                 <div class="tags reveal">${(c.atmosphere || []).map(a => `<span class="chip">${esc(a)}</span>`).join('')}</div>
               </div>
-              <div class="quadra-art reveal" data-anim>${S.art.quadraEmblem(q, { cls: 'qe-big', theme })}</div>
+              <div class="quadra-art reveal" data-anim>${S.art.quadraEmblem(q, { cls: 'qe-big' })}</div>
             </div>
             <div class="grid2 gap-top">
               <div class="card reveal"><h3 class="card-title">Ценят</h3>${aspects(q.values)}<p>${esc(c.values || '')}</p></div>

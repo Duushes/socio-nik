@@ -16,6 +16,19 @@
     return `${t.alias} — так в${NB}соционике называют тип${NB}${t.code}. Узнай свой тип: 20${NB}вопросов, 4${NB}минуты`;
   }
 
+  const traits = t => (S.content.traits && S.content.traits[t.id]) || [];
+  const traitItems = t => traits(t).map((x, i) => `<li style="--k:${i}">${esc(x)}</li>`).join('');
+
+  // Значок-призыв: текст бежит по кругу, в центре стрелка; без результата ведёт в тест
+  function badge(has) {
+    const text = (has ? 'Твой тип · Твой персонаж · Твои отношения · ' : `Узнай свой тип · 20${NB}вопросов · 4${NB}минуты · `).toUpperCase();
+    return `<a class="hero-badge" href="${has ? '#/result' : '#/test'}" data-anim aria-label="${has ? 'Мой результат' : 'Узнай свой тип — пройти тест'}">
+      <svg class="hb-ring" viewBox="0 0 120 120" aria-hidden="true"><defs><path id="hb-path" d="M60,60 m-45,0 a45,45 0 1,1 90,0 a45,45 0 1,1 -90,0"/></defs>
+        <text><textPath href="#hb-path" textLength="282" lengthAdjust="spacing">${esc(text)}</textPath></text></svg>
+      <span class="hb-core" aria-hidden="true">${ui.ICON.arrow}</span>
+    </a>`;
+  }
+
   // ---------- герой ----------
   function hero(t) {
     const has = Boolean(S.state.result());
@@ -30,10 +43,13 @@
         </h1>
         <div class="hero-char h-in" style="--d:.6s;--y:30px">
           <div class="hero-magnet" data-magnet><div class="hero-mag">
-            <div class="hero-fig" data-hero-next title="Показать другой тип">${ui.character(t, { sizes: ui.CHAR.hero, eager: true })}</div>
+            <div class="hero-fig" data-hero-next>${ui.character(t, { sizes: ui.CHAR.hero, eager: true })}</div>
           </div></div>
+          <ul class="hero-traits" aria-label="Коротко о типе" data-hero-traits data-anim>${traitItems(t)}</ul>
+          ${badge(has)}
         </div>
         <div class="hero-foot">
+          <ul class="hero-traits-m h-in" style="--d:.35s;--y:20px" aria-label="Коротко о типе" data-hero-traits>${traitItems(t)}</ul>
           <p class="hero-cap caption h-in" style="--d:.35s;--y:20px" data-hero-cap>${esc(caption(t))}</p>
           <div class="hero-actions h-in" style="--d:.5s;--y:20px">
             <button class="btn-ghost hero-next" type="button" data-hero-next><span class="hero-next-l">Другой тип</span>${ui.ICON.cycle}</button>
@@ -68,6 +84,14 @@
     fig.style.width = w.toFixed(1) + 'px';
     el.style.setProperty('--side', Math.max(180, (W - w) / 2 - 24 - parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gutter'))).toFixed(0) + 'px');
     el.classList.add('laid');
+    // плавающие черты: держим в пределах экрана
+    const gut = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gutter')) || 20;
+    el.querySelectorAll('.hero-traits li').forEach(li => {
+      li.style.setProperty('--dx', '0px');
+      const r = li.getBoundingClientRect();
+      const dx = r.left < gut ? gut - r.left : r.right > W - gut ? W - gut - r.right : 0;
+      li.style.setProperty('--dx', dx.toFixed(1) + 'px');
+    });
   }
 
   // Колода без повторов: следующий персонаж — случайный, пока не покажем всех
@@ -92,6 +116,7 @@
     const later = (fn, ms) => timers.push(setTimeout(fn, S.dom.reducedMotion() ? 0 : ms));
     const title = el.querySelector('.hero-title'), figEl = el.querySelector('.hero-fig');
     const nameEl = el.querySelector('[data-hero-name]'), capEl = el.querySelector('[data-hero-cap]');
+    const traitEls = Array.from(el.querySelectorAll('[data-hero-traits]'));
     const layout = () => layoutHero(el);
     el.addEventListener('fitted', layout);
     addEventListener('resize', layout);
@@ -110,8 +135,7 @@
       const img = queued, next = M().type(img.dataset.id);
       const ready = img.decode ? img.decode().catch(() => {}) : Promise.resolve();
       figEl.classList.add('is-out');
-      title.classList.add('is-fading');
-      capEl.classList.add('is-fading');
+      [title, capEl, ...traitEls].forEach(x => x.classList.add('is-fading'));
       Promise.all([ready, new Promise(r => later(r, 160))]).then(() => {
         de.dataset.hero = next.id;
         S.store.set('hero', next.id);
@@ -121,11 +145,11 @@
         pic.alt = `Персонаж типа ${next.code} «${next.alias}»`;
         nameEl.textContent = ui.short(next);
         capEl.textContent = caption(next);
+        traitEls.forEach(ul => { ul.innerHTML = traitItems(next); });
         el.style.setProperty('--q', `var(--q-${next.quadra})`);
         S.fx.fit(title);
         figEl.classList.remove('is-out');
-        title.classList.remove('is-fading');
-        capEl.classList.remove('is-fading');
+        [title, capEl, ...traitEls].forEach(x => x.classList.remove('is-fading'));
         queued = prefetch(nextType(next.id));
         later(() => { busy = false; }, 160);
       });
@@ -164,7 +188,7 @@
   function socionics() {
     return `
       <section class="sec soc-sec">
-        ${CORNERS.map(([a, q, pos, sx, sy], i) => `<span class="soc-g soc-${pos} reveal" data-anim style="--fx:${sx * 90}px;--fy:${sy * 30}px;--d:${(i * 0.08).toFixed(2)}s" aria-hidden="true"><span class="soc-float">${S.art.glyphSVG(a, S.theme.quadraColor(q), 'soc-svg')}</span></span>`).join('')}
+        ${CORNERS.map(([a, q, pos, sx, sy], i) => `<span class="soc-g soc-${pos} reveal" data-anim style="--fx:${sx * 90}px;--fy:${sy * 30}px;--d:${(i * 0.08).toFixed(2)}s" aria-hidden="true"><span class="soc-float">${S.art.aspectImg(a, q, 'soc-img')}</span></span>`).join('')}
         <div class="wrap center soc-in">
           <h2 class="h2 soc-h" data-anim-text>Соционика</h2>
           <p class="soc-text" data-anim-text>Соционика описывает 16${NB}типов: как человек замечает мир, принимает решения и${NB}с${NB}кем ему легко. Это не${NB}диагноз и${NB}не${NB}гороскоп, а${NB}язык, на${NB}котором проще понимать себя и${NB}близких. Двадцать вопросов — и${NB}узнаешь свой тип.</p>
