@@ -138,6 +138,13 @@
   function init() {
     const q = new URLSearchParams(location.search);
     if (q.get('demo')) S.state.demo = demoAxes(q.get('demo'));
+    // ?reset — сброс своего результата и прогресса теста, чтобы увидеть сайт глазами нового посетителя.
+    // Только локально (file:// и localhost): по чужой ссылке результат не сотрётся.
+    if (q.has('reset') && /^(file:|https?:\/\/(localhost|127\.0\.0\.1)[:/])/.test(location.href)) {
+      ['result', 'test', 'hero', 'box.seen'].forEach(k => S.store.del(k));
+      try { sessionStorage.removeItem('socio.friend'); } catch (e) { /* нет доступа */ }
+      try { history.replaceState(null, '', location.pathname + (location.hash || '#/')); } catch (e) { /* file:// без history */ }
+    }
     S.theme.apply();
     document.documentElement.classList.add('js');
 
