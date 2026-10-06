@@ -246,13 +246,14 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       const tiles = Array.from(document.querySelectorAll('.mq-copy:not([inert]) .mq-tile')).map(a => a.getAttribute('href'));
       return {
         cta: cta.getAttribute('href'), ctaText: cta.textContent.trim(), name: hero.querySelector('[data-hero-name]').textContent,
+        ask: (hero.querySelector('[data-hero-q]') || {}).textContent.replace(/\u00A0/g, ' '), micro: (hero.querySelector('.hero-micro') || {}).textContent || '',
         hero: document.documentElement.dataset.hero, imgOk: img.complete && img.naturalWidth > 0 && img.getAttribute('src').includes(document.documentElement.dataset.hero),
         tiles: tiles.length, uniq: new Set(tiles).size, inert: document.querySelectorAll('.mq-copy[inert]').length,
         cards: Array.from(document.querySelectorAll('.stack-card .qc-go')).map(a => a.getAttribute('href')).join(),
         types: new Set(Array.from(document.querySelectorAll('.stack-card .qc-type')).map(a => a.getAttribute('href'))).size
       };
     });
-    check('герой: «Пройти тест» ведёт в тест', home.cta === '#/test' && home.ctaText === 'Пройти тест', JSON.stringify(home));
+    check('герой: «Узнать свой тип» ведёт в тест, рядом вопрос и «20 вопросов · 4 минуты»', home.cta === '#/test' && home.ctaText === 'Узнать свой тип' && home.ask === 'А какой тип у тебя?' && /20.вопросов/.test(home.micro), JSON.stringify(home));
     check('герой: имя и портрет выбранного типа, картинка загружена', home.imgOk && home.name.length > 1, JSON.stringify(home));
     check('лента: 16 типов, у каждого одна живая копия, остальные inert', home.tiles === 16 && home.uniq === 16 && home.inert === 4, JSON.stringify(home));
     check('стопка: 4 карточки ведут на квадры, 16 персонажей — на типы', home.cards === '#/quadras#alpha,#/quadras#beta,#/quadras#gamma,#/quadras#delta' && home.types === 16, JSON.stringify(home));

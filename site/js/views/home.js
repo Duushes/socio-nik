@@ -12,30 +12,27 @@
   const heroType = () => M().type(document.documentElement.dataset.hero) || M().type('iee');
 
   const mineType = () => (S.state.myType() ? M().type(S.state.myType()) : null);
+  // Вопрос-крючок под приветствием: личный вопрос рядом с кнопкой — главный рычаг перехода в тест
+  function ask(t) {
+    const mine = mineType();
+    if (mine && mine.id === t.id) return 'Это твой тип!';
+    if (mine) return `Твой тип — ${ui.short(mine)}. А${NB}у${NB}друзей?`;
+    return `А${NB}какой тип у${NB}тебя?`;
+  }
   function caption(t) {
     const mine = mineType();
-    if (mine && mine.id === t.id) return `Это твой тип. Посмотри, с${NB}кем тебе легко, и${NB}поделись результатом`;
-    if (mine) return `${t.alias} — так в${NB}соционике называют тип${NB}${t.code}. А${NB}твой тип — ${mine.alias}`;
-    return `${t.alias} — так в${NB}соционике называют тип${NB}${t.code}. Узнай свой тип: 20${NB}вопросов, 4${NB}минуты`;
+    if (mine && mine.id === t.id) return `Посмотри, с${NB}кем тебе легко, и${NB}позови друзей пройти тест`;
+    if (mine) return `${t.alias} — так в${NB}соционике называют тип${NB}${t.code}. Сравни свой тип с${NB}типами друзей`;
+    return `${t.alias} — так в${NB}соционике называют тип${NB}${t.code}. Узнай свой и${NB}с${NB}кем тебе легко`;
   }
   const cheer = t => (S.content.cheers && S.content.cheers[t.id]) || 'Давай узнаем твой тип!';
 
   const traits = t => (S.content.traits && S.content.traits[t.id]) || [];
   const traitItems = t => traits(t).map((x, i) => `<li style="--k:${i}">${esc(x)}</li>`).join('');
 
-  // Значок-призыв: текст бежит по кругу, в центре стрелка; без результата ведёт в тест
-  function badge(has) {
-    const text = (has ? 'Поделись результатом · Сравни с друзьями · ' : `Узнай свой тип · 20${NB}вопросов · 4${NB}минуты · `).toUpperCase();
-    return `<a class="hero-badge" href="${has ? '#/result#share' : '#/test'}" data-anim data-cheer aria-label="${has ? 'Поделиться результатом' : 'Узнай свой тип — пройти тест'}">
-      <svg class="hb-ring" viewBox="0 0 120 120" aria-hidden="true"><defs><path id="hb-path" d="M60,60 m-45,0 a45,45 0 1,1 90,0 a45,45 0 1,1 -90,0"/></defs>
-        <text><textPath href="#hb-path" textLength="282" lengthAdjust="spacing">${esc(text)}</textPath></text></svg>
-      <span class="hb-core" aria-hidden="true">${ui.ICON.arrow}</span>
-    </a>`;
-  }
-
   // ---------- герой ----------
   function hero(t) {
-    const has = Boolean(S.state.result()), mine = mineType();
+    const mine = mineType();
     const intro = !introDone && !S.dom.reducedMotion();
     return `
       <section class="hero${intro ? ' intro' : ''}" data-hero style="${ui.qStyle(t.quadra)}">
@@ -52,19 +49,22 @@
           <p class="hero-bubble" aria-hidden="true" data-hero-bubble>${esc(cheer(t))}</p>
           <span class="hero-sparks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
           <ul class="hero-traits" aria-label="Коротко о типе" data-hero-traits data-anim>${traitItems(t)}</ul>
-          ${badge(has)}
         </div>
         <div class="hero-foot">
           <ul class="hero-traits-m h-in" style="--d:.35s;--y:20px" aria-label="Коротко о типе" data-hero-traits>${traitItems(t)}</ul>
-          <p class="hero-cap caption h-in" style="--d:.35s;--y:20px" data-hero-cap>${esc(caption(t))}</p>
+          <div class="hero-ask h-in" style="--d:.3s;--y:20px">
+            <p class="hero-q${mine && mine.id !== t.id ? ' long' : ''}" data-hero-q>${esc(ask(t))}</p>
+            <p class="hero-cap" data-hero-cap>${esc(caption(t))}</p>
+          </div>
           <div class="hero-right">
           ${mine ? `<nav class="hero-steps h-in" style="--d:.45s;--y:20px" aria-label="Что дальше">
             <a href="#/types/${mine.id}">Про мой тип</a><a href="#/types/${mine.id}#relations">Мои отношения</a><a href="#/result#share">Поделиться</a><a href="#/test" data-restart-test>Пройти заново</a>
           </nav>` : ''}
           <div class="hero-actions h-in" style="--d:.5s;--y:20px">
-            <button class="btn-ghost hero-next" type="button" data-hero-next><span class="hero-next-l">Другой тип</span>${ui.ICON.cycle}</button>
-            ${mine ? '<a class="btn hero-cta" href="#/result" data-cheer>Мой результат</a>' : '<a class="btn hero-cta" href="#/test" data-cheer>Пройти тест</a>'}
+            <button class="btn-ghost hero-next" type="button" data-hero-next title="Другой тип"><span class="hero-next-l">Другой тип</span>${ui.ICON.cycle}</button>
+            ${mine ? '<a class="btn hero-cta" href="#/result" data-cheer>Мой результат</a>' : '<a class="btn hero-cta" href="#/test" data-cheer>Узнать свой тип</a>'}
           </div>
+          ${mine ? '' : `<p class="hero-micro h-in" style="--d:.55s;--y:12px">20${NB}вопросов · 4${NB}минуты · без регистрации</p>`}
           </div>
         </div>
       </section>`;
@@ -126,7 +126,7 @@
     const de = document.documentElement, timers = [];
     const later = (fn, ms) => timers.push(setTimeout(fn, S.dom.reducedMotion() ? 0 : ms));
     const title = el.querySelector('.hero-title'), figEl = el.querySelector('.hero-fig');
-    const nameEl = el.querySelector('[data-hero-name]'), capEl = el.querySelector('[data-hero-cap]');
+    const nameEl = el.querySelector('[data-hero-name]'), capEl = el.querySelector('[data-hero-cap]'), qEl = el.querySelector('[data-hero-q]');
     const traitEls = Array.from(el.querySelectorAll('[data-hero-traits]'));
     const bubble = el.querySelector('[data-hero-bubble]'), look = el.querySelector('.hero-look');
     const layout = () => layoutHero(el);
@@ -147,7 +147,7 @@
       const img = queued, next = M().type(img.dataset.id);
       const ready = img.decode ? img.decode().catch(() => {}) : Promise.resolve();
       figEl.classList.add('is-out');
-      [title, capEl, ...traitEls].forEach(x => x.classList.add('is-fading'));
+      [title, capEl, qEl, ...traitEls].forEach(x => x.classList.add('is-fading'));
       Promise.all([ready, new Promise(r => later(r, 160))]).then(() => {
         de.dataset.hero = next.id;
         S.store.set('hero', next.id);
@@ -157,12 +157,13 @@
         pic.alt = `Персонаж типа ${next.code} «${next.alias}»`;
         nameEl.textContent = ui.short(next);
         capEl.textContent = caption(next);
+        qEl.textContent = ask(next);
         traitEls.forEach(ul => { ul.innerHTML = traitItems(next); });
         bubble.textContent = cheer(next);
         el.style.setProperty('--q', `var(--q-${next.quadra})`);
         S.fx.fit(title);
         figEl.classList.remove('is-out');
-        [title, capEl, ...traitEls].forEach(x => x.classList.remove('is-fading'));
+        [title, capEl, qEl, ...traitEls].forEach(x => x.classList.remove('is-fading'));
         queued = prefetch(nextType(next.id));
         later(() => { busy = false; }, 160);
       });
