@@ -225,14 +225,15 @@
     qs.forEach((q, i) => ok(i === 0 || q.axis !== qs[i - 1].axis, q.id + ': та же ось, что у предыдущего'));
   });
 
-  test('банк вопросов: первый полюс справа ровно в 10, утверждения ≤ 90 знаков, без родовых окончаний', () => {
+  test('банк вопросов: первый полюс справа ровно в 10, утверждения ≤ 90 знаков, заголовки ≤ 24, без родовых окончаний', () => {
     const qs = S.data.questions, FIRST = SC().FIRST, SECOND = SC().SECOND;
     eq(qs.filter(q => q.aPole !== FIRST[q.axis]).length, 10, 'первый полюс справа');
     const gendered = /(^|[\s«])(сам|сама|уверен|уверена|готов|готова|должен|должна|рад|рада)(?=[\s,.!?…»]|$)/i;
     qs.forEach(q => {
       ok(q.aPole === FIRST[q.axis] || q.aPole === SECOND[q.axis], q.id + ': полюс не с этой оси');
       ['a', 'b'].forEach(k => ok(q[k].length <= 90, q.id + '.' + k + ': ' + q[k].length + ' знаков'));
-      ['prompt', 'a', 'b'].forEach(k => ok(!gendered.test(q[k]), q.id + '.' + k + ': родовое окончание'));
+      ['prompt', 'a', 'b', 'as', 'bs'].forEach(k => ok(!gendered.test(q[k]), q.id + '.' + k + ': родовое окончание'));
+      ['as', 'bs'].forEach(k => ok(q[k] && q[k].length <= 24, q.id + '.' + k + ': короткий заголовок до 24 знаков'));
     });
   });
 

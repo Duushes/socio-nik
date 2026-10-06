@@ -59,7 +59,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
         if (!q) return { fail: 'нет вопроса ' + i };
         seen.push(q.dataset.q);
         q.querySelectorAll('.dot')[[0, 1, 3, 4, 1][i % 5]].click();
-        await sleep(560);
+        await sleep(760);   // ответ виден 0,43 с, потом смена вопроса
       }
       mo.disconnect();
       await sleep(3200);
@@ -91,6 +91,26 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     });
     check('клавиша 4 отвечает и листает дальше', keys.c0 === 'Вопрос 1 из 20' && keys.c1 === 'Вопрос 2 из 20', JSON.stringify(keys));
     check('«Назад» возвращает и помнит ответ', keys.c2 === 'Вопрос 1 из 20' && keys.kept === '1', JSON.stringify(keys));
+    const visual = await b.eval(async () => {
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      document.querySelector('[data-restart]').click();
+      await sleep(700);
+      const q = () => document.querySelector('.q-stage .q:last-child');
+      const arts = Array.from(q().querySelectorAll('.q-art img')).map(i => i.complete && i.naturalWidth > 0 && /img\/q\/q01-[ab]\.webp/.test(i.getAttribute('src')));
+      const heads = Array.from(q().querySelectorAll('.q-head')).map(h => h.textContent);
+      q().querySelector('.q-card.q-a').click();
+      await sleep(120);
+      const picked = { a: q().querySelector('.q-a').classList.contains('on'), b: q().querySelector('.q-b').classList.contains('off'), dot: (q().querySelector('.dot[aria-checked="true"]') || {}).dataset ? q().querySelector('.dot[aria-checked="true"]').dataset.v : null };
+      await sleep(700);
+      for (let k = 0; k < 4; k++) { q().querySelector('.q-card.q-b').click(); await sleep(760); }
+      const toast = document.querySelector('.t-toast');
+      return { arts, heads, picked, n: document.querySelector('[data-n]').textContent, eta: document.querySelector('[data-eta]').textContent, toast: toast.hidden ? '' : toast.textContent,
+        ring: getComputedStyle(document.querySelector('.t-ring-fg')).getPropertyValue('--p').trim(), done: document.querySelectorAll('.t-steps .done').length,
+        logo: Array.from(document.querySelectorAll('.brand-mark .bm')).filter(i => i.complete && i.naturalWidth > 0).length };
+    });
+    check('тест наглядный: у вариантов 3D-картинки и заголовки, нажатие на карточку — «точно»', visual.arts.length === 2 && visual.arts.every(Boolean) && visual.heads.every(h => h.length > 3) && visual.picked.a && visual.picked.b && visual.picked.dot === '-2', JSON.stringify(visual));
+    check('тест держит до конца: кольцо и 20 делений, время по темпу, подбадривание на четверти', visual.n === '6' && /мин|минуты/.test(visual.eta) && /Четверть позади/.test(visual.toast) && visual.done === 5 && Number(visual.ring) === 25, JSON.stringify(visual));
+    check('логотип: четыре 3D-шара в цветах квадр', visual.logo === 4, JSON.stringify(visual.logo));
     await shot('d-test');
 
     // ---------- шер ----------
@@ -227,7 +247,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
         const q = document.querySelector('.q-stage .q:last-child');
         if (!q) return { fail: 'нет вопроса ' + i };
         q.querySelectorAll('.dot')[[4, 3, 1, 0, 2][i % 5]].click();
-        await sleep(560);
+        await sleep(760);
       }
       await sleep(3200);
       const you = { view: document.body.dataset.view, title: (document.querySelector('.sh-you h2') || {}).textContent || '', rel: (document.querySelector('.sh-you .sh-rel') || {}).textContent || '' };
