@@ -310,26 +310,73 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     await shot('d-type-modelA', '.ma', 120);
     await shot('d-type-relations', '.rel-groups', 120);
 
-    // ---------- карта отношений типа ----------
+    // ---------- карта отношений типа: орбиты ----------
     const rmap = await b.eval(async () => {
       const sleep = ms => new Promise(r => setTimeout(r, ms));
       const box = document.querySelector('[data-relmap]');
       box.scrollIntoView({ block: 'center' });
       await sleep(1600);
-      const nodes = box.querySelectorAll('.rm-node').length, lines = box.querySelectorAll('.rm-line').length;
-      const first = box.querySelector('.rd-title').textContent;
+      const beam = () => { const on = box.querySelector('.rm-beam.is-on .rm-ray'); return on ? on.getAttribute('d').length > 10 : false; };
+      const emote = () => (box.querySelector('.rm-emote').getAttribute('src').match(/emotes\/([a-z-]+)/) || [])[1];
+      const nodes = box.querySelectorAll('.rm-node').length, rings = box.querySelectorAll('.rm-svg-front .rm-ring').length;
+      const first = box.querySelector('.rd-title').textContent, firstBeam = beam(), firstEmote = emote();
+      const firstOn = box.querySelector('.rm-node.is-on');
+      const dualRing = firstOn && firstOn.classList.contains('t-support');
+      box.querySelector('[data-tab="2"]').click();
+      await sleep(80);
       const conflict = Array.from(box.querySelectorAll('.rm-node')).find(n => /Конфликтные/.test(n.getAttribute('aria-label')));
       conflict.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       await sleep(300);
       const after = box.querySelector('.rd-title').textContent, link = box.querySelector('.rd .link').getAttribute('href');
+      const tabKept = box.querySelector('[data-tab="2"]').getAttribute('aria-selected') === 'true' && !box.querySelectorAll('.rd-pane')[2].hidden;
+      const duo = box.querySelector('.rd-duo .duo');
       box.querySelector('.rm-chip[data-tone="tense"]').click();
       await sleep(100);
-      return { nodes, lines, first, after, link, filtered: box.classList.contains('filtered') && box.classList.contains('f-tense') };
+      return { nodes, rings, first, firstBeam, firstEmote, dualRing, after, link, tabKept, afterBeam: beam(), afterEmote: emote(),
+        duo: duo ? duo.className : '', filtered: box.classList.contains('filtered') && box.classList.contains('f-tense') };
     });
-    check('карта отношений: 15 типов и 15 дуг, сначала — дуал', rmap.nodes === 15 && rmap.lines === 15 && rmap.first === 'Дуальные отношения', JSON.stringify(rmap));
-    check('карта: нажатие на тип открывает разбор пары, фильтр по тону работает', rmap.after === 'Конфликтные отношения' && rmap.link === '#/relations/esi/ile' && rmap.filtered, JSON.stringify(rmap));
+    check('карта-орбиты: 15 аватаров на 3 орбитах, сначала выбран дуал — луч и сердечко', rmap.nodes === 15 && rmap.rings === 3 && rmap.first === 'Дуальные отношения' && rmap.dualRing && rmap.firstBeam && rmap.firstEmote === 'heart', JSON.stringify(rmap));
+    check('карта: нажатие открывает разбор пары с молнией, вкладка «Как ладить» сохраняется, фильтр по тону работает',
+      rmap.after === 'Конфликтные отношения' && rmap.link === '#/relations/esi/ile' && rmap.afterBeam && rmap.afterEmote === 'lightning' && rmap.tabKept && rmap.filtered, JSON.stringify(rmap));
+    check('пара в панели разыгрывает отношение (сцена конфликта)', /act-conflict/.test(rmap.duo), rmap.duo);
+
+    // ---------- «Отношения»: тип в центре меняется выбором и кнопкой «Карта …»; пары в калькуляторе играют сцены ----------
+    await go('#/relations', 1400);
+    const refocus = await b.eval(async () => {
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      const box = document.querySelector('[data-relmap]'), sel = box.querySelector('[data-rmtype]');
+      box.scrollIntoView({ block: 'center' });
+      await sleep(900);
+      sel.value = 'lsi';
+      sel.dispatchEvent(new Event('change'));
+      await sleep(300);
+      const viaSelect = box.dataset.relmap + ':' + box.querySelectorAll('.rm-node').length;
+      const partner = box.querySelector('.rm-node.is-on').dataset.b;
+      box.querySelector('button[data-refocus]').click();
+      await sleep(300);
+      const calc = document.querySelector('[data-calc]'), a = calc.querySelector('[data-a]'), bb = calc.querySelector('[data-b]');
+      const acts = [];
+      for (const [x, y] of [['ile', 'sei'], ['ile', 'esi'], ['ile', 'eii'], ['ile', 'lse']]) {
+        a.value = x; bb.value = y; bb.dispatchEvent(new Event('change'));
+        await sleep(60);
+        const d = calc.querySelector('.duo');
+        acts.push((d.className.match(/act-[a-z]+/) || [''])[0] + ':' + d.querySelectorAll('.fx').length);
+      }
+      return { viaSelect, partner, center: box.dataset.relmap, selValue: sel.value, acts: acts.join(' ') };
+    });
+    check('карта: выбор типа ставит его в центр, «Карта …» — партнёра', refocus.viaSelect === 'lsi:15' && refocus.center === refocus.partner && refocus.selValue === refocus.partner, JSON.stringify(refocus));
+    check('калькулятор: пары разыгрывают отношение — дуал, конфликт, ревизия, заказ', refocus.acts === 'act-dual:3 act-conflict:1 act-supervision:2 act-request:2', refocus.acts);
+    const fitDesk = await b.eval(async () => {
+      const box = document.querySelector('.relmap'), nav = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h'));
+      scrollTo(0, box.getBoundingClientRect().top + scrollY - nav - 8);
+      await new Promise(r => setTimeout(r, 900));
+      const r = box.getBoundingClientRect();
+      return { top: Math.round(r.top), bottom: Math.round(r.bottom), vh: innerHeight };
+    });
+    check('карта с панелью влезает в один экран (1280×900)', fitDesk.bottom <= fitDesk.vh, JSON.stringify(fitDesk));
 
     // ---------- шторка функции модели А ----------
+    await go('#/types/esi', 1200);
     const fn = await b.eval(async () => {
       const sleep = ms => new Promise(r => setTimeout(r, ms));
       const cell = document.querySelector('[data-fn="4"]');
@@ -432,6 +479,20 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     await b.sleep(1500);
     const fold = await b.eval(`(() => { const c = document.querySelector('.hero-actions').getBoundingClientRect(), f = document.querySelector('.hero-fig img').getBoundingClientRect(); return { cta: Math.round(c.top), fig: Math.round(f.bottom), ctaBottom: Math.round(c.bottom) }; })()`);
     check('375×667: персонаж не закрывает кнопку героя, кнопка на первом экране', fold.fig <= fold.cta && fold.ctaBottom <= 667, JSON.stringify(fold));
+    for (const [w, h] of [[375, 667], [390, 844]]) {
+      await b.viewport(w, h, { mobile: true, scale: 2 });
+      await b.goto(BASE + '#/relations');
+      await b.sleep(1200);
+      const fit = await b.eval(async () => {
+        const box = document.querySelector('.relmap'), nav = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h'));
+        scrollTo(0, box.getBoundingClientRect().top + scrollY - nav - 8);
+        await new Promise(r => setTimeout(r, 1200));
+        const r = box.getBoundingClientRect(), ns = Array.from(box.querySelectorAll('.rm-node')).map(n => n.getBoundingClientRect().width);
+        return { bottom: Math.round(r.bottom), vh: innerHeight, minNode: Math.round(Math.min(...ns)) };
+      });
+      check(`${w}×${h}: карта с панелью влезает в экран, аватары не мельче 30 px`, fit.bottom <= fit.vh && fit.minNode >= 30, JSON.stringify(fit));
+    }
+    await b.viewport(375, 667, { mobile: true, scale: 2 });
     await b.goto(BASE + '#/');
     await b.sleep(1400);
     await shot('m-home');

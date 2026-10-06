@@ -67,11 +67,11 @@
     </div>`;
 
   // Выбор типа: нативный select, сгруппированный по квадрам
-  ui.typeSelect = (name, selected, label) => `
+  ui.typeSelect = (name, selected, label, { short = false } = {}) => `
     <label class="pick"><span class="pick-lab">${esc(label)}</span>
       <span class="pick-box"><select name="${name}" data-${name}>
         ${S.data.quadras.map(q => `<optgroup label="${q.name}">${typesOf(q.id).map(t =>
-          `<option value="${t.id}"${t.id === selected ? ' selected' : ''}>${t.code} — ${esc(t.alias)}</option>`).join('')}</optgroup>`).join('')}
+          `<option value="${t.id}"${t.id === selected ? ' selected' : ''}>${t.code} — ${esc(short ? ui.short(t) : t.alias)}</option>`).join('')}</optgroup>`).join('')}
       </select></span>
     </label>`;
 
@@ -105,15 +105,43 @@
     return S.art.scene(r.kind, left, right, { cls, labels: lab, theme, label: `${a.code} и ${b.code}: ${ui.relTitle(r, a, b)}` });
   };
 
-  // Два персонажа лицом друг к другу: правый отражён. Слева — тот, от кого идёт действие
+  // Эмоции-символы над парой — как в анимации: сердечки, молния, снежинка, капля пота… (img/emotes)
+  ui.emoteSrc = key => `img/emotes/${key}.webp`;
+  ui.EMOTE = {
+    dual: 'heart', activation: 'sparkles', mirror: 'bubbles', semidual: 'heart-split', mirage: 'cloud', identity: 'bulb',
+    kindred: 'bulb', business: 'handshake', quasi: 'question', request: 'gift', extinguish: 'candle', superego: 'snowflake',
+    supervision: 'magnifier', conflict: 'lightning'
+  };
+  ui.TONE_EMOTE = { support: 'heart', work: 'handshake', tense: 'lightning' };
+  // Сцена пары: что каждый делает и какие символы появляются (позы и движение — в motion.css, .act-<вид>)
+  const ACT = {
+    dual: ['heart', 'heart', 'puzzle'],
+    activation: ['sparkles', 'notes'],
+    mirror: ['bubbles', 'bubbles'],
+    semidual: ['heart-split'],
+    mirage: ['cloud', 'sparkles'],
+    identity: ['bulb', 'bulb'],
+    kindred: ['bulb'],
+    business: ['handshake'],
+    quasi: ['question', 'question'],
+    request: ['gift', 'sparkles'],
+    extinguish: ['candle'],
+    superego: ['snowflake', 'snowflake'],
+    supervision: ['magnifier', 'drop'],
+    conflict: ['lightning']
+  };
+
+  // Два персонажа лицом друг к другу: правый отражён. Слева — тот, от кого идёт действие.
+  // Позами, дистанцией, движением и символами они разыгрывают своё отношение
   const duoFig = (t, l, side, { sizes = ui.CHAR.duo, eager = false } = {}) => `<figure class="duo-${side}" style="${ui.qStyle(t.quadra)}">
-      <span class="duo-glow" aria-hidden="true"></span>${ui.character(t, { sizes, alt: '', eager })}
+      <span class="duo-glow" aria-hidden="true"></span><span class="duo-body">${ui.character(t, { sizes, alt: '', eager })}</span>
       <figcaption><b>${esc(l)}</b><span>${esc(t.alias)}</span></figcaption></figure>`;
   ui.duo = (a, b, { labels, cls = '', sizes, eager = false } = {}) => {
     const r = M().relation(a, b);
     let left = a, right = b, lab = labels || [a.code, b.code];
     if (r.id === 'benefactor' || r.id === 'supervisor') { left = b; right = a; lab = [lab[1], lab[0]]; }
-    return `<div class="duo ${cls}" role="img" aria-label="${esc(`${a.code} и ${b.code}: ${ui.relTitle(r, a, b)}`)}">${duoFig(left, lab[0], 'a', { sizes, eager })}${duoFig(right, lab[1], 'b', { sizes, eager })}</div>`;
+    const fx = (ACT[r.kind] || []).map((key, i) => `<img class="fx fx-${i + 1}" src="${ui.emoteSrc(key)}" alt="" width="100" height="100" decoding="async" draggable="false">`).join('');
+    return `<div class="duo act-${r.kind} ${cls}" data-anim role="img" aria-label="${esc(`${a.code} и ${b.code}: ${ui.relTitle(r, a, b)}`)}">${duoFig(left, lab[0], 'a', { sizes, eager })}${duoFig(right, lab[1], 'b', { sizes, eager })}<span class="duo-fx" aria-hidden="true">${fx}</span></div>`;
   };
   // Пара, где твой тип ещё неизвестен: слева «?», справа персонаж из ссылки
   ui.duoMystery = t => `<div class="duo duo-mystery" role="img" aria-label="${esc(`${t.code} и ты: отношения пока неизвестны`)}">

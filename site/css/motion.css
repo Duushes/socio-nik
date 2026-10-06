@@ -178,6 +178,131 @@
 @keyframes q-pulse { 0%, 100% { opacity: 0.5; transform: scale(0.92); } 50% { opacity: 1; transform: scale(1.08); } }
 @keyframes arc-flow { to { stroke-dashoffset: -18; } }
 
+/* ---------- пара персонажей разыгрывает отношение (.duo.act-<вид>) ----------
+   Поза каждого — --p0, крайняя точка движения — --p1 (и --p2 у трёхфазных); слева тот, от кого идёт действие.
+   Символы: .fx-1…3 — место (left/top) и своё движение. В щадящем режиме остаются позы и символы без движения. */
+.duo[class*="act-"] .duo-body { animation: var(--mv, duo-sway) var(--dur, 5s) var(--ez, ease-in-out) var(--del, 0s) infinite; }
+@keyframes duo-sway { 0%, 100% { transform: var(--p0); } 50% { transform: var(--p1); } }
+@keyframes duo-beat { 0%, 42%, 100% { transform: var(--p0); } 20% { transform: var(--p1); } }
+@keyframes duo-push { 0%, 100% { transform: var(--p0); } 24%, 44% { transform: var(--p1); } 70% { transform: var(--p2); } }
+@keyframes duo-jolt { 0%, 44%, 62%, 100% { transform: var(--p0); } 50% { transform: var(--p1); } 56% { transform: var(--p2); } }
+@keyframes duo-shiver { 0%, 34%, 66%, 100% { transform: var(--p0); } 40%, 52% { transform: var(--p1); } 46%, 58% { transform: var(--p2); } }
+
+/* символы */
+@keyframes fx-rise { 0% { opacity: 0; transform: translateY(60%) scale(0.4); } 18%, 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(-190%) scale(1.05) rotate(-8deg); } }
+@keyframes fx-pop { 0%, 30%, 100% { opacity: 0; transform: scale(0.3); } 42%, 72% { opacity: 1; transform: scale(1); } 84% { opacity: 0; transform: scale(1.15); } }
+@keyframes fx-burst { 0%, 100% { opacity: 0; transform: scale(0.3) rotate(-30deg); } 30% { opacity: 1; transform: scale(1.1) rotate(0deg); } 70% { opacity: 0.2; transform: scale(1.3) rotate(20deg); } }
+@keyframes fx-notes { 0% { opacity: 0; transform: translate(-40%, 40%) rotate(-12deg) scale(0.6); } 20%, 70% { opacity: 1; } 100% { opacity: 0; transform: translate(60%, -170%) rotate(14deg) scale(1); } }
+@keyframes fx-say { 0%, 48%, 100% { opacity: 0; transform: scale(0.5) translateY(30%); } 8%, 36% { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes fx-throb { 0%, 100% { opacity: 0.55; transform: scale(0.82); } 50% { opacity: 1; transform: scale(1.12); } }
+@keyframes fx-drift { 0%, 100% { transform: translateX(-26%) translateY(0); } 50% { transform: translateX(26%) translateY(-12%); } }
+@keyframes fx-twinkle { 0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(30deg); } }
+@keyframes fx-flash { 0%, 12%, 64%, 100% { opacity: 0; transform: scale(0.5) translateY(30%); } 24%, 52% { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes fx-glow { 0%, 100% { opacity: 0.5; transform: scale(0.8); filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45)); } 50% { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 18px rgba(255, 210, 63, 0.75)); } }
+@keyframes fx-shake { 0%, 18%, 74%, 100% { opacity: 0; transform: scale(0.4); } 28%, 64% { opacity: 1; transform: scale(1) rotate(0deg); } 36% { transform: scale(1) rotate(-12deg); } 44% { transform: scale(1) rotate(10deg); } 52% { transform: scale(1) rotate(-6deg); } }
+@keyframes fx-pass { 0%, 6% { opacity: 0; transform: translate(-150%, 10%) scale(0.7) rotate(-10deg); } 14% { opacity: 1; } 46% { transform: translate(0, -70%) scale(1) rotate(6deg); } 78% { opacity: 1; transform: translate(150%, 10%) scale(0.9) rotate(-4deg); } 90%, 100% { opacity: 0; transform: translate(150%, 10%) scale(0.5); } }
+@keyframes fx-land { 0%, 74%, 100% { opacity: 0; transform: scale(0.3) rotate(-20deg); } 84% { opacity: 1; transform: scale(1.1) rotate(0deg); } 94% { opacity: 0; transform: scale(1.3) rotate(15deg); } }
+@keyframes fx-snuff { 0%, 16%, 92%, 100% { opacity: 0; transform: translateY(20%) scale(0.5); } 30%, 80% { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes fx-fall { 0% { opacity: 0; transform: translateY(-80%) rotate(0deg); } 20%, 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(150%) rotate(120deg); } }
+@keyframes fx-scan { 0%, 100% { transform: translateX(-30%) rotate(-10deg); } 50% { transform: translateX(30%) rotate(8deg); } }
+@keyframes fx-sweat { 0%, 30% { opacity: 0; transform: translateY(-30%) scale(0.5); } 42% { opacity: 1; transform: translateY(0) scale(1); } 80% { opacity: 1; transform: translateY(60%) scale(0.9); } 100% { opacity: 0; transform: translateY(90%) scale(0.8); } }
+@keyframes fx-zap { 0%, 40%, 70%, 100% { opacity: 0; transform: scale(0.4) rotate(-10deg); } 48% { opacity: 1; transform: scale(1.2) rotate(4deg); } 52% { opacity: 0.4; } 56% { opacity: 1; transform: scale(1) rotate(-2deg); } }
+
+/* дуальные: тянутся друг к другу, сердечки, пазл сходится */
+.act-dual .duo-a { --p0: translateX(5%) rotate(4deg); --p1: translateX(9%) rotate(7deg); }
+.act-dual .duo-b { --p0: translateX(-5%) rotate(-4deg); --p1: translateX(-9%) rotate(-7deg); }
+.act-dual .fx-1, .act-dual .fx-2 { top: 36%; width: 12%; animation: fx-rise 4s ease-out infinite; }
+.act-dual .fx-2 { left: 57%; width: 9%; animation-delay: -2s; }
+.act-dual .fx-3 { top: 5%; width: 15%; animation: fx-pop 5s var(--spring) infinite; }
+/* активация: подпрыгивают по очереди, искры и ноты */
+.act-activation { --mv: duo-beat; --dur: 1.8s; }
+.act-activation .duo-a { --p0: rotate(3deg); --p1: translateY(-7%) rotate(5deg); }
+.act-activation .duo-b { --p0: rotate(-3deg); --p1: translateY(-7%) rotate(-5deg); --del: -0.9s; }
+.act-activation .fx-1 { top: 22%; animation: fx-burst 0.9s ease-out infinite; }
+.act-activation .fx-2 { left: 44%; top: 34%; width: 11%; animation: fx-notes 3s ease-out infinite; }
+/* зеркальные: спорят по очереди, у каждого своя реплика */
+.act-mirror { --mv: duo-beat; --dur: 4s; }
+.act-mirror .duo-a { --p0: none; --p1: translateX(4%) rotate(5deg); }
+.act-mirror .duo-b { --p0: none; --p1: translateX(-4%) rotate(-5deg); --del: -2s; }
+.act-mirror .fx-1, .act-mirror .fx-2 { top: 5%; left: 26%; width: 14%; animation: fx-say 4s ease-out infinite; }
+.act-mirror .fx-2 { left: 74%; scale: -1 1; animation-delay: -2s; }
+/* полудуальные: тянутся, но замирают на полпути, сердце не склеивается */
+.act-semidual { --dur: 4.5s; }
+.act-semidual .duo-a { --p0: rotate(3deg); --p1: translateX(7%) rotate(6deg); }
+.act-semidual .duo-b { --p0: rotate(-3deg); --p1: translateX(-7%) rotate(-6deg); }
+.act-semidual .fx-1 { top: 22%; width: 15%; animation: fx-throb 4.5s ease-in-out infinite; }
+/* миражные: мечтательно покачиваются вразнобой, облако */
+.act-mirage { --dur: 6s; }
+.act-mirage .duo-a { --p0: rotate(-2deg); --p1: translateY(-3%) rotate(1.5deg); }
+.act-mirage .duo-b { --p0: rotate(2deg); --p1: translateY(-3%) rotate(-1.5deg); --del: -3s; }
+.act-mirage .fx-1 { top: 7%; width: 18%; animation: fx-drift 7s ease-in-out infinite; }
+.act-mirage .fx-2 { left: 63%; top: 22%; width: 9%; animation: fx-twinkle 3s ease-in-out infinite; }
+/* тождественные: кивают в такт, одна мысль приходит обоим */
+.act-identity { --mv: duo-beat; --dur: 3s; }
+.act-identity .duo-a { --p0: none; --p1: translateY(2%) rotate(3deg); }
+.act-identity .duo-b { --p0: none; --p1: translateY(2%) rotate(-3deg); }
+.act-identity .fx-1, .act-identity .fx-2 { top: 5%; left: 27%; width: 13%; animation: fx-flash 3s ease-out infinite; }
+.act-identity .fx-2 { left: 73%; }
+/* родственные: вместе тянутся к общей идее, потом расходятся в способах */
+.act-kindred { --dur: 4s; }
+.act-kindred .duo-a { --p0: rotate(-1deg); --p1: translateX(5%) rotate(6deg); }
+.act-kindred .duo-b { --p0: rotate(1deg); --p1: translateX(-5%) rotate(-6deg); }
+.act-kindred .fx-1 { top: 7%; width: 13%; animation: fx-glow 4s ease-in-out infinite; }
+/* деловые: ровно рядом, вежливый кивок и рукопожатие */
+.act-business { --mv: duo-beat; --dur: 3.6s; }
+.act-business .duo-a { --p0: none; --p1: translateY(2.5%) rotate(2deg); }
+.act-business .duo-b { --p0: none; --p1: translateY(2.5%) rotate(-2deg); }
+.act-business .fx-1 { top: 27%; width: 16%; animation: fx-shake 3.6s ease-out infinite; }
+/* квазитождественные: недоумённо склоняют голову, вопросы по очереди */
+.act-quasi { --mv: duo-beat; --dur: 4s; }
+.act-quasi .duo-a { --p0: rotate(-3deg); --p1: translateY(1%) rotate(-8deg); }
+.act-quasi .duo-b { --p0: rotate(3deg); --p1: translateY(1%) rotate(8deg); --del: -2s; }
+.act-quasi .fx-1, .act-quasi .fx-2 { top: 5%; left: 25%; width: 12%; animation: fx-say 4s ease-out infinite; }
+.act-quasi .fx-2 { left: 75%; animation-delay: -2s; }
+/* заказ: заказчик выше и передаёт идею-подарок, подзаказный подпрыгивает, поймав её */
+.act-request { --dur: 3.4s; }
+.act-request .duo-a { --p0: translateY(-4%) scale(1.04) rotate(3deg); --p1: translateY(-4%) scale(1.04) rotate(6deg); }
+.act-request .duo-b { --mv: duo-beat; --p0: translateY(4%) scale(0.95) rotate(-4deg); --p1: translateY(-1%) scale(0.95) rotate(-6deg); --del: -1.87s; }
+.act-request .fx-1 { top: 36%; width: 14%; animation: fx-pass 3.4s ease-in-out infinite; }
+.act-request .fx-2 { left: 72%; top: 28%; width: 12%; animation: fx-land 3.4s ease-out infinite; }
+/* погашение: оба напирают — и гаснут, как свеча */
+.act-extinguish { --mv: duo-push; --dur: 3.6s; }
+.act-extinguish .duo-a { --p0: none; --p1: translateX(7%) rotate(7deg); --p2: translateX(-2%) rotate(-3deg); }
+.act-extinguish .duo-b { --p0: none; --p1: translateX(-7%) rotate(-7deg); --p2: translateX(2%) rotate(3deg); }
+.act-extinguish .fx-1 { top: 27%; width: 15%; animation: fx-snuff 3.6s ease-in-out infinite; }
+/* суперэго: держат дистанцию, церемонный поклон, холодок */
+.act-superego .duo-a { --p0: translateX(-7%); --p1: translateX(-7%) translateY(2%) rotate(3deg); }
+.act-superego .duo-b { --p0: translateX(7%); --p1: translateX(7%) translateY(2%) rotate(-3deg); }
+.act-superego .fx-1, .act-superego .fx-2 { top: 14%; width: 10%; animation: fx-fall 5s linear infinite; }
+.act-superego .fx-2 { left: 56%; width: 7%; animation-delay: -2.5s; }
+/* ревизия: ревизор крупнее и нависает с лупой, подревизный отклоняется, ёжится и потеет */
+.act-supervision { --dur: 3s; }
+.act-supervision .duo-a { --p0: translateY(-3%) scale(1.06) rotate(5deg); --p1: translateX(3%) translateY(-3%) scale(1.06) rotate(8deg); }
+.act-supervision .duo-b { --mv: duo-shiver; --p0: translateY(4%) scale(0.93) rotate(4deg); --p1: translateY(4%) scale(0.93) rotate(6deg); --p2: translateY(4%) scale(0.93) rotate(2.5deg); }
+.act-supervision .fx-1 { left: 68%; top: 16%; width: 15%; animation: fx-scan 3s ease-in-out infinite; }
+.act-supervision .fx-2 { left: 89%; top: 20%; width: 7%; animation: fx-sweat 3s ease-in infinite; }
+/* конфликт: стоят спиной друг к другу, вздрагивают от молнии */
+.act-conflict { --mv: duo-jolt; --dur: 2.8s; }
+.act-conflict .duo-a { --p0: translateX(-6%) rotate(-5deg); --p1: translateX(-9%) rotate(-9deg); --p2: translateX(-5%) rotate(-3deg); }
+.act-conflict .duo-b { --p0: translateX(6%) rotate(5deg); --p1: translateX(9%) rotate(9deg); --p2: translateX(5%) rotate(3deg); }
+.act-conflict .duo-a .char { transform: scaleX(-1); }
+.act-conflict .duo-b .char { transform: none; }
+.act-conflict .fx-1 { top: 25%; width: 18%; animation: fx-zap 2.8s ease-out infinite; }
+
+/* ---------- карта отношений: орбиты прорисовываются, аватары всплывают от центра, шары парят ---------- */
+.relmap.in .rm-ring { animation: rm-draw 1.1s var(--out) both; }
+.relmap.in .rm-ring.t-work { animation-delay: 0.12s; }
+.relmap.in .rm-ring.t-tense { animation-delay: 0.24s; }
+.relmap.in .rm-node { animation: rm-pop 0.6s var(--spring) backwards; animation-delay: calc(0.25s + var(--k) * 45ms); }
+.relmap.in .rm-bust { animation: rm-rise 0.7s var(--out) backwards; }
+@keyframes rm-pop { from { opacity: 0; scale: 0.3; } }
+@keyframes rm-rise { from { opacity: 0; translate: -50% -90%; } }
+@keyframes rm-draw { from { stroke-dashoffset: 1; } }
+@keyframes rm-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -5%; } }
+@keyframes rm-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14%); } }
+@keyframes rm-flow { to { stroke-dashoffset: -27; } }
+@keyframes rm-emote-in { from { opacity: 0; transform: scale(0.3) translateY(30%); } }
+
 /* ---------- пауза вне экрана и щадящий режим ---------- */
 .is-off, .is-off * { animation-play-state: paused !important; }
 
