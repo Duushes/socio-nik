@@ -185,6 +185,8 @@
     </div>`;
 
   ui.mountRelMap = scope => {
+    // с карты ведут на страницу пары — её тексты подгружаем заранее, в простое
+    if (ui.prefetchPair) ui.prefetchPair();
     const box = scope.querySelector('[data-relmap]');
     if (!box) return () => {};
     const stageEl = box.querySelector('.rm-stage'), panel = box.querySelector('.rm-panel');

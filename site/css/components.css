@@ -612,6 +612,12 @@
 .sk-link.done .sk-c1 { opacity: 0; transform: translateY(-120%); }
 .sk-link.done .sk-c2 { opacity: 1; transform: none; }
 .sk-link.done .sk-copy { background: #3ddc97; color: #062014; }
+/* главная кнопка «Отправить ссылку»: подпись сменяется на «Ссылка скопирована» прямо на кнопке */
+.sk-flip { display: grid; place-items: center; overflow: hidden; }
+.sk-flip > span { grid-area: 1 / 1; display: inline-flex; align-items: center; gap: 10px; transition: transform 0.35s var(--out), opacity 0.2s; }
+.sk-flip > span + span { opacity: 0; transform: translateY(120%); }
+.sk-go.done .sk-flip > span:first-child { opacity: 0; transform: translateY(-120%); }
+.sk-go.done .sk-flip > span + span { opacity: 1; transform: none; }
 .sk-status { min-height: 1.2em; margin: 2px 0 0; color: var(--muted); font-size: 13px; }
 .sk-compact .sk-go { min-height: 52px; font-size: 14px; }
 .sk-row { display: flex; gap: 8px; min-width: 0; }
@@ -1012,6 +1018,107 @@
 .pair-about { max-width: none; font-size: clamp(1.1rem, 1.8vw, 1.4rem); }
 .pair-hero + .sec-white .card { margin-top: 24px; }
 .pair-links { display: flex; flex-wrap: wrap; gap: 14px 30px; margin-top: 30px; }
+
+/* ---------- страница пары на каждый день: неделя из жизни, восемь сфер, когда трудно, вопросы на вечер ---------- */
+/* чья сторона: две половинки-ссылки, как переключатель */
+.pr-side { display: flex; width: fit-content; gap: 4px; margin: 26px auto 0; padding: 4px; border: 2px solid var(--hair); border-radius: var(--r-pill); }
+.pr-side a { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 18px; border-radius: var(--r-pill); color: var(--muted); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none; transition: background 0.25s, color 0.25s; -webkit-tap-highlight-color: transparent; }
+.pr-side a[aria-current="page"] { background: var(--paper); color: var(--ink); }
+@media (hover: hover) and (pointer: fine) { .pr-side a:not([aria-current]):hover { color: var(--text); } }
+/* оглавление страницы */
+.pr-toc { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 16px auto 0; }
+.pr-toc a { padding: 7px 14px; border-radius: var(--r-pill); background: var(--chip); color: var(--text); font-size: 13.5px; font-weight: 600; text-decoration: none; transition: background 0.2s; }
+@media (hover: hover) and (pointer: fine) { .pr-toc a:hover { background: var(--chip-hover); } }
+.pr-body + .sec { padding-top: 0; }
+
+/* неделя из жизни */
+.pr-story { max-width: none; font-size: clamp(1.08rem, 1.7vw, 1.3rem); }
+.pr-more { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--hair); }
+.pr-more summary { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; list-style: none; }
+.pr-more summary::-webkit-details-marker { display: none; }
+.pr-more p { margin: 14px 0 0; line-height: 1.6; }
+.pr-chev { flex: none; width: 22px; height: 22px; color: var(--muted); transition: rotate 0.3s var(--out); }
+.pr-more[open] .pr-chev, .pr-zone[open] .pr-chev { rotate: 180deg; }
+.pr-skel { display: grid; gap: 14px; }
+.pr-skel i { height: 18px; border-radius: 9px; background: var(--chip); animation: pr-pulse 1.1s ease-in-out infinite alternate; }
+.pr-skel i:last-child { width: 62%; }
+@keyframes pr-pulse { to { opacity: 0.45; } }
+
+/* восемь сфер: цвет вида — точкой и рамкой; текст остаётся в цветах текста */
+.pr-spheres { --fit: #3ddc97; --common: #56c2ff; --ask: #ffc84a; --care: #ff8fb1; --gap: #b4a5ff; }
+.pr-fit { --g: var(--fit); }
+.pr-common { --g: var(--common); }
+.pr-ask { --g: var(--ask); }
+.pr-care { --g: var(--care); }
+.pr-gap { --g: var(--gap); }
+.pr-head { display: grid; gap: 14px; margin-bottom: clamp(22px, 3vw, 34px); }
+.pr-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; margin-bottom: 18px; }
+.pr-legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.pr-legend li { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 10px; border: 1.5px solid var(--hair); border-radius: var(--r-pill); font-size: 13px; font-weight: 600; }
+.pr-legend b { color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
+.pr-legend i, .pr-badge i { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--g); box-shadow: 0 0 10px var(--g); }
+.pr-progress { display: flex; align-items: center; gap: 12px; margin: 0; color: var(--muted); font-size: 14px; }
+.pr-progress b { color: var(--text); font-variant-numeric: tabular-nums; }
+.pr-pbar { position: relative; overflow: hidden; width: 110px; height: 8px; border-radius: 4px; background: var(--track); }
+.pr-pbar i { position: absolute; inset: 0; background: var(--grad-line); transform: scaleX(var(--p, 0)); transform-origin: 0 50%; transition: transform 0.6s var(--out); }
+.pr-zones { display: grid; gap: 12px; align-items: start; }
+.pr-zone { container-type: inline-size; min-width: 0; border: 2px solid var(--hair); border-radius: var(--r-in); background: linear-gradient(180deg, color-mix(in srgb, var(--g) 7%, transparent), transparent 70%); transition: border-color 0.3s; }
+.pr-zone[open] { border-color: color-mix(in srgb, var(--g) 45%, transparent); }
+.pr-zone summary { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "i t c" "i g g" "x x x"; align-items: center; gap: 6px 14px; padding: 16px; cursor: pointer; list-style: none; -webkit-tap-highlight-color: transparent; }
+.pr-zone summary::-webkit-details-marker { display: none; }
+@container (min-width: 470px) { .pr-zone summary { grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: "i t g c" "i x x x"; padding: 18px 20px; } }
+.pr-zi { grid-area: i; align-self: start; width: clamp(48px, 5vw, 64px); }
+.pr-asp { display: block; width: 100%; height: auto; }
+.pr-zt { grid-area: t; display: grid; min-width: 0; }
+.pr-zt b { font-size: clamp(1.05rem, 1.5vw, 1.25rem); font-weight: 800; line-height: 1.25; }
+.pr-zt small { color: var(--muted); font-size: 13px; line-height: 1.35; }
+.pr-badge { grid-area: g; justify-self: start; display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px 5px 9px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--g) 14%, transparent); font-size: 12px; font-weight: 700; white-space: nowrap; }
+.pr-zone summary .pr-chev { grid-area: c; }
+.pr-teaser { grid-area: x; display: -webkit-box; overflow: hidden; color: var(--muted); font-size: 14.5px; line-height: 1.45; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.pr-zone[open] .pr-teaser { display: none; }
+.pr-zbody { padding: 0 16px 18px; animation: pr-open 0.4s var(--out); }
+@container (min-width: 470px) { .pr-zbody { padding: 0 20px 20px; } }
+@keyframes pr-open { from { opacity: 0; translate: 0 -6px; } }
+.pr-scene { margin: 0 0 14px; font-size: clamp(1rem, 1.4vw, 1.1rem); line-height: 1.6; }
+.pr-sides { display: grid; gap: 10px; margin-bottom: 14px; }
+@container (min-width: 520px) { .pr-sides { grid-template-columns: 1fr 1fr; gap: 12px; } }
+.pr-sides p { margin: 0; padding: 12px 14px; border-radius: 16px; background: var(--chip); color: color-mix(in srgb, var(--text) 84%, transparent); font-size: 14.5px; line-height: 1.5; }
+.pr-k { display: block; margin-bottom: 4px; color: var(--muted); font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.pr-deal { padding: 14px 16px 16px; border: 1.5px solid color-mix(in srgb, var(--g) 50%, transparent); border-radius: 18px; background: color-mix(in srgb, var(--g) 9%, transparent); }
+.pr-deal .pr-k { color: var(--g); }
+.pr-deal-t { margin: 0 0 12px; font-weight: 600; line-height: 1.5; }
+.pr-try { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 15px 8px 12px; border: 1.5px solid var(--hair); border-radius: var(--r-pill); background: transparent; color: var(--text); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: background 0.25s, border-color 0.25s, color 0.25s; -webkit-tap-highlight-color: transparent; }
+.pr-try .ico { width: 18px; height: 18px; opacity: 0.35; transition: opacity 0.25s, transform 0.4s var(--spring); }
+.pr-try[aria-pressed="true"] { border-color: transparent; background: var(--g); color: var(--ink); }
+.pr-try[aria-pressed="true"] .ico { opacity: 1; transform: scale(1.12); }
+.pr-try:active { transform: scale(0.97); }
+
+/* когда трудно: фразы «вместо → скажи», ссора и ритуал */
+.pr-scripts { display: grid; gap: 12px; margin-bottom: clamp(26px, 4vw, 40px); }
+.pr-script { margin: 0; padding: 18px 20px; border-radius: var(--r-in); background: var(--chip); }
+.pr-instead { margin: 0 0 10px; color: var(--muted); font-size: 15px; line-height: 1.45; }
+.pr-instead s { text-decoration-thickness: 1px; text-decoration-color: color-mix(in srgb, var(--text) 40%, transparent); }
+.pr-say { margin: 0; font-size: clamp(1.05rem, 1.6vw, 1.25rem); font-weight: 700; line-height: 1.45; }
+.pr-card { padding: clamp(22px, 3vw, 32px); border: 2px solid var(--line); border-radius: var(--r-in); }
+.pr-card .card-title { margin-bottom: 10px; }
+.pr-card p { margin: 0; line-height: 1.6; }
+
+/* вопросы на вечер: одна карточка, листается по кнопке; ниже — отправить партнёру */
+.pr-deck { max-width: 640px; margin: 0 auto; padding: clamp(26px, 4vw, 44px) clamp(20px, 4vw, 44px) 20px; border: 1.5px solid rgba(215, 226, 234, 0.14); border-radius: var(--r-in); background: radial-gradient(120% 90% at 50% 0%, rgba(182, 0, 168, 0.22), transparent 65%), var(--card); }
+.pr-q { margin: 0; }
+.pr-q.on { animation: pr-q-in 0.5s var(--out); }
+@keyframes pr-q-in { from { opacity: 0; translate: 0 10px; } }
+.pr-q figcaption { margin-bottom: 12px; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.pr-q blockquote { margin: 0; font-size: clamp(1.3rem, 2.6vw, 1.9rem); font-weight: 700; line-height: 1.3; text-wrap: balance; }
+.pr-deck-nav { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 26px; }
+.pr-qn { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.pr-qn b { color: var(--text); }
+.pr-send { max-width: 560px; margin: clamp(44px, 6vw, 72px) auto 0; }
+.pr-send .h4 { margin-bottom: 6px; }
+.pr-send-sub { margin: 0 0 18px; color: var(--muted); font-size: 15px; }
+.pr-send .sk { margin-inline: auto; }
+.pr-fine { max-width: 40em; margin: 30px auto 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.pr-fine + .pr-fine { margin-top: 10px; }
 
 /* ================= РЕЗУЛЬТАТ ПО ССЫЛКЕ ================= */
 .sh-badge { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 14px; padding: 8px 18px; border: 1.5px solid var(--hair); border-radius: var(--r-pill); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }

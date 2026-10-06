@@ -26,7 +26,27 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ESC[c]);
   const reducedMotion = () => Boolean(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const pct = n => n + ' %';
-  S.dom = { esc, reducedMotion, pct };
+  // Русский типограф для длинных текстов: неразрывный пробел после коротких слов («в», «и», «на»), перед тире
+  // и между числом и словом или знаком («64 %», «4 минуты»). Только текстовые узлы — разметку, SVG и поля не трогает.
+  // Зовётся после вставки длинного текста (страница пары)
+  const NBSP = '\u00A0';
+  const SHORT = /(^|[\s(«"„])([а-яёА-ЯЁa-zA-Z]{1,2}) (?=\S)/g;
+  const typoText = str => str.replace(SHORT, '$1$2' + NBSP).replace(SHORT, '$1$2' + NBSP)
+    .replace(/ ([—–]) /g, NBSP + '$1 ')
+    .replace(/(\d) (?=[%₽а-яёА-ЯЁ])/g, '$1' + NBSP);
+  const TYPO_SKIP = 'script, style, textarea, select, code, pre, svg';
+  function typo(scope) {
+    const d = root.document;
+    if (!scope || !d || !d.createTreeWalker) return scope;
+    const walker = d.createTreeWalker(scope, 4 /* NodeFilter.SHOW_TEXT */, {
+      acceptNode: n => (/ /.test(n.nodeValue) && n.nodeValue.trim() && !(n.parentElement && n.parentElement.closest(TYPO_SKIP)) ? 1 : 3)
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(n => { const v = typoText(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; });
+    return scope;
+  }
+  S.dom = { esc, reducedMotion, pct, typo, typoText };
 
   // ---------- хранилище: localStorage с фолбэком в память (приватный режим, data:-снимок) ----------
   const memory = {};

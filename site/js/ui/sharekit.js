@@ -15,8 +15,9 @@
     check: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   };
 
-  // Кнопки: главная, мессенджеры, ссылка. text — подпись к шеру, url — ссылка (может быть пустой)
-  ui.shareActions = ({ text, url = '', primary = 'Поделиться', compact = false, extra = '' }) => {
+  // Кнопки: главная, мессенджеры, ссылка. text — подпись к шеру, url — ссылка (может быть пустой).
+  // link — главная кнопка отправляет ссылку (системное меню на телефоне, на компьютере — копирует), а не картинку
+  ui.shareActions = ({ text, url = '', primary = 'Поделиться', compact = false, extra = '', link = false }) => {
     const files = S.share.canShareFiles();
     const nets = NETS.map(([net, name]) => {
       const h = S.social.href(net, text, url);
@@ -29,7 +30,9 @@
     const shown = url ? url.replace(/^https?:\/\//, '') : '';
     return `
       <div class="sk${compact ? ' sk-compact' : ''}">
-        ${extra ? '<div class="sk-row">' : ''}<button class="btn sk-go" type="button" data-sk="go">${files ? I.share + esc(primary) : I.save + 'Скачать картинку'}</button>${extra ? extra + '</div>' : ''}
+        ${extra ? '<div class="sk-row">' : ''}${link
+          ? `<button class="btn sk-go" type="button" data-sk="send"><span class="sk-flip"><span>${I.share}${esc(primary)}</span><span>${I.check}Ссылка скопирована</span></span></button>`
+          : `<button class="btn sk-go" type="button" data-sk="go">${files ? I.share + esc(primary) : I.save + 'Скачать картинку'}</button>`}${extra ? extra + '</div>' : ''}
         <div class="sk-nets" role="group" aria-label="Отправить в мессенджер">${nets}${compact ? linkTile : more}</div>
         ${compact ? '' : url ? `<button class="sk-link" type="button" data-sk="copy" aria-label="Скопировать ссылку ${esc(shown)}">
           <span class="sk-url">${esc(shown)}</span><span class="sk-copy"><span class="sk-c1">Копировать</span><span class="sk-c2">${I.check}Скопировано</span></span>
@@ -58,6 +61,16 @@
           } else say('Не удалось скопировать — выдели ссылку вручную');
         }
         if (act === 'more') await navigator.share({ text: get.text(), url: get.url() || undefined });
+        if (act === 'send') {
+          // ссылка: на телефоне — системное меню, иначе — в буфер с подтверждением на самой кнопке
+          if (navigator.share && matchMedia('(pointer: coarse)').matches) await navigator.share({ text: get.text(), url: get.url() || undefined });
+          else if (await S.share.copy(get.text() + (get.url() ? ' ' + get.url() : ''))) {
+            b.classList.add('done');
+            clearTimeout(flashT);
+            flashT = setTimeout(() => b.classList.remove('done'), 2400);
+            say('Ссылка скопирована — вставь её в чат');
+          } else say('Не удалось скопировать — выдели ссылку вручную');
+        }
         if (act === 'go') {
           b.classList.add('busy');
           say('Готовим картинку…');

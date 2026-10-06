@@ -531,6 +531,47 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     await shot('d-type-celebs', '#celebs', 40);
     await go('#/relations/ile/lse', 1200);
     await shot('d-pair');
+
+    // ---------- страница пары на каждый день ----------
+    await go('#/relations/esi/lie', 1600);
+    const pr = await b.eval(async () => {
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      for (let i = 0; i < 30 && !document.querySelector('#spheres'); i++) await sleep(150);
+      localStorage.removeItem('socio.tried.esi-lie');
+      const zones = document.querySelectorAll('.pr-zone');
+      const out = {
+        zones: zones.length, story: document.querySelectorAll('.pr-story').length, scripts: document.querySelectorAll('.pr-script').length,
+        qs: document.querySelectorAll('.pr-q').length, badges: Array.from(document.querySelectorAll('.pr-badge')).map(x => x.textContent.trim()),
+        side: Array.from(document.querySelectorAll('.pr-side a')).map(a => a.getAttribute('href')),
+        send: Boolean(document.querySelector('[data-sk="send"]')), toc: document.querySelectorAll('.pr-toc a').length,
+        imgs: Array.from(document.querySelectorAll('.pr-asp')).length
+      };
+      document.querySelector('.pr-toc a[href$="#spheres"]').click();
+      await sleep(1100);
+      out.tocTop = Math.round(document.getElementById('spheres').getBoundingClientRect().top);
+      zones[0].open = true;
+      await sleep(300);
+      const btn = zones[0].querySelector('[data-try]');
+      btn.click();
+      await sleep(200);
+      out.pressed = btn.getAttribute('aria-pressed');
+      out.progress = document.querySelector('.pr-progress').textContent.replace(/\s+/g, ' ').trim();
+      document.querySelector('[data-q-next]').click();
+      await sleep(200);
+      out.qn = document.querySelector('.pr-qn').textContent.replace(/\s+/g, ' ').trim();
+      out.qVisible = document.querySelectorAll('.pr-q:not([hidden])').length;
+      return out;
+    });
+    check('пара: неделя из жизни, 8 сфер со знаками и бейджами, 3 фразы, 6 вопросов, две стороны и отправка партнёру',
+      pr.zones === 8 && pr.imgs === 8 && pr.story === 2 && pr.scripts === 3 && pr.qs === 6 && pr.badges.length === 8 && pr.badges.every(Boolean) &&
+      pr.side[1] === '#/relations/lie/esi' && pr.send && pr.toc === 4, JSON.stringify(pr));
+    check('пара: оглавление ведёт к разделу, «попробовали» отмечается и считается, вопросы листаются',
+      pr.tocTop >= -5 && pr.tocTop < 160 && pr.pressed === 'true' && /Попробовали 1 из 8/.test(pr.progress) && /^2 из 6$/.test(pr.qn) && pr.qVisible === 1, JSON.stringify(pr));
+    await b.reload();
+    await b.sleep(1800);
+    const kept = await b.eval(`(() => { const z = document.querySelector('.pr-zone [data-try]'); return { pressed: z && z.getAttribute('aria-pressed'), progress: (document.querySelector('.pr-progress') || {}).textContent || '' }; })()`);
+    check('пара: тексты подгружаются при чистой загрузке, отметка «попробовали» переживает перезагрузку', kept.pressed === 'true' && /1\s+из\s+8/.test(kept.progress), JSON.stringify(kept));
+    await shot('d-pair-spheres', '#spheres', 60);
     await go('#/quadras', 1200);
     await shot('d-quadras', '#gamma', 50);
     await go('#/about', 1200);

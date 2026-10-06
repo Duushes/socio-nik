@@ -17,6 +17,26 @@
   ui.relText = relText;
 
   ui.qStyle = qid => `--q:var(--q-${qid})`;
+  // Тексты страницы пары (≈ 245 КБ: сцены по сферам, фразы, вопросы) грузятся только там, где нужны:
+  // на странице пары и заранее, в простое, рядом с картой отношений. Версия файлов — как у этого скрипта
+  const VER = ((document.querySelector('script[src*="ui/components.js"]') || {}).src || '').split('?')[1] || '';
+  const loadScript = src => new Promise((ok, fail) => {
+    const el = document.createElement('script');
+    el.src = src + (VER ? '?' + VER : '');
+    el.onload = ok;
+    el.onerror = () => fail(new Error('не загрузилось: ' + src));
+    document.head.appendChild(el);
+  });
+  let pairWait = null;
+  ui.pairReady = () => { const P = S.content.pair; return Boolean(P && P.zones && P.partnerView && P.relations && P.domains); };
+  ui.pairTexts = () => {
+    if (ui.pairReady()) return Promise.resolve(S.content.pair);
+    if (!pairWait) pairWait = Promise.all(['pair', 'pair-zones', 'pair-partner'].map(f => loadScript(`js/content/${f}.js`)))
+      .then(() => S.content.pair)
+      .catch(e => { pairWait = null; throw e; });
+    return pairWait;
+  };
+  ui.prefetchPair = () => { const idle = root.requestIdleCallback || (f => setTimeout(f, 1500)); idle(() => ui.pairTexts().catch(() => {})); };
   // Короткое имя для крупного заголовка: «Максим», «Джек»; в подписях — полный псевдоним
   ui.short = t => t.short || t.alias;
 
