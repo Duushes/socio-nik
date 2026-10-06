@@ -448,6 +448,26 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     await shot('d-quadras', '#gamma', 50);
     await go('#/about', 1200);
     await shot('d-about-aspects', '.aspect-grid', 140);
+    const asp = await b.eval(async () => {
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      const btn = document.querySelector('[data-aspect="Ne"]');
+      btn.scrollIntoView({ block: 'center' });
+      await sleep(500);
+      btn.click();
+      await sleep(700);
+      const d = document.querySelector('dialog.sheet');
+      if (!d) return { open: false };
+      const title = d.querySelector('.fn-title').textContent, life = d.querySelectorAll('.as-life li').length;
+      const types = Array.from(d.querySelectorAll('.as-type b')).map(x => x.textContent).join(',');
+      d.querySelector('[data-as-go="Ni"]').click();
+      await sleep(700);
+      const next = d.querySelector('.fn-title').textContent;
+      d.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      d.dispatchEvent(new Event('cancel'));
+      await sleep(500);
+      return { open: true, title, life, types, next, closed: !document.querySelector('dialog.sheet') };
+    });
+    check('«О соционике»: аспект по нажатию — шторка с разбором, типами и листанием', asp.open && asp.title === 'Интуиция возможностей' && asp.life === 3 && asp.types === 'ИЛЭ,ИЭЭ,ЛИИ,ЭИИ' && asp.next === 'Интуиция времени' && asp.closed, JSON.stringify(asp));
 
     // ---------- щадящий режим ----------
     await b.media({ 'prefers-reduced-motion': 'reduce' });

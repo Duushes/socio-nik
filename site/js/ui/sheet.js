@@ -133,6 +133,72 @@
       </article>`;
   }
 
+  // ---------- шторка аспекта (страница «О соционике») ----------
+  const ASPECTS = ['Ne', 'Ni', 'Se', 'Si', 'Te', 'Ti', 'Fe', 'Fi'];
+  const GLYPH = { pyramid: 'пирамида', sphere: 'шар', cube: 'куб', corner: 'уголок' };
+
+  function aspectHTML(id) {
+    const a = S.data.aspects[id], el = S.data.elements[a.element], more = (S.content.aspectsMore || {})[id] || {};
+    const base = S.data.types.filter(t => t.ego[0] === id), creative = S.data.types.filter(t => t.ego[1] === id);
+    const quadras = S.data.quadras.filter(q => q.values.includes(id));
+    const i = ASPECTS.indexOf(id), prev = ASPECTS[(i + 7) % 8], next = ASPECTS[(i + 1) % 8];
+    const typeLink = t => `<a class="as-type" href="#/types/${t.id}" style="${ui.qStyle(t.quadra)}"><span class="as-ava">${ui.character(t, { sizes: '48px', alt: '' })}</span><span><b>${t.code}</b> ${esc(t.alias)}</span></a>`;
+    const dense = a.vert === 'e';
+    return `
+      <article class="fn as" style="--q:var(--violet, #8b3fd1)">
+        <header class="fn-head sheet-drag">
+          <div class="fn-art"><span class="fn-float">${S.art.aspectImg(id, 'violet', 'fn-img', { eager: true })}</span></div>
+          <div class="fn-titles">
+            <p class="fn-kicker">${el.name} · ${dense ? 'чёрный, экстравертный' : 'белый, интровертный'} аспект</p>
+            <h2 class="fn-title">${esc(a.name)}</h2>
+            <p class="fn-aspect">${S.art.symbol(id)}<b>${a.short}</b> ${esc(a.hint)}</p>
+          </div>
+        </header>
+        <section class="fn-sec fn-main"><p>${esc(more.about || S.content.aspectsLong[id])}</p></section>
+        ${more.life ? `<section class="fn-sec"><h3>Как это выглядит в жизни</h3><ul class="as-life">${more.life.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
+        ${more.low ? `<section class="fn-sec"><h3>Когда этого мало</h3><p>${esc(more.low)}</p></section>` : ''}
+        <section class="fn-sec">
+          <h3>Главная сила у типов</h3><div class="as-types">${base.map(typeLink).join('')}</div>
+          <h3 class="as-sub">Рабочий инструмент у типов</h3><div class="as-types">${creative.map(typeLink).join('')}</div>
+        </section>
+        <section class="fn-sec">
+          <h3>Ценят квадры</h3>
+          <div class="as-quadras">${quadras.map(q => `<a class="chip" href="#/quadras#${q.id}" style="${ui.qStyle(q.id)}"><i class="qdot" aria-hidden="true"></i>${q.name}</a>`).join('')}</div>
+          <p class="as-glyph">На сайте этот аспект — ${dense ? 'плотный' : 'стеклянный'} ${GLYPH[el.glyph]}: так его носят персонажи на одежде.</p>
+        </section>
+        <nav class="fn-nav" aria-label="Другие аспекты">
+          <button type="button" data-as-go="${prev}" aria-label="Предыдущий: ${esc(S.data.aspects[prev].name)}">‹ ${S.data.aspects[prev].short}</button>
+          <span class="fn-dots" aria-hidden="true">${ASPECTS.map(k => `<i class="${k === id ? 'on' : ''}"></i>`).join('')}</span>
+          <button type="button" data-as-go="${next}" aria-label="Следующий: ${esc(S.data.aspects[next].name)}">${S.data.aspects[next].short} ›</button>
+        </nav>
+      </article>`;
+  }
+
+  ui.openAspect = (id, from) => {
+    let cur = id;
+    const label = k => `Аспект: ${S.data.aspects[k].name}`;
+    const sheet = ui.openSheet({
+      label: label(id),
+      from,
+      render: () => aspectHTML(cur),
+      onKey: e => {
+        if (e.key === 'ArrowRight') go(ASPECTS[(ASPECTS.indexOf(cur) + 1) % 8], 1);
+        if (e.key === 'ArrowLeft') go(ASPECTS[(ASPECTS.indexOf(cur) + 7) % 8], -1);
+      }
+    });
+    function go(k, dir) {
+      cur = k;
+      sheet.dlg.setAttribute('aria-label', label(k));
+      sheet.swap(aspectHTML(k), dir);
+    }
+    sheet.dlg.addEventListener('click', e => {
+      const b = e.target.closest('[data-as-go]');
+      if (b) { const k = b.dataset.asGo, d = ASPECTS.indexOf(k) - ASPECTS.indexOf(cur); go(k, d === 1 || d === -7 ? 1 : -1); }
+      if (e.target.closest('.as-type, .as-quadras a')) sheet.close();
+    });
+    return sheet;
+  };
+
   ui.openFunction = (t, n, from) => {
     let cur = n;
     const sheet = ui.openSheet({

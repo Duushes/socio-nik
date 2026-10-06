@@ -57,14 +57,15 @@
         <section class="sec sec-white">
           <div class="wrap">
             ${part('03', 'Восемь аспектов информации', true)}
-            <p class="lead sec-sub reveal">Каждая стихия бывает «чёрной» (экстравертной) и${NB}«белой» (интровертной). На${NB}сайте чёрные аспекты — плотные знаки, белые — стеклянные. Те${NB}же знаки носят персонажи на${NB}одежде.</p>
+            <p class="lead sec-sub reveal">Каждая стихия бывает «чёрной» (экстравертной) и${NB}«белой» (интровертной). На${NB}сайте чёрные аспекты — плотные знаки, белые — стеклянные. Те${NB}же знаки носят персонажи на${NB}одежде. Нажми на${NB}аспект — расскажем подробнее.</p>
             <div class="aspect-grid">${Object.keys(A).map((id, i) => `
-              <div class="aspect reveal" style="--i:${i % 4}">
+              <button type="button" class="aspect reveal" data-aspect="${id}" style="--i:${i % 4}" aria-haspopup="dialog">
                 <span class="aspect-art">${S.art.aspectImg(id, 'violet', 'aspect-img')}</span>
                 <span class="aspect-code">${S.art.symbol(id)} ${A[id].short}</span>
                 <span class="aspect-name">${esc(A[id].name)}</span>
                 <span class="aspect-hint">${esc(A[id].hint)}</span>
-              </div>`).join('')}</div>
+                <span class="aspect-more" aria-hidden="true">Подробнее${ui.ICON.arrow}</span>
+              </button>`).join('')}</div>
           </div>
         </section>
         <section class="sec">
@@ -79,6 +80,11 @@
             <p class="gap-top reveal"><a class="btn" href="#/test">Пройти тест</a></p>
           </div>
         </section>`;
+    },
+    mount(root) {
+      const open = e => { const b = e.target.closest('[data-aspect]'); if (b) ui.openAspect(b.dataset.aspect, b); };
+      root.addEventListener('click', open);
+      return () => root.removeEventListener('click', open);
     }
   };
 
