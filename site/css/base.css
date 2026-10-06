@@ -18,6 +18,8 @@ ul, ol { margin: 0; padding: 0; }
 ::selection { background: #b600a8; color: #fff; }
 :focus-visible { outline: 2px solid var(--line); outline-offset: 3px; }
 main:focus, main:focus-visible { outline: none; }
+/* декор (тени карты, персонажи сцены, свечения) не раздвигает страницу вбок: на телефоне body { overflow-x: clip } этого не держит */
+main { overflow-x: clip; }
 
 .skip { position: absolute; left: -9999px; top: 10px; z-index: 100; padding: 10px 18px; border-radius: var(--r-pill); background: var(--paper); color: var(--ink); font-weight: 600; }
 .skip:focus { left: 16px; }
@@ -75,6 +77,8 @@ main:has(> .sec-white:last-child) + .footer { position: relative; margin-top: ca
 /* белая обводка внутри: 2 px со смещением −3 px */
 .btn::after { content: ""; position: absolute; inset: 1px; border: 2px solid #fff; border-radius: inherit; pointer-events: none; }
 .btn:active { transform: scale(0.97); }
+/* узкий экран: длинная подпись переносится, а не раздвигает страницу */
+@media (max-width: 479px) { .btn { max-width: 100%; white-space: normal; text-align: center; } }
 @media (hover: hover) and (pointer: fine) { .btn:hover { filter: brightness(1.14) saturate(1.05); } }
 .btn-ghost {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;

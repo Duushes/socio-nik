@@ -176,6 +176,16 @@ if (full) {
   (qctx.Socio.data.questions || []).forEach(q => ['a', 'b'].forEach(side => {
     if (!fs.existsSync(path.join(QIMG, `${q.id}-${side}.webp`))) err('тест', `нет картинки img/q/${q.id}-${side}.webp`);
   }));
+  // превью ссылок для мессенджеров: og.jpg главной и у каждого типа — картинка og/<id>.jpg и страница r/<id>/ (tools/og.js)
+  const SITE_DIR = path.join(__dirname, '..', 'site');
+  if (!fs.existsSync(path.join(SITE_DIR, 'og.jpg'))) err('превью', 'нет site/og.jpg — запусти tools/og.js');
+  TYPES.forEach(id => {
+    if (!fs.existsSync(path.join(SITE_DIR, 'og', id + '.jpg'))) err('превью', `нет og/${id}.jpg — запусти tools/og.js`);
+    const stub = path.join(SITE_DIR, 'r', id, 'index.html');
+    if (!fs.existsSync(stub)) { err('превью', `нет r/${id}/index.html — запусти tools/og.js`); return; }
+    const html = fs.readFileSync(stub, 'utf8');
+    if (!html.includes(`og/${id}.jpg`) || !html.includes(`#/types/${id}`)) err('превью', `r/${id}/index.html ссылается не на свой тип`);
+  });
 }
 
 if (notes.length) console.log(notes.join(' · '));

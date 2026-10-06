@@ -5,6 +5,7 @@
   const ui = S.ui = S.ui || {};
   const { esc } = S.dom;
   const M = () => S.core.modelA;
+  const NB = '\u00A0';
 
   const typesOf = qid => S.data.types.filter(t => t.quadra === qid);
   const quadra = id => S.data.quadras.find(q => q.id === id);
@@ -216,15 +217,47 @@
   ];
   ui.AXES = AXES;
 
-  ui.axisBars = axes => `<div class="axes">${AXES.map(([ax, a, b], i) => {
-    const v = axes[ax], first = v >= 50;
-    return `<div class="axis reveal" style="--i:${i}">
-      <div class="axis-labs"><span class="${first ? 'on' : ''}">${a} <b>${v} %</b></span><span class="${first ? '' : 'on'}"><b>${100 - v} %</b> ${b}</span></div>
-      <div class="axis-track" role="img" aria-label="${a} ${v} %, ${b.toLowerCase()} ${100 - v} %">
-        <i class="seg ${first ? 'on' : ''}" data-w="${v}"></i><i class="seg ${first ? '' : 'on'}" data-w="${100 - v}"></i>
-      </div>
-    </div>`;
-  }).join('')}</div>`;
+  // Четыре шкалы: у каждой — вопрос простыми словами, 3D-картинки полюсов (те же предметы, что в тесте),
+  // шкала растёт от центра к ближнему полюсу, на её конце — глянцевый шар в цвете квадры, и вывод словами.
+  // Тексты без «ты»: блок стоит и на своём результате, и на странице чужого результата по ссылке.
+  const SCALE = {
+    EI: { title: 'Откуда берутся силы', a: 'E', b: 'I' },
+    NS: { title: 'Что замечается первым', a: 'N', b: 'S' },
+    TF: { title: 'На что опираются решения', a: 'T', b: 'F' },
+    RP: { title: 'Как с планами', a: 'R', b: 'P' }
+  };
+  const POLE = {
+    E: ['Экстраверсия', 'силы дают люди, встречи и движение'],
+    I: ['Интроверсия', 'силы возвращаются в тишине и наедине с собой'],
+    N: ['Интуиция', 'внимание тянется к возможностям и смыслам'],
+    S: ['Сенсорика', 'в фокусе конкретное: вкус, цвет, детали'],
+    T: ['Логика', 'решения опираются на факты, пользу и систему'],
+    F: ['Этика', 'решения опираются на людей, чувства и отношения'],
+    R: ['Рациональность', 'спокойнее, когда есть план и порядок'],
+    P: ['Иррациональность', 'спокойнее, когда можно действовать по ситуации']
+  };
+  const near = d => (d >= 75 ? 'Явно ближе' : d >= 60 ? 'Ближе' : 'Чуть ближе');
+  ui.axisBars = axes => {
+    const top = M().type(S.core.scoring.result(axes).top.id);
+    return `<div class="scales">${AXES.map(([ax], i) => {
+      const v = axes[ax], sc = SCALE[ax], win = v >= 50 ? sc.a : sc.b;
+      const pole = (p, val, on) => `<div class="sc-pole${on ? ' on' : ''}">
+          <img src="img/scale/${p}.webp" alt="" width="240" height="240" loading="lazy" decoding="async" draggable="false">
+          <span class="sc-name">${POLE[p][0]}</span><span class="sc-pct"><b data-count="${val}">${val}</b>${NB}%</span>
+        </div>`;
+      const verdict = v === 50 ? `<b>Поровну</b>: обе стороны одинаково близки` : `<b>${near(Math.max(v, 100 - v))} ${POLE[win][0].toLowerCase()}</b>: ${POLE[win][1]}`;
+      return `<article class="scale reveal" style="--i:${i % 2};--gx:${v > 50 ? 18 : v < 50 ? 82 : 50}%" data-w="${100 - v}">
+        <p class="sc-title">${sc.title}</p>
+        <div class="sc-poles">${pole(sc.a, v, v >= 50)}${pole(sc.b, 100 - v, v <= 50)}</div>
+        <div class="sc-track" role="img" aria-label="${POLE[sc.a][0]} ${v} %, ${POLE[sc.b][0].toLowerCase()} ${100 - v} %">
+          <span class="sc-mid" aria-hidden="true"></span>
+          <span class="sc-fill" aria-hidden="true"></span>
+          <span class="sc-knob" aria-hidden="true"><img src="img/logo/${top.quadra}.webp" alt="" width="48" height="48"></span>
+        </div>
+        <p class="sc-verdict">${verdict}</p>
+      </article>`;
+    }).join('')}</div>`;
+  };
 
   ui.distribution = res => {
     const byId = {};

@@ -496,16 +496,31 @@
 .next-pct { grid-row: 1 / 3; grid-column: 3; font-size: 26px; font-weight: 800; }
 @media (hover: hover) and (pointer: fine) { .next-card:hover .next-art img { transform: scale(1.28); } }
 
-/* шкалы */
-.axes { display: grid; gap: 26px; }
-.axis-labs { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 10px; color: var(--muted); font-size: 14px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
-.axis-labs .on { color: var(--text); }
-.axis-labs b { font-weight: 800; font-variant-numeric: tabular-nums; }
-.axis-track { display: flex; gap: 3px; height: 14px; }
-.axis-track .seg { display: block; flex: none; height: 100%; width: max(0px, calc(var(--w, 0%) - 1.5px)); border-radius: 3px; background: var(--track); transition: width 1.2s var(--out); }
-.axis-track .seg:first-child { border-radius: 7px 3px 3px 7px; }
-.axis-track .seg:last-child { border-radius: 3px 7px 7px 3px; }
-.axis-track .seg.on { background: var(--grad-line); }
+/* четыре шкалы: карточка на шкалу, полюса — 3D-предметы. Бегунок едет от центра к ближнему полюсу,
+   на подъезде полюс оживает (цвет + пружинка); при 50/50 горят оба. --w ставит fx.show() из data-w,
+   --gx — с какой стороны свечение. Блёклая только картинка: текст проигравшего полюса остаётся читаемым */
+.scales { display: grid; gap: 14px; }
+@media (min-width: 768px) { .scales { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } .scale { padding-inline: clamp(16px, 2.2vw, 28px); } }
+.scale { --sd: calc(0.15s + var(--i, 0) * 80ms); min-width: 0; padding: 18px clamp(14px, 4vw, 20px) 20px; border: 2px solid var(--hair); border-radius: var(--r-in); background: radial-gradient(65% 85% at var(--gx, 50%) 0%, rgba(182, 0, 168, 0.17), transparent 70%); }
+.sc-title { margin: 0 0 12px; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-align: center; text-transform: uppercase; }
+.sc-poles { display: grid; grid-template-columns: auto auto; justify-content: space-between; align-items: end; gap: 8px; }
+.sc-pole { display: grid; justify-items: start; min-width: 0; color: var(--muted); transition: color 0.5s; }
+.sc-pole + .sc-pole { justify-items: end; text-align: right; }
+.sc-pole img { width: clamp(56px, 6vw, 72px); height: auto; margin-bottom: 8px; opacity: 0.5; filter: grayscale(1) drop-shadow(0 8px 10px rgba(0, 0, 0, 0.45)); transform-origin: 50% 85%; transition: transform 0.7s var(--spring), filter 0.5s, opacity 0.5s; }
+.sc-name { font-size: clamp(12px, 3.4vw, 15px); font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
+.sc-pct { font-size: 14px; white-space: nowrap; }
+.sc-pct b { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.sc-pole.on .sc-pct b { font-size: clamp(24px, 2.4vw, 30px); font-weight: 900; }
+.scale.in .sc-pole.on { color: var(--text); transition-delay: calc(var(--sd) + 0.45s); }
+.scale.in .sc-pole.on img { opacity: 1; filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 18px rgba(209, 107, 224, 0.5)); transform: scale(1.14); transition-delay: calc(var(--sd) + 0.45s); }
+.sc-track { position: relative; height: 12px; margin: 18px 8px 16px; border-radius: 6px; background: var(--track); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.55); }
+.sc-mid { position: absolute; top: -5px; bottom: -5px; left: 50%; width: 2px; border-radius: 1px; background: var(--faint); translate: -50% 0; }
+.sc-fill { position: absolute; top: 0; bottom: 0; left: min(var(--w, 50%), 50%); width: calc(max(var(--w, 50%), 50%) - min(var(--w, 50%), 50%)); overflow: hidden; border-radius: 6px; background: var(--grad-line); box-shadow: 0 0 14px rgba(182, 0, 168, 0.5); transition: left 1.2s var(--out) var(--sd), width 1.2s var(--out) var(--sd); }
+.sc-fill::after { content: ''; position: absolute; inset: 1px 3px 50%; border-radius: 4px; background: linear-gradient(rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0)); }
+.sc-knob { position: absolute; top: 50%; left: var(--w, 50%); width: 30px; height: 30px; translate: -50% -50%; transition: left 1.2s var(--out) var(--sd); }
+.sc-knob img { display: block; width: 100%; height: 100%; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6)); }
+.sc-verdict { margin: 0; color: color-mix(in srgb, var(--text) 78%, transparent); font-size: 14.5px; line-height: 1.45; text-align: center; text-wrap: pretty; }
+.sc-verdict b { color: var(--text); }
 
 /* распределение */
 .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0 0 18px; color: var(--muted); font-size: 13px; }
@@ -547,6 +562,8 @@
   .seg[role="group"] { display: flex; max-width: 100%; }
   .seg[role="group"] button { flex: 1 1 auto; padding: 8px 10px; font-size: 12.5px; letter-spacing: 0.01em; text-transform: none; white-space: nowrap; }
 }
+/* 320–374 px: три подписи целиком не влезают — «Любой / Мой · ЭСИ / Выбрать» */
+@media (max-width: 374px) { .seg-x { display: none; } }
 /* ================= ПОДЕЛИТЬСЯ ================= */
 /* превью картинки в «телефоне», слегка развёрнутом в 3D; вокруг — парящие символы */
 .share-sec { overflow-x: clip; }

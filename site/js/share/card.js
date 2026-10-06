@@ -228,10 +228,13 @@
     return canvas;
   }
 
-  // Ссылка на результат — только когда сайт выложен (SITE_URL); в ней 4 числа, без ответов и имён
+  // Ссылка на результат — только когда сайт выложен (SITE_URL); в ней 4 числа, без ответов и имён.
+  // Ведёт на r/<тип>/ — статичную страницу с превью этого типа для мессенджеров (tools/og.js); числа — в #хэше,
+  // их не видят ни сервер, ни превью-боты, а страница сразу передаёт их сайту: #/r/<числа>
   function url(axes) {
     const base = S.config && S.config.SITE_URL;
-    return base ? base.replace(/\/$/, '') + '/#/r/' + S.core.payload.encode(axes) : '';
+    if (!base) return '';
+    return base.replace(/\/$/, '') + '/r/' + S.core.scoring.result(axes).top.id + '/#' + S.core.payload.encode(axes);
   }
 
   function text(axes, { withUrl = true } = {}) {
@@ -384,45 +387,176 @@
     return canvas;
   }
 
-  // Превью ссылки для мессенджеров 1200×630 — как hero главной: «аврора», парящие знаки, градиентный заголовок
-  function renderOG(canvas) {
+  // ---------- превью ссылок для мессенджеров (og:image 1200×630) ----------
+  // Подпись Socio-Nik как в шапке: четыре 3D-шара квадр (alpha ↖, beta ↗, gamma ↘, delta ↙) и слово
+  function lockup(ctx, x, cy, s, center = false) {
+    ctx.save();
+    ctx.font = font(900, Math.round(s * 0.56));
+    ctx.letterSpacing = '0.08em';
+    const word = 'SOCIO-NIK', gap = s * 0.36, w = s + gap + ctx.measureText(word).width;
+    const x0 = center ? x - w / 2 : x, y0 = cy - s / 2, d = s * 0.58, a = -s * 0.04, b = s * 0.46;
+    blob(ctx, x0 + s / 2, cy, s * 1.15, '#b600a8', 0.32);
+    const Q = id => S.data.quadras.find(q => q.id === id).color.dark;
+    [['alpha', a, a], ['beta', b, a], ['gamma', b, b], ['delta', a, b]].forEach(([q, dx, dy]) => {
+      const im = arts['q-' + q];
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.55)';
+      ctx.shadowBlur = s * 0.1;
+      ctx.shadowOffsetY = s * 0.08;
+      if (im) ctx.drawImage(im, x0 + dx, y0 + dy, d, d);
+      else { ctx.fillStyle = Q(q); ctx.beginPath(); ctx.arc(x0 + dx + d / 2, y0 + dy + d / 2, d / 2, 0, Math.PI * 2); ctx.fill(); }
+      ctx.restore();
+    });
+    const g = ctx.createLinearGradient(0, cy - s * 0.3, 0, cy + s * 0.3);
+    g.addColorStop(0.15, '#ffffff');
+    g.addColorStop(1, '#aebdc8');
+    ctx.fillStyle = g;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(word, x0 + s + gap, cy + s * 0.03);
+    ctx.restore();
+  }
+
+  // Бюст из портрета 600×750: сверху `part` высоты, низ растворяется; глубина — яркость и лёгкое размытие
+  function bust(ctx, im, cx, bottom, h, { part = 0.66, light = 1, soft = 0 } = {}) {
+    const sw = im.width, sh = Math.round(im.height * part), w = h * sw / sh;
+    const off = document.createElement('canvas');
+    off.width = Math.round(w);
+    off.height = Math.round(h);
+    const o = off.getContext('2d');
+    o.drawImage(im, 0, 0, sw, sh, 0, 0, off.width, off.height);
+    o.globalCompositeOperation = 'destination-in';
+    const g = o.createLinearGradient(0, 0, 0, off.height);
+    g.addColorStop(0, '#000');
+    g.addColorStop(0.62, '#000');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    o.fillStyle = g;
+    o.fillRect(0, 0, off.width, off.height);
+    ctx.save();
+    if (light !== 1 || soft) ctx.filter = `brightness(${light})${soft ? ` blur(${soft}px)` : ''}`;
+    ctx.drawImage(off, cx - w / 2, bottom - h);
+    ctx.restore();
+  }
+
+  // Главная: огромное серебряное «КТО ТЫ?», как заголовки сайта, а перед ним — пятеро из 16 типов.
+  // Всё важное держим в центре: VK режет края до 2,2:1, квадратное превью берёт середину.
+  const CAST = [['sli', 128, 268, 0.55, 1.2], ['iee', 1072, 268, 0.55, 1.2], ['iei', 352, 312, 0.78, 0], ['see', 848, 312, 0.78, 0], ['ese', 600, 352, 1, 0]];
+  function renderOG(canvas, id) {
+    if (id) return renderTypeOG(canvas, id);
     const W = 1200, H = 630;
     canvas.width = W;
     canvas.height = H;
     const ctx = canvas.getContext('2d');
-    const Q = id => S.data.quadras.find(q => q.id === id).color.dark;
-    ctx.fillStyle = '#000';
+    const Q = tid => S.data.quadras.find(q => q.id === S.core.modelA.type(tid).quadra).color.dark;
+    ctx.fillStyle = '#07080a';
     ctx.fillRect(0, 0, W, H);
-    [['alpha', 0.14, 0.2], ['gamma', 0.86, 0.16], ['beta', 0.82, 0.9], ['delta', 0.16, 0.9]].forEach(([q, x, y]) => blob(ctx, W * x, H * y, W * 0.5, Q(q), 0.4));
-    [['Ne', 'alpha', 0.1, 0.24, 1.25], ['Fe', 'beta', 0.9, 0.22, 1.1], ['Ti', 'beta', 0.13, 0.78, 1.0], ['Si', 'alpha', 0.89, 0.76, 1.0],
-      ['Se', 'gamma', 0.31, 0.9, 0.7], ['Ni', 'gamma', 0.69, 0.91, 0.72], ['Te', 'delta', 0.035, 0.52, 0.7], ['Fi', 'delta', 0.965, 0.5, 0.72]]
-      .forEach(([a, q, x, y, s]) => {
-        ctx.save();
-        ctx.translate(W * x, H * y);
-        ctx.scale(s, s);
-        S.art.toCanvas(ctx, S.art.glyphOf(a, Q(q), 'dark'));
-        ctx.restore();
-      });
+    blob(ctx, W * 0.08, H * 0.05, W * 0.55, '#b600a8', 0.24);
+    blob(ctx, W * 0.95, H * 0.1, W * 0.5, '#7621b0', 0.26);
+    blob(ctx, W * 0.5, H * 1.05, W * 0.6, '#be4c00', 0.16);
+    lockup(ctx, W / 2, 52, 38, true);
+
+    // заголовок: серебро сверху тёмное, снизу светлое — как .sv на сайте
     ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(255,255,255,0.72)';
-    ctx.font = font(600, 30);
-    ctx.fillText('Socio-Nik', W / 2, 196);
-    ctx.fillStyle = '#fff';
-    ctx.font = font(800, 80);
-    ctx.fillText('Узнай свой', W / 2, 298);
-    const g = ctx.createLinearGradient(W / 2 - 390, 0, W / 2 + 390, 0);
-    g.addColorStop(0, Q('alpha'));
-    g.addColorStop(0.52, Q('gamma'));
-    g.addColorStop(1, Q('beta'));
-    ctx.fillStyle = g;
-    ctx.fillText('соционический тип', W / 2, 392);
-    ctx.fillStyle = 'rgba(255,255,255,0.72)';
-    ctx.font = font(500, 30);
-    ctx.fillText('20 вопросов · 4 минуты · 16 типов и их отношения', W / 2, 462);
+    const px = fit(ctx, 'КТО ТЫ?', W - 120, 900, 210, 120);
+    ctx.font = font(900, px);
+    ctx.letterSpacing = '-0.01em';
+    silver(ctx, 'КТО ТЫ?', W / 2, 262, px);
+    ctx.letterSpacing = '0px';
+
+    CAST.forEach(([tid, cx, h, light, soft]) => {
+      blob(ctx, cx, H - h * 0.62, h * 0.78, Q(tid), 0.42 * light);
+      if (pics[tid]) bust(ctx, pics[tid], cx, H + 6, h, { light, soft });
+    });
+    // низ уходит в темноту, на нём — подпись
+    const fade = ctx.createLinearGradient(0, H - 150, 0, H);
+    fade.addColorStop(0, 'rgba(7,8,10,0)');
+    fade.addColorStop(1, 'rgba(7,8,10,0.94)');
+    ctx.fillStyle = fade;
+    ctx.fillRect(0, H - 150, W, 150);
+    drawArt(ctx, 'sparkles', 1118, 96, 76, 10, 0.95);
+    pill(ctx, '20 вопросов · 4 минуты · 16 типов', W / 2, H - 46, { px: 22, weight: 700, fill: 'rgba(10,10,12,0.72)', stroke: 'rgba(215,226,234,0.28)', color: 'rgba(255,255,255,0.9)', W });
     return canvas;
+  }
+
+  // Ссылка на чужой результат: персонаж типа в свете своей квадры, код, имя, роль и вопрос «А какой тип у тебя?».
+  // Процентов нет: картинка одна на тип, а превью-боты не видят #хэш с ответами.
+  function renderTypeOG(canvas, id) {
+    const W = 1200, H = 630;
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const t = S.core.modelA.type(id), q = S.data.quadras.find(x => x.id === t.quadra), c = q.color.dark;
+    ctx.fillStyle = '#07080a';
+    ctx.fillRect(0, 0, W, H);
+    blob(ctx, W * 0.05, H * 0.1, W * 0.5, '#b600a8', 0.2);
+    blob(ctx, W * 0.3, H * 1.0, W * 0.45, '#7621b0', 0.22);
+    blob(ctx, 880, 330, 520, c, 0.5);
+    blob(ctx, 880, 300, 240, '#ffffff', 0.07);
+    if (pics[id]) bust(ctx, pics[id], 880, H + 40, 690, { part: 1 });
+    drawArt(ctx, 'sparkles', 1092, 120, 92, 8, 0.95);
+
+    const X = 72, maxW = 560;
+    lockup(ctx, X, 74, 38);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#fff';
+    ctx.font = font(900, 196);
+    ctx.letterSpacing = '0.01em';
+    ctx.fillText(t.code, X - 8, 300);
+    ctx.letterSpacing = '0px';
+    const alias = `«${t.alias}»`;
+    const ap = fit(ctx, alias, maxW, 900, 64, 40);
+    ctx.font = font(900, ap);
+    silver(ctx, alias, X, 380, ap);
+    // роль и квадра: точка в цвете квадры, как на карточках сайта
+    ctx.save();
+    ctx.shadowColor = c;
+    ctx.shadowBlur = 14;
+    ctx.fillStyle = c;
+    ctx.beginPath();
+    ctx.arc(X + 9, 432, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = 'rgba(255,255,255,0.78)';
+    const sub = `${t.role} · квадра ${q.name}`;
+    ctx.font = font(600, fit(ctx, sub, maxW - 32, 600, 30, 22));
+    ctx.textBaseline = 'middle';
+    ctx.fillText(sub, X + 32, 433);
+    ctx.textBaseline = 'alphabetic';
+    // кнопка-вопрос в фирменном градиенте, как .btn
+    const ask = 'А какой тип у тебя? →';
+    ctx.font = font(800, 30);
+    const bw = ctx.measureText(ask).width + 68, bh = 76, by = 500;
+    const g = ctx.createLinearGradient(X, by, X + bw, by + bh);
+    g.addColorStop(0.07, '#18011f');
+    g.addColorStop(0.37, '#b600a8');
+    g.addColorStop(0.72, '#7621b0');
+    g.addColorStop(1, '#be4c00');
+    ctx.save();
+    ctx.shadowColor = 'rgba(182,0,168,0.45)';
+    ctx.shadowBlur = 30;
+    ctx.fillStyle = g;
+    roundRect(ctx, X, by, bw, bh, bh / 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    roundRect(ctx, X + 3, by + 3, bw - 6, bh - 6, (bh - 6) / 2);
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(ask, X + 34, by + bh / 2 + 1);
+    ctx.textBaseline = 'alphabetic';
+    return canvas;
+  }
+
+  // Для tools/og.js: дождаться портретов и 3D-символов, потом рисовать
+  async function ogImage(id) {
+    await Promise.all([art(), ...(id ? [id] : CAST.map(x => x[0])).map(portrait)]);
+    if (document.fonts) await document.fonts.ready;
+    return renderOG(document.createElement('canvas'), id);
   }
 
   const factImage = fact => Promise.all([fact.type ? portrait(fact.type) : null, art()]).then(() => toBlob(renderFact(document.createElement('canvas'), fact)));
 
-  S.share = { render, renderFact, factImage, renderOG, portrait, art, url, text, toBlob, download, copy, canShareFiles, share };
+  S.share = { render, renderFact, factImage, renderOG, ogImage, portrait, art, url, text, toBlob, download, copy, canShareFiles, share };
 })(window);

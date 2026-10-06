@@ -36,7 +36,7 @@
           <h3 class="sh-rel reveal">${esc(ui.relTitle(r, me, fr))}</h3>
           <p class="reveal">${ui.toneChip(r.tone)}</p>
           <p class="lead reveal">${esc(txt.line || '')}</p>
-          <p class="reveal"><a class="btn" href="#/relations/${me.id}/${fr.id}">Подробнее о ваших отношениях</a></p>
+          <p class="reveal"><a class="btn" href="#/relations/${me.id}/${fr.id}">Про ваши отношения</a></p>
         </div>
       </section>`;
   }
@@ -206,7 +206,7 @@
           <h2 class="h2 h2-md reveal">${mine ? `${mine.code} и ${t.code}` : 'А какой тип у тебя?'}</h2>
           <p class="lead reveal">${mine ? esc(ui.relText(rel.kind).line || '') : 'Пройди тест — и сразу увидишь, как устроены ваши отношения: дуальные, зеркальные, деловые или ещё какие-то из четырнадцати видов.'}</p>
           <div class="sh-pair reveal">${mine ? ui.duo(mine, t, { labels: ['Ты', t.code] }) : ui.duoMystery(t)}</div>
-          ${mine ? `<h3 class="sh-rel reveal">${esc(ui.relTitle(rel, mine, t))}</h3><p class="reveal"><a class="btn" href="#/relations/${mine.id}/${t.id}">Подробнее о ваших отношениях</a></p>`
+          ${mine ? `<h3 class="sh-rel reveal">${esc(ui.relTitle(rel, mine, t))}</h3><p class="reveal"><a class="btn" href="#/relations/${mine.id}/${t.id}">Про ваши отношения</a></p>`
                  : `<p class="reveal">${test('Пройти тест')}</p>`}
         </div>
       </section>

@@ -50,9 +50,9 @@
       <div class="box${compact ? ' box-compact' : ''}" data-box data-mode="${mode}" data-type="${target}">
         ${modes ? `
           <div class="seg box-modes" role="group" aria-label="Про какой тип факты">
-            <button type="button" data-m="any" aria-pressed="true">Любой тип</button>
-            <button type="button" data-m="mine"${mine ? '' : ' disabled title="Сначала пройди тест"'}>Мой тип${mine ? ' · ' + M().type(mine).code : ''}</button>
-            <button type="button" data-m="pick">Выбрать тип</button>
+            <button type="button" data-m="any" aria-pressed="true">Любой<span class="seg-x"> тип</span></button>
+            <button type="button" data-m="mine"${mine ? '' : ' disabled title="Сначала пройди тест"'}>Мой<span class="seg-x"> тип</span>${mine ? ' · ' + M().type(mine).code : ''}</button>
+            <button type="button" data-m="pick">Выбрать<span class="seg-x"> тип</span></button>
           </div>
           <div class="box-pick" hidden>${ui.typeSelect('boxtype', target, 'Тип')}</div>` : ''}
         <div class="box-play">

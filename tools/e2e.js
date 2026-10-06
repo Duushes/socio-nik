@@ -130,18 +130,50 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     });
     check('картинка для шера рисуется и выгружается в PNG (canvas не «испачкан»)', share.colored > 200 && share.size > 50000, JSON.stringify(share));
     check('формат «Пост» — 1080×1350', share.postH === 1350, String(share.postH));
+
+    // ---------- четыре шкалы ----------
+    const scales = await b.eval(async () => {
+      const box = document.querySelector('.scales');
+      box.scrollIntoView({ block: 'center' });
+      await new Promise(r => setTimeout(r, 2400));
+      return Array.from(box.querySelectorAll('.scale')).map(c => {
+        const t = c.querySelector('.sc-track').getBoundingClientRect(), k = c.querySelector('.sc-knob').getBoundingClientRect();
+        return {
+          w: Number(c.dataset.w),
+          knob: Math.round((k.left + k.width / 2 - t.left) / t.width * 100),
+          vals: Array.from(c.querySelectorAll('.sc-pct b')).map(b => Number(b.dataset.count)),
+          on: Array.from(c.querySelectorAll('.sc-pole')).map(p => p.classList.contains('on')),
+          imgs: Array.from(c.querySelectorAll('.sc-pole img')).every(i => i.complete && i.naturalWidth > 0),
+          verdict: c.querySelector('.sc-verdict').textContent.trim()
+        };
+      });
+    });
+    check('четыре шкалы: бегунок у ближнего полюса, полюс подсвечен, 3D-картинки загрузились',
+      scales.length === 4 && scales.every(x => Math.abs(x.knob - x.w) <= 2 && x.vals[0] + x.vals[1] === 100 && x.on[0] === (x.vals[0] >= 50) && x.on[1] === (x.vals[1] >= 50) && x.imgs && /ближе|поровну/i.test(x.verdict)),
+      JSON.stringify(scales));
+    await shot('d-result-scales', '.scales', 90);
     check('на картинке — портрет персонажа типа (data:-URI, canvas чистый)', share.portrait && share.size > 50000, JSON.stringify({ portrait: share.portrait, size: share.size }));
     const siteUrl = await b.eval('Socio.config.SITE_URL');
     if (siteUrl) {
-      check('текст шера: «кто я», вопрос к друзьям и ссылка на результат', /^Я — .+ А ты кто из 16 типов\? Тест за 4 минуты на Socio-Nik https:\/\/\S+\/#\/r\/1-\d+-\d+-\d+-\d+$/.test(share.text), share.text);
-      const round = await b.eval(async () => {
-        const code = document.querySelector('.res-code').textContent;
-        const hash = Socio.share.url(Socio.state.result()).split('#')[1];
-        location.hash = '#' + hash;
-        await new Promise(r => setTimeout(r, 900));
-        return { code, view: document.body.dataset.view, shared: document.querySelector('.res-code').textContent, links: document.querySelectorAll('.share-links a').length };
-      });
-      check('ссылка на результат открывает тот же тип', round.view === 'shared' && round.shared === round.code, JSON.stringify(round));
+      check('текст шера: «кто я», вопрос к друзьям и ссылка на результат', /^Я — .+ А ты кто из 16 типов\? Тест за 4 минуты на Socio-Nik https:\/\/\S+\/r\/[a-z]{3}\/#1-\d+-\d+-\d+-\d+$/.test(share.text), share.text);
+      // ссылка ведёт на r/<тип>/ — страницу с превью типа для мессенджеров; она сразу передаёт числа сайту
+      const shareUrl = await b.eval('Socio.share.url(Socio.state.result())');
+      const myCode = await b.eval(`document.querySelector('.res-code').textContent`);
+      const sm = shareUrl.match(/\/r\/([a-z]{3})\/#(1-\d+-\d+-\d+-\d+)$/);
+      const stubFile = sm ? path.join(TMP, 'r', sm[1], 'index.html') : '';
+      const stubHtml = stubFile && fs.existsSync(stubFile) ? fs.readFileSync(stubFile, 'utf8') : '';
+      check('ссылка на результат ведёт на страницу-превью своего типа с og-картинкой',
+        Boolean(sm) && stubHtml.includes(`og/${sm[1]}.jpg`) && fs.existsSync(path.join(TMP, 'og', sm[1] + '.jpg')), shareUrl);
+      if (sm) {
+        await b.goto(`file://${TMP}/r/${sm[1]}/index.html#${sm[2]}`);
+        await b.sleep(1300);
+        const round = await b.eval(`({ href: location.href, view: document.body.dataset.view, shared: (document.querySelector('.res-code') || {}).textContent })`);
+        check('страница-превью сразу открывает тот же результат', round.view === 'shared' && round.shared === myCode && /index\.html#\/r\/1-/.test(round.href), JSON.stringify(round));
+        await b.goto(`file://${TMP}/r/${sm[1]}/index.html`);
+        await b.sleep(1100);
+        const bare = await b.eval(`({ href: location.href, view: document.body.dataset.view })`);
+        check('страница-превью без чисел ведёт на страницу типа', new RegExp(`#/types/${sm[1]}$`).test(bare.href), JSON.stringify(bare));
+      }
       await go('#/result', 900);
       const soc = await b.eval(async () => {
         const box = document.querySelector('[data-share]');
@@ -539,11 +571,18 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       for (const r of ROUTES) {
         await b.goto(BASE + r);
         await b.sleep(600);
-        const o = await b.eval(`document.documentElement.scrollWidth - innerWidth`);
+        // с innerWidth сравнивать нельзя: телефон расширяет layout viewport под переполнение, и разница всегда 0
+        const o = await b.eval(`Math.max(document.documentElement.scrollWidth, innerWidth) - ${w}`);
         if (o > 0) overflow.push(`${r}: +${o}px`);
       }
       check(`телефон ${w} px: нигде нет горизонтального скролла`, overflow.length === 0, overflow.join(', '));
     }
+    // 320 px: названия полюсов шкал («Иррациональность» и др.) в одну строку
+    await b.viewport(320, 640, { mobile: true, scale: 2 });
+    await b.goto(BASE + '#/result');
+    await b.sleep(900);
+    const wrapped = await b.eval(`Array.from(document.querySelectorAll('.sc-name')).filter(n => n.getBoundingClientRect().height > parseFloat(getComputedStyle(n).lineHeight) * 1.5).map(n => n.textContent)`);
+    check('320 px: названия полюсов на шкалах не переносятся', wrapped.length === 0, wrapped.join(', '));
     // 375×667: шкала теста видна без прокрутки, персонаж героя не закрывает кнопку
     await b.viewport(375, 667, { mobile: true, scale: 2 });
     await b.goto(BASE + '#/test');
@@ -577,7 +616,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     await b.goto(BASE + '#/result');
     await b.sleep(1400);
     await shot('m-result-top');
-    await shot('m-result-axes', '.axes', 90);
+    await shot('m-result-scales', '.scales', 90);
 
     check('ошибок JS за весь прогон нет', b.errors.length === 0, b.errors.slice(0, 5).join(' | '));
   } catch (e) {
