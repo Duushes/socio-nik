@@ -64,7 +64,7 @@
   art.quadraEmblem = (q, { cls = '' } = {}) => `
     <div class="qorbit ${cls}" role="img" aria-label="Квадра ${q.name}: ценности — ${q.values.map(v => S.data.aspects[v].short).join(', ')}" style="--q:var(--q-${q.id})">
       <span class="qo-glow" aria-hidden="true"></span><span class="qo-ring" aria-hidden="true"></span>
-      <span class="qo-spin" aria-hidden="true">${q.values.map((id, i) => `<span class="qo-item" style="left:${ORBIT_POS[i][0]}%;top:${ORBIT_POS[i][1]}%">${art.aspectImg(id, q.id, 'qo-img')}</span>`).join('')}</span>
+      <span class="qo-spin" aria-hidden="true">${q.values.map((id, i) => `<span class="qo-item" style="left:${ORBIT_POS[i][0]}%;top:${ORBIT_POS[i][1]}%">${art.aspectImg(id, q.id, 'qo-img', { sizes: '(min-width: 900px) 100px, 26vw' })}</span>`).join('')}</span>
     </div>`;
 
   art.orbitPos = orbitPos;

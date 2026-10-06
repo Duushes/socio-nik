@@ -107,7 +107,7 @@
     return `
       <article class="fn" style="${ui.qStyle(t.quadra)}">
         <header class="fn-head sheet-drag">
-          <div class="fn-art"><span class="fn-float">${S.art.aspectImg(id, t.quadra, 'fn-img', { eager: true })}</span></div>
+          <div class="fn-art"><span class="fn-float">${S.art.aspectImg(id, t.quadra, 'fn-img', { eager: true, sizes: '96px' })}</span></div>
           <div class="fn-titles">
             <p class="fn-kicker">${t.code} · ${BLOCKS[n]} · функция ${n} из 8</p>
             <h2 class="fn-title">${F[n - 1].name}</h2>
@@ -147,7 +147,7 @@
     return `
       <article class="fn as" style="--q:var(--violet, #8b3fd1)">
         <header class="fn-head sheet-drag">
-          <div class="fn-art"><span class="fn-float">${S.art.aspectImg(id, 'violet', 'fn-img', { eager: true })}</span></div>
+          <div class="fn-art"><span class="fn-float">${S.art.aspectImg(id, 'violet', 'fn-img', { eager: true, sizes: '96px' })}</span></div>
           <div class="fn-titles">
             <p class="fn-kicker">${el.name} · ${dense ? 'чёрный, экстравертный' : 'белый, интровертный'} аспект</p>
             <h2 class="fn-title">${esc(a.name)}</h2>

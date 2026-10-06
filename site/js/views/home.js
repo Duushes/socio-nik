@@ -241,7 +241,7 @@
   function socionics() {
     return `
       <section class="sec soc-sec">
-        ${CORNERS.map(([a, q, pos, sx, sy], i) => `<span class="soc-g soc-${pos} reveal" data-anim style="--fx:${sx * 90}px;--fy:${sy * 30}px;--d:${(i * 0.08).toFixed(2)}s" aria-hidden="true"><span class="soc-float">${S.art.aspectImg(a, q, 'soc-img')}</span></span>`).join('')}
+        ${CORNERS.map(([a, q, pos, sx, sy], i) => `<span class="soc-g soc-${pos} reveal" data-anim style="--fx:${sx * 90}px;--fy:${sy * 30}px;--d:${(i * 0.08).toFixed(2)}s" aria-hidden="true"><span class="soc-float">${S.art.aspectImg(a, q, 'soc-img', { sizes: '(max-width: 600px) 96px, (min-width: 1563px) 250px, 16vw' })}</span></span>`).join('')}
         <div class="wrap center soc-in">
           <h2 class="h2 soc-h" data-anim-text>Соционика</h2>
           <p class="soc-text" data-anim-text>Соционика описывает 16${NB}типов: как человек замечает мир, принимает решения и${NB}с${NB}кем ему легко. Это не${NB}диагноз и${NB}не${NB}гороскоп, а${NB}язык, на${NB}котором проще понимать себя и${NB}близких. Двадцать вопросов — и${NB}узнаешь свой тип.</p>

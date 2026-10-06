@@ -136,8 +136,9 @@
   // Отрисованный знак (рендер в стиле персонажей): img/aspects/<аспект>-<оттенок>.webp, оттенок — id квадры или violet.
   // Векторные знаки выше остаются для canvas (картинки для шера): растровый файл с file:// «пачкает» canvas.
   art.aspectSrc = (id, tint) => `img/aspects/${id}-${tint}.webp`;
-  art.aspectImg = (id, tint, cls = 'asp', { eager = false } = {}) =>
-    `<img class="${cls}" src="${art.aspectSrc(id, tint)}" width="320" height="320" alt=""${eager ? '' : ' loading="lazy"'} decoding="async" draggable="false">`;
+  // 320 и 640 px: браузер берёт ту, что не мылится при этой ширине и плотности экрана; sizes — сколько знак занимает на экране
+  art.aspectImg = (id, tint, cls = 'asp', { eager = false, sizes = '128px' } = {}) =>
+    `<img class="${cls}" src="${art.aspectSrc(id, tint)}" srcset="${art.aspectSrc(id, tint)} 320w, img/aspects/${id}-${tint}-640.webp 640w" sizes="${sizes}" width="320" height="320" alt=""${eager ? '' : ' loading="lazy"'} decoding="async" draggable="false">`;
 
   art.glyph = glyph;
   art.glyphOf = glyphOf;
