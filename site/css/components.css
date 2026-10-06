@@ -627,7 +627,8 @@
 @media (max-width: 380px) { .fc-next span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } .fc-next { padding-inline: 14px; } }
 /* ссылка плиткой (компактный блок): «Ссылка» → «Готово» прямо на плитке */
 .sk-tile-link { --brand: #4d5260; }
-.sk-tile-link .sk-copy { display: grid; place-items: center; max-width: 100%; overflow: hidden; }
+/* подпись плитки — как у соседних «Telegram» / «WhatsApp», без пилюли «Копировать» (специфичность выше .sk-compact .sk-copy) */
+.sk-net.sk-tile-link .sk-copy { display: grid; place-items: center; min-width: 0; max-width: 100%; height: auto; padding: 0; overflow: hidden; border-radius: 0; background: none; color: inherit; font: inherit; letter-spacing: normal; text-transform: none; }
 .sk-tile-link .sk-c1, .sk-tile-link .sk-c2 { grid-area: 1 / 1; display: inline-flex; align-items: center; gap: 4px; transition: transform 0.35s var(--out), opacity 0.2s; }
 .sk-tile-link .sk-c2 { opacity: 0; transform: translateY(120%); color: #3ddc97; }
 .sk-tile-link .sk-c2 .ico { width: 13px; height: 13px; }
