@@ -475,6 +475,11 @@
 .seg[role="group"] button { min-height: 40px; padding: 8px 18px; border: 0; border-radius: var(--r-pill); background: transparent; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: background 0.25s, color 0.25s; }
 .seg[role="group"] button[aria-pressed="true"] { background: var(--paper); color: var(--ink); }
 .seg[role="group"] button:disabled { opacity: 0.4; cursor: default; }
+/* узкий телефон: подписи в одну строку, без капса */
+@media (max-width: 479px) {
+  .seg[role="group"] { display: flex; max-width: 100%; }
+  .seg[role="group"] button { flex: 1 1 auto; padding: 8px 10px; font-size: 12.5px; letter-spacing: 0.01em; text-transform: none; white-space: nowrap; }
+}
 .share-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .share-status { min-height: 1.5em; margin: 12px 0 0; color: var(--muted); font-size: 14px; }
 .socials { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
@@ -496,7 +501,8 @@
 
 /* ================= MYSTERY BOX ================= */
 .box { text-align: center; }
-.box-modes { margin: 18px auto 6px; }
+/* .seg[role="group"] сильнее одного класса — поэтому через .box */
+.box .box-modes { margin: clamp(26px, 3vw, 40px) auto 6px; }
 .box-pick { max-width: 340px; margin: 8px auto 0; text-align: left; }
 .box-stage { position: relative; display: grid; place-items: center; min-height: 460px; overflow-x: clip; }
 .box-compact .box-stage { min-height: 420px; }
