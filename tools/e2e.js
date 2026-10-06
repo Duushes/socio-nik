@@ -182,6 +182,23 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     });
     check('mystery box открывается: из коробки выскакивает герой факта, вокруг летали 6 символов', box.open && box.t1.length > 20 && box.pop && box.moons === 6, JSON.stringify(box));
     check('«Ещё факт» — другой факт, счётчик растёт', box.t2 && box.t2 !== box.t1 && Number(box.count2) > Number(box.count1), JSON.stringify(box));
+    await go('#/about', 400);
+    await go('#/box', 1000);
+    const still = await b.eval(async () => {
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      const at = () => ['.box-stage', '.bx', '.bx-slot', '.box-progress'].map(sel => { const r = document.querySelector(sel).getBoundingClientRect(); return [r.left, r.top + scrollY, r.width, r.height].map(Math.round).join(','); }).join(' | ');
+      const before = at();
+      document.querySelector('.bx').click();
+      await sleep(250);
+      const popEarly = getComputedStyle(document.querySelector('.bx-pop')).opacity;
+      await sleep(1300);
+      const opened = at(), flipped = document.querySelector('.bx-slot').classList.contains('flipped');
+      document.querySelector('[data-more]').click();
+      await sleep(2100);
+      return { before, opened, again: at(), popEarly, flipped };
+    });
+    check('mystery box не прыгает: коробка и карта на месте при открытии и «Ещё факт», сквозь закрытую коробку никого не видно',
+      still.flipped && still.before === still.opened && still.opened === still.again && still.popEarly === '0', JSON.stringify(still));
     const fsoc = await b.eval(async () => {
       const card = document.querySelector('.bx-card');
       const nets = Array.from(card.querySelectorAll('[data-net]')).map(el => el.dataset.net);

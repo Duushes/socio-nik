@@ -597,6 +597,20 @@
 .sk-link.done .sk-copy { background: #3ddc97; color: #062014; }
 .sk-status { min-height: 1.2em; margin: 2px 0 0; color: var(--muted); font-size: 13px; }
 .sk-compact .sk-go { min-height: 52px; font-size: 14px; }
+.sk-row { display: flex; gap: 8px; min-width: 0; }
+.sk-row .sk-go { flex: 1 1 auto; }
+.fc-next { flex: none; gap: 8px; min-height: 52px; padding: 10px 18px; font-size: 13px; }
+.fc-next .ico { width: 16px; height: 16px; }
+@media (max-width: 380px) { .fc-next span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } .fc-next { padding-inline: 14px; } }
+/* ссылка плиткой (компактный блок): «Ссылка» → «Готово» прямо на плитке */
+.sk-tile-link { --brand: #4d5260; }
+.sk-tile-link .sk-copy { display: grid; place-items: center; max-width: 100%; overflow: hidden; }
+.sk-tile-link .sk-c1, .sk-tile-link .sk-c2 { grid-area: 1 / 1; display: inline-flex; align-items: center; gap: 4px; transition: transform 0.35s var(--out), opacity 0.2s; }
+.sk-tile-link .sk-c2 { opacity: 0; transform: translateY(120%); color: #3ddc97; }
+.sk-tile-link .sk-c2 .ico { width: 13px; height: 13px; }
+.sk-tile-link.done { --brand: #1f9e68; }
+.sk-tile-link.done .sk-c1 { opacity: 0; transform: translateY(-120%); }
+.sk-tile-link.done .sk-c2 { opacity: 1; transform: none; }
 .sk-compact .sk-net { padding: 9px 4px 8px; font-size: 11.5px; border-radius: 18px; }
 .sk-compact .sk-ico { width: 38px; height: 38px; }
 .sk-compact .sk-ico svg { width: 21px; height: 21px; }
@@ -608,14 +622,13 @@
 /* .seg[role="group"] сильнее одного класса — поэтому через .box */
 .box .box-modes { margin: clamp(26px, 3vw, 40px) auto 6px; }
 .box-pick { max-width: 340px; margin: 8px auto 0; text-align: left; }
-.box-play { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; }
-/* открыта: на широком экране коробка с героем слева, карточка справа */
+.box-play { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; align-items: center; gap: 16px clamp(16px, 3vw, 48px); }
 @media (min-width: 900px) {
-  .box:not(.box-compact).is-open .box-play { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); align-items: center; gap: clamp(16px, 3vw, 48px); }
+  /* раскладка одна и до, и после открытия: слева коробка, справа карта — ничего не прыгает */
+  .box-play { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); }
 }
 .box-stage { position: relative; display: grid; place-items: center; width: 100%; min-height: 460px; overflow-x: clip; transition: min-height 0.6s var(--out); }
 .box-compact .box-stage { min-height: 420px; }
-.box.is-open .box-stage { min-height: 330px; }
 .box-stage > .bx { grid-area: 1 / 1; }
 .bx-glow { position: absolute; width: min(560px, 94vw); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--q) 34%, transparent), color-mix(in srgb, #7621b0 14%, transparent) 54%, transparent 75%); transition: opacity 0.5s; }
 .bx-glow::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(closest-side, rgba(255, 200, 130, 0.34), rgba(190, 76, 0, 0.12) 50%, transparent 72%); opacity: 0; transition: opacity 0.5s; }
@@ -632,7 +645,8 @@
 .is-lid .bx-closed, .is-open .bx-closed { opacity: 0; }
 .is-lid .bx-open, .is-open .bx-open { opacity: 1; transform: none; }
 /* кто выскочил: всё ниже кромки проёма — «внутри» коробки (кромка — ломаная по рисунку) */
-.bx-pop { position: absolute; inset: 0; z-index: 1; clip-path: polygon(-30% -60%, 130% -60%, 130% 50%, 80% 50%, 38.4% 54.2%, 18% 49%, -30% 49%); pointer-events: none; }
+.bx-pop { position: absolute; inset: 0; z-index: 1; clip-path: polygon(-30% -60%, 130% -60%, 130% 50%, 80% 50%, 38.4% 54.2%, 18% 49%, -30% 49%); opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+.is-lid .bx-pop, .is-open .bx-pop { opacity: 1; }   /* пока крышка на месте, внутри никого не видно */
 .bx-who { position: absolute; left: 49%; bottom: 46%; width: 58%; translate: -50% 0; transform: translateY(70%); transition: transform 0.7s var(--spring) 0.05s; }
 .bx-who .char { display: block; width: 100%; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45)); }
 .is-open .bx-who { transform: none; }
@@ -642,11 +656,31 @@
 .bx-flash { position: absolute; left: 50%; top: 44%; width: 74%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%) scale(0.2); background: radial-gradient(closest-side, rgba(255, 240, 205, 0.95), rgba(255, 176, 90, 0.5) 42%, transparent 72%); opacity: 0; pointer-events: none; mix-blend-mode: screen; }
 .is-lid .bx-flash { animation: bx-flash 0.75s var(--out) both; }
 .bx-shadow { position: absolute; left: 50%; bottom: 2%; width: 62%; height: 9%; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 0, 0, 0.7), transparent); }
-.is-open .bx { transform: scale(0.86); }
 .bx-hint { position: absolute; left: 0; right: 0; bottom: 14px; margin: 0; color: var(--muted); font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
 
 /* карточка-«коллекционка» */
-.bx-card { position: relative; z-index: 3; width: min(520px, 100%); min-width: 0; perspective: 1200px; text-align: left; }
+/* карта: рубашка ↔ лицо, переворот на месте */
+.bx-slot { position: relative; z-index: 3; width: min(560px, 100%); min-width: 0; perspective: 1600px; }
+.bx-flip { display: grid; transform-style: preserve-3d; transition: transform 0.85s var(--spring); }
+.bx-flip > * { grid-area: 1 / 1; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.bx-slot.flipped .bx-flip { transform: rotateY(180deg); }
+.bx-slot.flipped .bx-back, .bx-slot:not(.flipped) .bx-card { pointer-events: none; }
+.bx-card { display: flex; flex-direction: column; min-width: 0; text-align: left; transform: rotateY(180deg); }
+/* лицо — во всю высоту карты, как рубашка; кнопки — внизу */
+.bx-card > .fc { flex: 1; display: flex; flex-direction: column; }
+.bx-card .fc-share { margin-top: auto; }
+.bx-back { position: relative; display: grid; justify-items: center; align-content: center; gap: 10px; min-height: 760px; padding: 28px; overflow: hidden; border: 1.5px solid rgba(215, 226, 234, 0.18); border-radius: 36px; background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 14px), radial-gradient(70% 55% at 50% 42%, color-mix(in srgb, var(--q) 30%, transparent), transparent 72%), #101114; color: var(--paper); font: inherit; text-align: center; cursor: pointer; box-shadow: 0 40px 80px -36px rgba(0, 0, 0, 0.85), inset 0 0 0 10px rgba(255, 255, 255, 0.02); -webkit-tap-highlight-color: transparent; }
+.bx-back::before { content: ""; position: absolute; inset: 14px; border: 1px solid rgba(215, 226, 234, 0.12); border-radius: 26px; pointer-events: none; }
+.bxb-mark { position: relative; width: 34px; height: 34px; margin-bottom: 6px; }
+.bxb-mark img { position: absolute; width: 58%; height: 58%; }
+.bxb-mark img:nth-child(1) { left: -4%; top: -4%; }
+.bxb-mark img:nth-child(2) { right: -4%; top: -4%; }
+.bxb-mark img:nth-child(3) { right: -4%; bottom: -4%; }
+.bxb-mark img:nth-child(4) { left: -4%; bottom: -4%; }
+.bxb-q { width: clamp(110px, 12vw, 160px); height: auto; filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.55)); animation: bob 5s ease-in-out infinite; }
+.bxb-t { font-size: clamp(1.1rem, 1.8vw, 1.4rem); font-weight: 800; }
+.bxb-s { max-width: 18em; color: var(--muted); font-size: 14px; line-height: 1.4; }
+@media (hover: hover) and (pointer: fine) { .bx-back:hover .bxb-q { animation-duration: 1.6s; } }
 .fc { position: relative; overflow: hidden; padding: clamp(20px, 2.4vw, 30px); border: 1.5px solid color-mix(in srgb, var(--q) 60%, rgba(215, 226, 234, 0.3)); border-radius: 36px; background: radial-gradient(120% 70% at 100% 0%, color-mix(in srgb, var(--q) 24%, transparent), transparent 62%), radial-gradient(90% 60% at 0% 100%, rgba(182, 0, 168, 0.12), transparent 70%), #101114; color: var(--paper); box-shadow: 0 40px 80px -36px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(0, 0, 0, 0.5), 0 0 60px -30px var(--q); transform-origin: 50% 90%; }
 .fc-sheen { position: absolute; inset: 0; z-index: 0; border-radius: inherit; background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.07) 42%, rgba(160, 210, 255, 0.07) 48%, rgba(255, 140, 230, 0.07) 54%, transparent 66%); background-size: 260% 100%; pointer-events: none; animation: fc-sheen 7s ease-in-out infinite; }
 .fc > :not(.fc-sheen) { position: relative; z-index: 1; }
@@ -658,17 +692,15 @@
 .fc-ava img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 6%; transform: scale(1.3); transform-origin: 50% 0; }
 .fc-ava-gen { display: grid; place-items: center; }
 .fc-ava-gen img { width: 70%; height: auto; transform: none; object-fit: contain; }
-.fc-name { display: grid; gap: 1px; min-width: 0; }
+.fc-name { display: grid; gap: 1px; min-width: 0; flex: 1; }
+.fc-type-link { flex: none; align-self: center; font-size: 14px; }
 .fc-name b { overflow: hidden; font-size: 16px; font-weight: 800; white-space: nowrap; text-overflow: ellipsis; }
 .fc-name small { color: rgba(215, 226, 234, 0.6); font-size: 13px; }
-.fc-text { margin: 0 0 18px; font-size: clamp(1.1rem, 1.7vw, 1.3rem); font-weight: 500; line-height: 1.5; }
+.fc-text { margin: 0 0 16px; font-size: clamp(1.05rem, 1.45vw, 1.2rem); font-weight: 500; line-height: 1.5; }
 .bx-reset { margin: -8px 0 16px; color: rgba(215, 226, 234, 0.6); font-size: 13px; }
 .fc-share { padding-top: 16px; border-top: 1px solid rgba(215, 226, 234, 0.12); }
 .fc-hook { margin: 0 0 12px; color: var(--paper); font-size: 15px; font-weight: 600; }
 .fc-share .sk { max-width: none; }
-.fc-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-top: 14px; }
-.fc-foot .btn-ghost { gap: 8px; }
-.fc-foot .btn-ghost .ico { width: 16px; height: 16px; }
 .bx-card .link { color: var(--paper); }
 
 /* коллекция */
@@ -1104,7 +1136,6 @@ html.sheet-open { overflow: hidden; }
   .celeb-ava { width: 48px; height: 48px; font-size: 17px; }
   .box-stage { min-height: 440px; }
   .fc { padding: 20px 18px 16px; border-radius: 30px; }
-  .box.is-open .box-stage { min-height: 280px; }
   .bx-moon { left: -26px; top: -26px; width: 52px; height: 52px; }
   .fn-head { grid-template-columns: 76px 1fr; gap: 14px; }
   .fn-art { width: 76px; height: 76px; }

@@ -16,7 +16,7 @@
   };
 
   // Кнопки: главная, мессенджеры, ссылка. text — подпись к шеру, url — ссылка (может быть пустой)
-  ui.shareActions = ({ text, url = '', primary = 'Поделиться', compact = false }) => {
+  ui.shareActions = ({ text, url = '', primary = 'Поделиться', compact = false, extra = '' }) => {
     const files = S.share.canShareFiles();
     const nets = NETS.map(([net, name]) => {
       const h = S.social.href(net, text, url);
@@ -24,12 +24,14 @@
     }).join('');
     const more = typeof navigator !== 'undefined' && navigator.share
       ? `<button class="sk-net sk-more" type="button" data-sk="more"><span class="sk-ico">${S.social.icon('more')}</span><span>Ещё</span></button>` : '';
+    // в компактном виде ссылка — четвёртая плитка рядом с мессенджерами: блок ниже и не раздувает карточку
+    const linkTile = url ? `<button class="sk-net sk-tile-link" type="button" data-sk="copy" aria-label="Скопировать ссылку"><span class="sk-ico">${S.social.icon('copy')}</span><span class="sk-copy"><span class="sk-c1">Ссылка</span><span class="sk-c2">${I.check}Готово</span></span></button>` : '';
     const shown = url ? url.replace(/^https?:\/\//, '') : '';
     return `
       <div class="sk${compact ? ' sk-compact' : ''}">
-        <button class="btn sk-go" type="button" data-sk="go">${files ? I.share + esc(primary) : I.save + 'Скачать картинку'}</button>
-        <div class="sk-nets" role="group" aria-label="Отправить в мессенджер">${nets}${more}</div>
-        ${url ? `<button class="sk-link" type="button" data-sk="copy" aria-label="Скопировать ссылку ${esc(shown)}">
+        ${extra ? '<div class="sk-row">' : ''}<button class="btn sk-go" type="button" data-sk="go">${files ? I.share + esc(primary) : I.save + 'Скачать картинку'}</button>${extra ? extra + '</div>' : ''}
+        <div class="sk-nets" role="group" aria-label="Отправить в мессенджер">${nets}${compact ? linkTile : more}</div>
+        ${compact ? '' : url ? `<button class="sk-link" type="button" data-sk="copy" aria-label="Скопировать ссылку ${esc(shown)}">
           <span class="sk-url">${esc(shown)}</span><span class="sk-copy"><span class="sk-c1">Копировать</span><span class="sk-c2">${I.check}Скопировано</span></span>
         </button>` : `<button class="sk-link" type="button" data-sk="copy-text"><span class="sk-url">${esc(text)}</span><span class="sk-copy"><span class="sk-c1">Копировать</span><span class="sk-c2">${I.check}Скопировано</span></span></button>`}
         <p class="sk-status" aria-live="polite"></p>

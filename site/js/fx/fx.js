@@ -186,7 +186,7 @@
   }
 
   // ---------- конфетти ----------
-  function confetti(colors, { x = 0.5, y = 0.32, n = 110 } = {}) {
+  function confetti(colors, { x = 0.5, y = 0.32, n = 110, power = 1 } = {}) {
     if (reducedMotion() || !document.body.animate) return;
     const layer = document.createElement('div');
     layer.className = 'confetti';
@@ -198,12 +198,12 @@
       const w = 6 + Math.random() * 7;
       p.style.cssText = `left:${ox}px;top:${oy}px;width:${w}px;height:${(w * (0.45 + Math.random() * 0.7)).toFixed(1)}px;background:${colors[i % colors.length]};border-radius:${Math.random() < 0.3 ? '50%' : '2px'}`;
       layer.appendChild(p);
-      const a = Math.random() * Math.PI * 2, v = 160 + Math.random() * 340;
-      const dx = Math.cos(a) * v, dy = Math.sin(a) * v - 240, rot = (Math.random() - 0.5) * 1080;
+      const a = Math.random() * Math.PI * 2, v = (160 + Math.random() * 340) * power;
+      const dx = Math.cos(a) * v, dy = Math.sin(a) * v - 240 * power, rot = (Math.random() - 0.5) * 1080;
       p.animate([
         { transform: 'translate(-50%,-50%) rotate(0deg)', opacity: 1 },
         { transform: `translate(calc(-50% + ${dx.toFixed(0)}px), calc(-50% + ${dy.toFixed(0)}px)) rotate(${(rot / 2).toFixed(0)}deg)`, opacity: 1, offset: 0.45 },
-        { transform: `translate(calc(-50% + ${(dx * 1.3).toFixed(0)}px), calc(-50% + ${(dy + 560).toFixed(0)}px)) rotate(${rot.toFixed(0)}deg)`, opacity: 0 }
+        { transform: `translate(calc(-50% + ${(dx * 1.3).toFixed(0)}px), calc(-50% + ${(dy + 560 * power).toFixed(0)}px)) rotate(${rot.toFixed(0)}deg)`, opacity: 0 }
       ], { duration: 1500 + Math.random() * 900, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'forwards' });
     }
     setTimeout(() => layer.remove(), 2800);

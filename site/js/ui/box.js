@@ -70,7 +70,17 @@
             </button>
             <p class="bx-hint">Нажми на коробку</p>
           </div>
-          <article class="bx-card" aria-live="polite" hidden></article>
+          <div class="bx-slot">
+            <div class="bx-flip">
+              <button class="bx-back" type="button" tabindex="-1" aria-hidden="true">
+                <span class="bxb-mark"><img src="img/logo/alpha.webp" alt="" width="48" height="48"><img src="img/logo/beta.webp" alt="" width="48" height="48"><img src="img/logo/gamma.webp" alt="" width="48" height="48"><img src="img/logo/delta.webp" alt="" width="48" height="48"></span>
+                <img class="bxb-q" src="${ui.emoteSrc('question')}" alt="" width="160" height="160" decoding="async" draggable="false">
+                <span class="bxb-t">Здесь появится факт</span>
+                <span class="bxb-s">Нажми на коробку или на эту карту</span>
+              </button>
+              <article class="bx-card" aria-live="polite" aria-hidden="true"></article>
+            </div>
+          </div>
         </div>
         <p class="box-progress">${progress()}</p>
       </div>`;
@@ -104,20 +114,19 @@
         </header>
         <div class="fc-who">
           ${t ? `<span class="fc-ava">${ui.character(t, { sizes: ui.CHAR.ava, alt: '' })}</span>
-            <span class="fc-name"><b>${t.code} «${esc(t.alias)}»</b><small>${esc(t.role)} · квадра ${q.name}</small></span>`
+            <span class="fc-name"><b>${t.code} «${esc(t.alias)}»</b><small>${esc(t.role)} · квадра ${q.name}</small></span>
+            <a class="link fc-type-link" href="#/types/${t.id}">Про ${t.code}</a>`
             : `<span class="fc-ava fc-ava-gen"><img src="${ui.emoteSrc('sparkles')}" alt="" width="100" height="100"></span>
-            <span class="fc-name"><b>Соционика</b><small>Факт обо всех 16 типах</small></span>`}
+            <span class="fc-name"><b>Соционика</b><small>Факт обо всех 16 типах</small></span>
+            <a class="link fc-type-link" href="#/about">О соционике</a>`}
         </div>
         <p class="bx-text fc-text">${esc(f.text)}</p>
         ${reset ? '<p class="bx-reset">Все факты этой колоды уже открыты — перемешали заново.</p>' : ''}
         <div class="fc-share">
-          <p class="fc-hook">${t ? 'Узнаёшь кого-то из друзей? Отправь им этот факт' : 'Удиви друзей — отправь им этот факт'}</p>
-          ${ui.shareActions({ text: factText(f), url: factUrl(f), primary: 'Поделиться фактом', compact: true })}
+          <p class="fc-hook">${t ? 'Узнаёшь кого-то? Отправь им этот факт' : 'Удиви друзей — отправь им этот факт'}</p>
+          ${ui.shareActions({ text: factText(f), url: factUrl(f), primary: 'Поделиться', compact: true,
+            extra: `<button class="btn-ghost fc-next" type="button" data-more>${ui.ICON.cycle}<span>Ещё факт</span></button>` })}
         </div>
-        <footer class="fc-foot">
-          <button class="btn-ghost btn-sm" type="button" data-more>${ui.ICON.cycle}Ещё факт</button>
-          ${t ? `<a class="link" href="#/types/${t.id}">Всё про ${t.code}</a>` : '<a class="link" href="#/about">О соционике</a>'}
-        </footer>
       </div>`;
   }
 
@@ -159,6 +168,7 @@
     const box = scope.querySelector('[data-box]');
     if (!box) return () => {};
     const btn = box.querySelector('.bx'), card = box.querySelector('.bx-card'), stage = box.querySelector('.box-stage');
+    const slot = box.querySelector('.bx-slot'), backFace = box.querySelector('.bx-back');
     const prog = box.querySelector('.box-progress'), hint = box.querySelector('.bx-hint'), pop = box.querySelector('.bx-pop');
     const timers = [];
     const later = (fn, ms) => timers.push(setTimeout(fn, reducedMotion() ? 0 : ms));
@@ -179,41 +189,49 @@
       hint.hidden = true;
       box.classList.remove('is-open');
       stage.classList.remove('is-open', 'is-lid');
-      card.hidden = true;
       pop.innerHTML = popHTML(t);
       box.style.setProperty('--q', t ? `var(--q-${t.quadra})` : '');
       btn.classList.remove('shake');
       void btn.offsetWidth;
       btn.classList.add('shake');
-      later(() => stage.classList.add('is-lid'), 420);
       later(() => {
+        stage.classList.add('is-lid');
+        // лицо карты заполняем, пока она лежит рубашкой вверх, — потом переворачиваем на месте
         card.innerHTML = cardHTML(fact, reset);
-        card.hidden = false;
+      }, 420);
+      later(() => {
         stage.classList.add('is-open');
         box.classList.add('is-open');
+        slot.classList.add('flipped');
+        card.setAttribute('aria-hidden', 'false');
+        backFace.setAttribute('aria-hidden', 'true');
         const colors = t ? [S.theme.quadraColor(t.quadra), '#ffffff', '#ffd27a']
           : S.data.quadras.map(q => S.theme.quadraColor(q.id));
         const r = stage.getBoundingClientRect();
-        S.fx.confetti(colors, { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height * 0.4) / innerHeight, n: 60 });
+        S.fx.confetti(colors, { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height * 0.42) / innerHeight, n: 34, power: 0.45 });
         prog.innerHTML = progress();
         const more = card.querySelector('[data-more]');
         if (more && document.documentElement.classList.contains('kbd')) more.focus({ preventScroll: true });
         // на телефоне карточка под коробкой — подводим к ней
         if (innerWidth < 900) {
-          const cr = card.getBoundingClientRect();
-          if (cr.top > innerHeight * 0.7) card.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'nearest' });
+          const cr = slot.getBoundingClientRect();
+          if (cr.top > innerHeight * 0.5) scrollTo({ top: cr.top + scrollY - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 60) - 12, behavior: reducedMotion() ? 'auto' : 'smooth' });
         }
         busy = false;
       }, 900);
     }
 
+    // карта ложится рубашкой вверх, коробка закрывается — без исчезновений и скачков
     function close(then) {
+      slot.classList.remove('flipped');
+      card.setAttribute('aria-hidden', 'true');
       stage.classList.remove('is-open', 'is-lid');
       box.classList.remove('is-open');
-      later(() => { card.hidden = true; if (then) then(); }, 320);
+      later(() => { if (then) then(); }, 480);
     }
 
     btn.addEventListener('click', open);
+    backFace.addEventListener('click', open);
     card.addEventListener('click', e => { if (e.target.closest('[data-more]')) close(open); });
     const offShare = ui.mountShareActions(card, {
       text: () => factText(current),

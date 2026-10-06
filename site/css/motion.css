@@ -74,13 +74,8 @@
 }
 @keyframes bx-flash { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.9); } }
 .is-open .bx-float, .is-open .bx-shadow { animation-play-state: paused; }
-.bx-card:not([hidden]) .fc { animation: card-in 0.85s var(--spring) both; }
+
 @keyframes fc-sheen { 0%, 100% { background-position: 100% 0; } 50% { background-position: 0% 0; } }
-@keyframes card-in {
-  0% { opacity: 0; transform: translateY(90px) scale(0.25) rotateY(-150deg); }
-  55% { opacity: 1; }
-  100% { opacity: 1; transform: none; }
-}
 
 /* ---------- сцены отношений (сдвиги — в единицах знака, масштаб 0.56) ---------- */
 .scene .sf, .scene .sx { transform-box: fill-box; transform-origin: center; }
