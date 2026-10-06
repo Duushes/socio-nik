@@ -43,7 +43,7 @@
           <span class="fit-in"><span class="fit-line"><span class="sv">Привет, я</span></span> <span class="fit-line"><span class="sv hero-name" data-hero-name>${esc(ui.short(t))}</span></span></span>
         </h1>
         <div class="hero-char h-in" style="--d:.6s;--y:30px">
-          <div class="hero-magnet" data-magnet><div class="hero-mag"><div class="hero-look">
+          <div class="hero-magnet"><div class="hero-mag"><div class="hero-look">
             <div class="hero-fig" data-hero-next>${ui.character(t, { sizes: ui.CHAR.hero, eager: true })}</div>
           </div></div></div>
           <p class="hero-bubble" aria-hidden="true" data-hero-bubble>${esc(cheer(t))}</p>
@@ -128,7 +128,7 @@
     const title = el.querySelector('.hero-title'), figEl = el.querySelector('.hero-fig');
     const nameEl = el.querySelector('[data-hero-name]'), capEl = el.querySelector('[data-hero-cap]'), qEl = el.querySelector('[data-hero-q]');
     const traitEls = Array.from(el.querySelectorAll('[data-hero-traits]'));
-    const bubble = el.querySelector('[data-hero-bubble]'), look = el.querySelector('.hero-look');
+    const bubble = el.querySelector('[data-hero-bubble]');
     const layout = () => layoutHero(el);
     el.addEventListener('fitted', layout);
     addEventListener('resize', layout);
@@ -174,20 +174,7 @@
     };
     el.addEventListener('click', onClick);
 
-    // Персонаж поворачивается к курсору (мышь, не в щадящем режиме)
-    let raf = 0, px = 0, py = 0;
-    const look2 = () => {
-      raf = 0;
-      const r = look.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height * 0.35;
-      const dx = Math.max(-1, Math.min(1, (px - cx) / (innerWidth * 0.5))), dy = Math.max(-1, Math.min(1, (py - cy) / (innerHeight * 0.6)));
-      look.style.setProperty('--ry', (dx * 16).toFixed(2) + 'deg');
-      look.style.setProperty('--rx', (-dy * 9).toFixed(2) + 'deg');
-    };
-    const onMove = e => { if (e.pointerType !== 'mouse') return; px = e.clientX; py = e.clientY; if (!raf) raf = requestAnimationFrame(look2); };
-    const follow = !S.dom.reducedMotion() && S.fx.fineMouse();
-    if (follow) addEventListener('pointermove', onMove, { passive: true });
-
-    // Наведение на главную кнопку или значок: персонаж радуется и подбадривает
+    // Наведение на главную кнопку: персонаж радуется и подбадривает
     let cheerT = 0;
     const cheerOn = () => { clearTimeout(cheerT); el.classList.add('cheer'); };
     const cheerOff = () => { clearTimeout(cheerT); cheerT = setTimeout(() => el.classList.remove('cheer'), 350); };
@@ -201,8 +188,6 @@
     if (!S.fx.fineMouse()) later(() => { cheerOn(); later(cheerOff, 3600); }, 2400);
 
     return () => {
-      removeEventListener('pointermove', onMove);
-      cancelAnimationFrame(raf);
       clearTimeout(cheerT);
       io.disconnect();
       de.classList.remove('hero-on');

@@ -12,7 +12,7 @@
     <h1 class="res-title display" data-fit data-min="12" data-max="17.5" data-maxh="19">
       <span class="fit-in"><span class="fit-line"><span class="sv">${word}</span></span> <span class="fit-line"><span class="sv">${esc(ui.short(t))}</span></span></span>
     </h1>
-    <div class="res-char" data-magnet><div><div class="res-fig">${ui.character(t, { sizes: ui.CHAR.hero, eager: true })}</div></div></div>`;
+    <div class="res-char"><div><div class="res-fig">${ui.character(t, { sizes: ui.CHAR.hero, eager: true })}</div></div></div>`;
 
   const nextCards = res => `<div class="next-grid">${res.next.map((r, i) => {
     const tt = M().type(r.id);

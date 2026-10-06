@@ -1,5 +1,5 @@
 /* Socio-Nik · эффекты: появление при прокрутке, счёт чисел и рост полос, пауза петель вне экрана,
-   магнит, лента по прокрутке, проявление текста по буквам, стопка карточек, подгонка заголовка по ширине,
+   лента по прокрутке, проявление текста по буквам, стопка карточек, подгонка заголовка по ширине,
    конфетти и переходы между экранами. Всё уважает prefers-reduced-motion. */
 (function (root) {
   const S = root.Socio = root.Socio || {};
@@ -62,39 +62,6 @@
     const io = new IntersectionObserver(entries => entries.forEach(e => e.target.classList.toggle('is-off', !e.isIntersecting)));
     els.forEach(el => io.observe(el));
     return () => io.disconnect();
-  }
-
-  // ---------- магнит: [data-magnet] — зона (её размер не меняется), сдвигается первый ребёнок ----------
-  function magnet(scope, { pad = 150, strength = 3 } = {}) {
-    const zones = Array.from(scope.querySelectorAll('[data-magnet]'));
-    if (!zones.length || reducedMotion() || !fineMouse()) return () => {};
-    let raf = 0, mx = -1e4, my = -1e4;
-    const apply = () => {
-      raf = 0;
-      zones.forEach(z => {
-        const el = z.firstElementChild;
-        if (!el) return;
-        const r = z.getBoundingClientRect();
-        const near = mx > r.left - pad && mx < r.right + pad && my > r.top - pad && my < r.bottom + pad;
-        if (near) {
-          const x = (mx - (r.left + r.width / 2)) / strength, y = (my - (r.top + r.height / 2)) / strength;
-          el.style.transition = 'transform 0.3s ease-out';
-          el.style.willChange = 'transform';
-          el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
-          z.classList.add('pulled');
-        } else if (z.classList.contains('pulled')) {
-          z.classList.remove('pulled');
-          el.style.transition = 'transform 0.6s ease-in-out';
-          el.style.transform = 'translate3d(0, 0, 0)';
-          setTimeout(() => { if (!z.classList.contains('pulled')) el.style.willChange = ''; }, 650);
-        }
-      });
-    };
-    const move = e => { if (e.pointerType !== 'mouse') return; mx = e.clientX; my = e.clientY; if (!raf) raf = requestAnimationFrame(apply); };
-    const leave = () => { mx = my = -1e4; if (!raf) raf = requestAnimationFrame(apply); };
-    addEventListener('pointermove', move, { passive: true });
-    document.addEventListener('pointerleave', leave);
-    return () => { removeEventListener('pointermove', move); document.removeEventListener('pointerleave', leave); cancelAnimationFrame(raf); };
   }
 
   // ---------- лента: ряды едут в разные стороны по прокрутке ----------
@@ -223,10 +190,10 @@
 
   // Подключить всё к только что отрисованному экрану; вернуть уборку
   function mountAll(scope) {
-    const offs = [fitAll(scope), reveal(scope), pauseOffscreen(scope), magnet(scope), marquee(scope), animText(scope), stack(scope)];
+    const offs = [fitAll(scope), reveal(scope), pauseOffscreen(scope), marquee(scope), animText(scope), stack(scope)];
     scope.querySelectorAll('svg.em-live').forEach(svg => offs.push(S.art.animateOrbit(svg)));
     return () => offs.forEach(off => off && off());
   }
 
-  S.fx = { reveal, countUp, show, pauseOffscreen, magnet, marquee, animText, stack, fit, fitAll, confetti, transition, mountAll, fineMouse };
+  S.fx = { reveal, countUp, show, pauseOffscreen, marquee, animText, stack, fit, fitAll, confetti, transition, mountAll, fineMouse };
 })(window);
