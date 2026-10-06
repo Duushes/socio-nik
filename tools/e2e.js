@@ -257,6 +257,27 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     check('герой: имя и портрет выбранного типа, картинка загружена', home.imgOk && home.name.length > 1, JSON.stringify(home));
     check('лента: 16 типов, у каждого одна живая копия, остальные inert', home.tiles === 16 && home.uniq === 16 && home.inert === 4, JSON.stringify(home));
     check('стопка: 4 карточки ведут на квадры, 16 персонажей — на типы', home.cards === '#/quadras#alpha,#/quadras#beta,#/quadras#gamma,#/quadras#delta' && home.types === 16, JSON.stringify(home));
+    const orbit = await b.eval(() => {
+      const em = document.querySelector('.stack-card .qorbit');
+      const items = em ? Array.from(em.querySelectorAll('.qo-item')) : [];
+      const r = em ? em.getBoundingClientRect() : { width: 0, height: 0 };
+      return { items: items.length, abs: items.length > 0 && items.every(i => getComputedStyle(i).position === 'absolute'), w: Math.round(r.width), h: Math.round(r.height) };
+    });
+    check('эмблема квадры в стопке — квадратная орбита из 4 знаков', orbit.items === 4 && orbit.abs && orbit.w > 100 && Math.abs(orbit.w - orbit.h) <= 2, JSON.stringify(orbit));
+    const mag = await b.eval(async () => {
+      scrollTo(0, 0);
+      const z = document.querySelector('.hero [data-magnet]');
+      if (!z) return { zone: false };
+      const el = z.firstElementChild, r = z.getBoundingClientRect();
+      const move = (x, y) => dispatchEvent(new PointerEvent('pointermove', { clientX: x, clientY: y, pointerType: 'mouse' }));
+      move(r.right + 40, r.top + r.height / 2);
+      await new Promise(res => setTimeout(res, 400));
+      const near = el.style.transform;
+      move(2, 2);
+      await new Promise(res => setTimeout(res, 400));
+      return { zone: true, fine: Socio.fx.fineMouse(), near, far: el.style.transform };
+    });
+    check('магнит: персонаж тянется к мыши рядом и возвращается на место', mag.zone && mag.fine && /^translate3d\((?!0px, 0px)/.test(mag.near) && /^translate3d\(0px, 0px/.test(mag.far), JSON.stringify(mag));
     const sw = await b.eval(async () => {
       const before = document.documentElement.dataset.hero;
       document.querySelector('.hero-next').click();

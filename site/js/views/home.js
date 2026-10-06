@@ -43,7 +43,7 @@
           <span class="fit-in"><span class="fit-line"><span class="sv">Привет, я</span></span> <span class="fit-line"><span class="sv hero-name" data-hero-name>${esc(ui.short(t))}</span></span></span>
         </h1>
         <div class="hero-char h-in" style="--d:.6s;--y:30px">
-          <div class="hero-magnet"><div class="hero-mag"><div class="hero-look">
+          <div class="hero-magnet" data-magnet><div class="hero-mag"><div class="hero-look">
             <div class="hero-fig" data-hero-next>${ui.character(t, { sizes: ui.CHAR.hero, eager: true })}</div>
           </div></div></div>
           <p class="hero-bubble" aria-hidden="true" data-hero-bubble>${esc(cheer(t))}</p>

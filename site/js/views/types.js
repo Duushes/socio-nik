@@ -60,7 +60,7 @@
           <h1 class="type-title display" data-fit data-min="11" data-max="19" data-maxh="22">
             <span class="sr">${t.code} — </span><span class="fit-in">${words.map(w => `<span class="fit-line"><span class="sv">${esc(w)}</span></span>`).join(' ')}</span>
           </h1>
-          <div class="type-char"><div><div class="res-fig">${ui.character(t, { sizes: ui.CHAR.hero, eager: true })}</div></div></div>
+          <div class="type-char" data-magnet><div><div class="res-fig">${ui.character(t, { sizes: ui.CHAR.hero, eager: true })}</div></div></div>
           <div class="type-meta">
             <p class="type-name">${esc(t.name)}</p>
             <p class="lead">${esc(c.tagline || '')}</p>
