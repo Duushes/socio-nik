@@ -1,5 +1,6 @@
-/* Socio-Nik · картинка для шера: сторис 1080×1920 и пост 1080×1350, целиком на Canvas 2D (без растровых файлов,
-   чтобы canvas не «пачкался» на file://), плюс «Поделиться» / «Скачать» / «Скопировать текст» с фолбэками. */
+/* Socio-Nik · картинка для шера: сторис 1080×1920 и пост 1080×1350 на Canvas 2D, плюс «Поделиться» / «Скачать» /
+   «Скопировать текст» с фолбэками. Портрет персонажа приходит data:-URI из js/share/portraits/<id>.js: обычная картинка
+   с file:// «пачкает» canvas, и сохранить PNG уже нельзя. Пока портрет не загружен — рисуется векторная эмблема. */
 (function (root) {
   const S = root.Socio = root.Socio || {};
   const { rgba, tone } = S.color;
@@ -21,6 +22,48 @@
     g.addColorStop(1, rgba(c, 0));
     ctx.fillStyle = g;
     ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+
+  // ---------- портрет типа ----------
+  const pics = {}, waits = {};
+  const VER = ((document.querySelector('script[src*="share/card.js"]') || {}).src || '').split('?')[1] || '';
+  function portrait(id) {
+    if (pics[id]) return Promise.resolve(pics[id]);
+    if (waits[id]) return waits[id];
+    waits[id] = new Promise(ok => {
+      const make = () => {
+        const src = (S.sharePortraits || {})[id];
+        if (!src) { ok(null); return; }
+        const im = new Image();
+        im.onload = () => { pics[id] = im; ok(im); };
+        im.onerror = () => ok(null);
+        im.src = src;
+      };
+      if ((S.sharePortraits || {})[id]) { make(); return; }
+      const s = document.createElement('script');
+      s.src = `js/share/portraits/${id}.js${VER ? '?' + VER : ''}`;
+      s.onload = make;
+      s.onerror = () => ok(null);
+      document.head.appendChild(s);
+    });
+    return waits[id];
+  }
+
+  // Бюст по центру, низ растворяется — поверх него ляжет код типа
+  function drawPortrait(ctx, im, cx, bottom, h) {
+    const w = h * 0.8, off = document.createElement('canvas');
+    off.width = Math.round(w);
+    off.height = Math.round(h);
+    const o = off.getContext('2d');
+    o.drawImage(im, 0, 0, off.width, off.height);
+    o.globalCompositeOperation = 'destination-in';
+    const g = o.createLinearGradient(0, 0, 0, off.height);
+    g.addColorStop(0, '#000');
+    g.addColorStop(0.68, '#000');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    o.fillStyle = g;
+    o.fillRect(0, 0, off.width, off.height);
+    ctx.drawImage(off, cx - w / 2, bottom - h);
   }
 
   function roundRect(ctx, x, y, w, h, r) {
@@ -53,8 +96,8 @@
     });
     // Сетка координат по форматам: сверху вниз, без наложений (сторис 1920, пост 1350)
     const L = story
-      ? { brand: 118, title: 176, ey: 468, ek: 2.35, code: 900, codePx: 220, name: 978, alias: 1036, pct: 1172, pctPx: 140, pcPx: 62, pctLab: 1224, top3: 1316, topRow: 70, axes: 1548, axRow: 76, foot: 1864 }
-      : { brand: 78, title: 128, ey: 318, ek: 1.55, code: 604, codePx: 170, name: 666, alias: 718, pct: 830, pctPx: 100, pcPx: 46, pctLab: 872, top3: 0, topRow: 0, axes: 952, axRow: 70, foot: 1292 };
+      ? { brand: 118, title: 176, ey: 468, ek: 2.35, picBottom: 860, picH: 640, code: 900, codePx: 220, name: 978, alias: 1036, pct: 1172, pctPx: 140, pcPx: 62, pctLab: 1224, top3: 1316, topRow: 70, axes: 1548, axRow: 76, foot: 1864 }
+      : { brand: 78, title: 128, ey: 318, ek: 1.55, picBottom: 560, picH: 410, code: 604, codePx: 170, name: 666, alias: 718, pct: 830, pctPx: 100, pcPx: 46, pctLab: 872, top3: 0, topRow: 0, axes: 952, axRow: 70, foot: 1292 };
     blob(ctx, W / 2, L.ey, W * 0.62, c, 0.5);
 
     ctx.textAlign = 'center';
@@ -66,12 +109,15 @@
     ctx.font = font(600, 40);
     ctx.fillText('Мой соционический тип', W / 2, L.title);
 
-    // эмблема
-    ctx.save();
-    ctx.translate(W / 2, L.ey);
-    ctx.scale(L.ek, L.ek);
-    S.art.toCanvas(ctx, S.art.emblemNodes(t, 'dark', { at: 22 }));
-    ctx.restore();
+    // портрет персонажа (или эмблема, пока он не загрузился)
+    if (pics[t.id]) drawPortrait(ctx, pics[t.id], W / 2, L.picBottom, L.picH);
+    else {
+      ctx.save();
+      ctx.translate(W / 2, L.ey);
+      ctx.scale(L.ek, L.ek);
+      S.art.toCanvas(ctx, S.art.emblemNodes(t, 'dark', { at: 22 }));
+      ctx.restore();
+    }
 
     // код и имя
     ctx.fillStyle = '#fff';
@@ -247,11 +293,14 @@
     ctx.fillText(cat ? 'Факт · ' + cat.charAt(0).toLowerCase() + cat.slice(1) : 'Факт', W / 2, 176);
 
     if (t) {
-      ctx.save();
-      ctx.translate(W / 2, 470);
-      ctx.scale(2.05, 2.05);
-      S.art.toCanvas(ctx, S.art.emblemNodes(t, 'dark', { at: 22 }));
-      ctx.restore();
+      if (pics[t.id]) drawPortrait(ctx, pics[t.id], W / 2, 820, 620);
+      else {
+        ctx.save();
+        ctx.translate(W / 2, 470);
+        ctx.scale(2.05, 2.05);
+        S.art.toCanvas(ctx, S.art.emblemNodes(t, 'dark', { at: 22 }));
+        ctx.restore();
+      }
       ctx.fillStyle = '#fff';
       ctx.font = font(800, 170);
       ctx.fillText(t.code, W / 2, 860);
@@ -335,7 +384,7 @@
     return canvas;
   }
 
-  const factImage = fact => toBlob(renderFact(document.createElement('canvas'), fact));
+  const factImage = fact => (fact.type ? portrait(fact.type) : Promise.resolve()).then(() => toBlob(renderFact(document.createElement('canvas'), fact)));
 
-  S.share = { render, renderFact, factImage, renderOG, url, text, toBlob, download, copy, canShareFiles, share };
+  S.share = { render, renderFact, factImage, renderOG, portrait, url, text, toBlob, download, copy, canShareFiles, share };
 })(window);

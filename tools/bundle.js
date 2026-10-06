@@ -9,7 +9,7 @@ const pages = process.argv.length > 2 ? process.argv.slice(2) : ['index.html'];
 
 fs.mkdirSync(DIST, { recursive: true });
 // Портреты, знаки и шрифт — растровые файлы: кладём рядом с собранной страницей
-for (const dir of ['img', 'fonts']) fs.cpSync(path.join(SITE, dir), path.join(DIST, dir), { recursive: true });
+for (const dir of ['img', 'fonts', 'js/share/portraits']) fs.cpSync(path.join(SITE, dir), path.join(DIST, dir), { recursive: true });
 for (const page of pages) {
   let html = fs.readFileSync(path.join(SITE, page), 'utf8');
   html = html.replace(/<script src="([^"]+)"><\/script>/g, (_, src) =>

@@ -163,8 +163,9 @@
       try { S.share.render(canvas, axes, fmt); } catch (e) { status.textContent = 'Не получилось нарисовать картинку'; }
     };
     draw();
-    // Картинка рисуется шрифтом сайта: перерисовываем, когда он догрузится
+    // Картинка рисуется шрифтом сайта и с портретом типа: перерисовываем, когда они догрузятся
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+    S.share.portrait(S.core.scoring.result(axes).top.id).then(im => { if (im) draw(); });
     const shareBtn = box.querySelector('[data-do="share"]');
     if (S.share.canShareFiles()) {
       shareBtn.hidden = false;

@@ -106,10 +106,11 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       const size = await new Promise(r => c.toBlob(bl => r(bl ? bl.size : 0), 'image/png'));
       document.querySelector('[data-fmt="post"]').click();
       await new Promise(r => setTimeout(r, 200));
-      return { w: c.width, h: c.height, colored, size, postH: c.height, text: Socio.share.text(Socio.state.result()) };
+      return { w: c.width, h: c.height, colored, size, postH: c.height, text: Socio.share.text(Socio.state.result()), portrait: Boolean(Socio.sharePortraits && Socio.sharePortraits[Socio.state.myType()]) };
     });
     check('картинка для шера рисуется и выгружается в PNG (canvas не «испачкан»)', share.colored > 200 && share.size > 50000, JSON.stringify(share));
     check('формат «Пост» — 1080×1350', share.postH === 1350, String(share.postH));
+    check('на картинке — портрет персонажа типа (data:-URI, canvas чистый)', share.portrait && share.size > 50000, JSON.stringify({ portrait: share.portrait, size: share.size }));
     const siteUrl = await b.eval('Socio.config.SITE_URL');
     if (siteUrl) {
       check('текст шера со ссылкой на результат', /Socio-Nik https:\/\/\S+\/#\/r\/1-\d+-\d+-\d+-\d+$/.test(share.text), share.text);
