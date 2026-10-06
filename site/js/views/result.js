@@ -48,7 +48,6 @@
     const n1 = M().type(res.next[0].id);
     const qc = (S.content.quadras || {})[q.id] || {};
     const friend = S.state.friend ? S.core.scoring.result(S.state.friend).top.id : null;
-    const link = S.share.url(axes), plain = S.share.text(axes, { withUrl: false });
 
     return `
       <section class="res-hero" style="${ui.qStyle(t.quadra)}">
@@ -114,30 +113,7 @@
         </div>
       </section>
 
-      <section class="sec" id="share">
-        <div class="wrap">
-          <div class="share" data-share>
-            <div class="share-preview reveal">
-              <canvas class="share-canvas" width="1080" height="1920" role="img" aria-label="Картинка с результатом: ${t.code}, ${res.top.pct} %"></canvas>
-            </div>
-            <div class="share-side reveal" style="--i:1">
-              <h2 class="h2 h2-sm"><span class="sv">Поделись результатом</span></h2>
-              <p class="lead">Картинка для сторис или поста — с${NB}твоим типом, процентами и${NB}шкалами.</p>
-              <div class="seg" role="group" aria-label="Формат картинки">
-                <button type="button" data-fmt="story" aria-pressed="true">Сторис</button>
-                <button type="button" data-fmt="post" aria-pressed="false">Пост</button>
-              </div>
-              <div class="share-actions">
-                <button class="btn" type="button" data-do="share" hidden>Поделиться</button>
-                <button class="btn" type="button" data-do="download">Скачать картинку</button>
-                <button class="btn-ghost" type="button" data-do="copy">Скопировать текст</button>
-              </div>
-              ${S.social.bar({ text: plain, url: link, label: 'Поделиться результатом' })}
-              <p class="share-status" aria-live="polite"></p>
-            </div>
-          </div>
-        </div>
-      </section>
+      ${ui.resultShare(axes)}
 
       <section class="sec sec-line">
         <div class="wrap center">
@@ -152,52 +128,6 @@
           </details>
         </div>
       </section>`;
-  }
-
-  function mountShare(root, axes) {
-    const box = root.querySelector('[data-share]');
-    if (!box) return () => {};
-    const canvas = box.querySelector('canvas'), status = box.querySelector('.share-status');
-    let fmt = 'story';
-    const draw = () => {
-      try { S.share.render(canvas, axes, fmt); } catch (e) { status.textContent = 'Не получилось нарисовать картинку'; }
-    };
-    draw();
-    // Картинка рисуется шрифтом сайта и с портретом типа: перерисовываем, когда они догрузятся
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
-    S.share.portrait(S.core.scoring.result(axes).top.id).then(im => { if (im) draw(); });
-    const shareBtn = box.querySelector('[data-do="share"]');
-    if (S.share.canShareFiles()) {
-      shareBtn.hidden = false;
-      box.querySelector('[data-do="download"]').className = 'btn-ghost';
-    }
-    box.addEventListener('click', async e => {
-      const f = e.target.closest('[data-fmt]');
-      if (f) {
-        fmt = f.dataset.fmt;
-        box.querySelectorAll('[data-fmt]').forEach(b => b.setAttribute('aria-pressed', String(b === f)));
-        box.classList.toggle('is-post', fmt === 'post');
-        draw();
-        return;
-      }
-      const act = e.target.closest('[data-do]');
-      if (!act) return;
-      const id = S.core.scoring.result(axes).top.id;
-      try {
-        if (act.dataset.do === 'share') { await S.share.share(canvas, axes, fmt); status.textContent = ''; }
-        if (act.dataset.do === 'download') { S.share.download(await S.share.toBlob(canvas), `socio-nik-${id}-${fmt}.png`); status.textContent = 'Картинка сохранена'; }
-        if (act.dataset.do === 'copy') status.textContent = (await S.share.copy(S.share.text(axes))) ? 'Текст скопирован' : 'Не удалось скопировать — выдели текст вручную';
-      } catch (err) {
-        if (err && err.name !== 'AbortError') status.textContent = 'Не получилось — попробуй «Скачать картинку»';
-      }
-    });
-    // Картинка для сторис уходит файлом, остальные сети берут текст и ссылку на результат
-    return S.social.mount(box, {
-      text: () => S.share.text(axes, { withUrl: false }),
-      url: () => S.share.url(axes),
-      image: () => { const c = document.createElement('canvas'); S.share.render(c, axes, 'story'); return S.share.toBlob(c); },
-      status: () => status
-    });
   }
 
   // Персонаж наезжает на нижнюю строку заголовка — на треть высоты букв
@@ -233,7 +163,7 @@
     mount(root) {
       const axes = S.state.result();
       if (!axes) return overlap(root);
-      const offs = [overlap(root), ui.mountCalc(root), ui.mountBox(root), ui.mountTips(root), mountShare(root, axes)];
+      const offs = [overlap(root), ui.mountCalc(root), ui.mountBox(root), ui.mountTips(root), ui.mountResultShare(root, axes)];
       if (S.state.justFinished) {
         S.state.justFinished = false;
         const t = M().type(S.core.scoring.result(axes).top.id);

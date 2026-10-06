@@ -32,6 +32,8 @@
     saveResult(axes) {
       this.demo = null;
       S.store.set('result', { axes, at: Date.now() });
+      // тип отдельно — его читает скрипт в <head>, чтобы герой главной сразу был «твоим» (с предзагрузкой портрета)
+      S.store.set('mine', S.core.scoring.result(axes).top.id);
     },
     myType() {
       const a = this.result();
@@ -141,9 +143,15 @@
     // ?reset — сброс своего результата и прогресса теста, чтобы увидеть сайт глазами нового посетителя.
     // Только локально (file:// и localhost): по чужой ссылке результат не сотрётся.
     if (q.has('reset') && /^(file:|https?:\/\/(localhost|127\.0\.0\.1)[:/])/.test(location.href)) {
-      ['result', 'test', 'hero', 'box.seen'].forEach(k => S.store.del(k));
+      ['result', 'mine', 'test', 'hero', 'box.seen'].forEach(k => S.store.del(k));
       try { sessionStorage.removeItem('socio.friend'); } catch (e) { /* нет доступа */ }
       try { history.replaceState(null, '', location.pathname + (location.hash || '#/')); } catch (e) { /* file:// без history */ }
+    }
+    // результат, сохранённый до того, как появился ключ «mine», — дописываем
+    if (!S.state.demo) {
+      const mine = S.state.myType();
+      if (mine && S.store.get('mine', null) !== mine) S.store.set('mine', mine);
+      if (!mine && S.store.get('mine', null)) S.store.del('mine');
     }
     S.theme.apply();
     document.documentElement.classList.add('js');

@@ -76,121 +76,155 @@
     ctx.closePath();
   }
 
-  // format: 'story' | 'post'
+  // ---------- коробка и 3D-символы: data:-URI из js/share/art.js (грузится, когда нужна картинка) ----------
+  const arts = {};
+  let artWait = null;
+  function art() {
+    if (artWait) return artWait;
+    artWait = new Promise(ok => {
+      const make = () => {
+        const all = S.shareArt || {}, keys = Object.keys(all);
+        let left = keys.length;
+        if (!left) { ok(arts); return; }
+        const done = () => { if (--left === 0) ok(arts); };
+        keys.forEach(k => { const im = new Image(); im.onload = () => { arts[k] = im; done(); }; im.onerror = done; im.src = all[k]; });
+      };
+      if (S.shareArt) { make(); return; }
+      const s = document.createElement('script');
+      s.src = `js/share/art.js${VER ? '?' + VER : ''}`;
+      s.onload = make;
+      s.onerror = () => ok(arts);
+      document.head.appendChild(s);
+    });
+    return artWait;
+  }
+  function drawArt(ctx, key, cx, cy, w, rot = 0, alpha = 1) {
+    const im = arts[key];
+    if (!im) return;
+    const h = w * im.height / im.width;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(cx, cy);
+    ctx.rotate(rot * Math.PI / 180);
+    ctx.drawImage(im, -w / 2, -h / 2, w, h);
+    ctx.restore();
+  }
+
+  // ---------- общие детали картинок ----------
+  // четырёхлучевая искра
+  function spark(ctx, x, y, r, color, a = 1) {
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x, y - r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.quadraticCurveTo(x, y, x, y + r);
+    ctx.quadraticCurveTo(x, y, x - r, y);
+    ctx.quadraticCurveTo(x, y, x, y - r);
+    ctx.fill();
+    ctx.restore();
+  }
+  // серебряный текст, как заголовки сайта
+  function silver(ctx, text, x, y, px) {
+    const g = ctx.createLinearGradient(0, y - px * 0.78, 0, y + px * 0.06);
+    g.addColorStop(0, '#8f96a0');
+    g.addColorStop(1, '#e6eef4');
+    ctx.fillStyle = g;
+    ctx.fillText(text, x, y);
+  }
+  // пилюля: бренд, черта типа, проценты; держится в пределах картинки
+  function pill(ctx, text, cx, cy, { px = 32, weight = 700, dot = null, fill = 'rgba(10,10,12,0.62)', stroke = 'rgba(215,226,234,0.3)', color = '#fff', W = 1080 } = {}) {
+    const label = text.toUpperCase();
+    ctx.font = font(weight, px);
+    const tw = ctx.measureText(label).width, gap = dot ? px * 0.66 : 0;
+    const h = Math.round(px * 1.95), w = tw + gap + px * 1.6;
+    const x = Math.max(36, Math.min(W - 36 - w, cx - w / 2)), y = cy - h / 2;
+    ctx.fillStyle = fill;
+    roundRect(ctx, x, y, w, h, h / 2);
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = stroke;
+    ctx.stroke();
+    let tx = x + px * 0.8;
+    if (dot) {
+      ctx.save();
+      ctx.shadowColor = dot;
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = dot;
+      ctx.beginPath();
+      ctx.arc(tx + px * 0.2, cy, px * 0.21, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      tx += gap;
+    }
+    ctx.fillStyle = color;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, tx, cy + px * 0.04);
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'center';
+  }
+  // фон: почти чёрный, свет в цвете квадры за персонажем, фирменный градиент по краям и искры
+  function backdrop(ctx, W, H, c, focusY) {
+    ctx.fillStyle = '#07080a';
+    ctx.fillRect(0, 0, W, H);
+    blob(ctx, W * 0.06, H * 0.08, W * 0.62, '#b600a8', 0.2);
+    blob(ctx, W * 0.96, H * 0.9, W * 0.66, '#7621b0', 0.24);
+    blob(ctx, W / 2, focusY, W * 0.74, c, 0.5);
+    blob(ctx, W / 2, focusY + W * 0.12, W * 0.34, '#ffffff', 0.08);
+    [[0.08, 0.15, 18], [0.92, 0.19, 13], [0.05, 0.46, 10], [0.95, 0.5, 15], [0.07, 0.74, 12], [0.93, 0.78, 9], [0.5, 0.985, 7]]
+      .forEach(([x, y, r], i) => spark(ctx, W * x, H * y, r * 1.7, i % 2 ? '#ffd27a' : '#ffffff', 0.5));
+  }
+  const site = () => (S.config && S.config.SITE_URL ? S.config.SITE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '') : 'Socio-Nik');
+  const traitsOf = id => (S.content.traits && S.content.traits[id]) || [];
+
+  // Результат картинкой: «Я — Хранитель», персонаж с чертами вокруг, код, одно число и вопрос к друзьям.
+  // Сторис 1080×1920: всё важное — между 250 и 1580 px, там его не закроют шапка и строка ответа.
   function render(canvas, axes, format = 'story') {
-    const W = 1080, H = format === 'story' ? 1920 : 1350, story = format === 'story';
+    const story = format === 'story', W = 1080, H = story ? 1920 : 1350;
     canvas.width = W;
     canvas.height = H;
     const ctx = canvas.getContext('2d');
-    const res = S.core.scoring.result(axes);
-    const M = S.core.modelA;
-    const t = M.type(res.top.id), q = S.data.quadras.find(x => x.id === t.quadra);
-    const c = q.color.dark;
-
-    // фон: чёрный + «аврора» из цветов квадр
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, W, H);
-    S.data.quadras.forEach((qq, i) => {
-      const pos = [[0.08, 0.06], [0.95, 0.12], [0.05, 0.92], [0.92, 0.88]][i];
-      blob(ctx, W * pos[0], H * pos[1], W * 0.55, qq.color.dark, qq.id === q.id ? 0.0 : 0.16);
-    });
-    // Сетка координат по форматам: сверху вниз, без наложений (сторис 1920, пост 1350)
+    const res = S.core.scoring.result(axes), t = S.core.modelA.type(res.top.id);
+    const q = S.data.quadras.find(x => x.id === t.quadra), c = q.color.dark;
     const L = story
-      ? { brand: 118, title: 176, ey: 468, ek: 2.35, picBottom: 860, picH: 640, code: 900, codePx: 220, name: 978, alias: 1036, pct: 1172, pctPx: 140, pcPx: 62, pctLab: 1224, top3: 1316, topRow: 70, axes: 1548, axRow: 76, foot: 1864 }
-      : { brand: 78, title: 128, ey: 318, ek: 1.55, picBottom: 560, picH: 410, code: 604, codePx: 170, name: 666, alias: 718, pct: 830, pctPx: 100, pcPx: 46, pctLab: 872, top3: 0, topRow: 0, axes: 952, axRow: 70, foot: 1292 };
-    blob(ctx, W / 2, L.ey, W * 0.62, c, 0.5);
-
+      ? { brand: 300, head: 446, headPx: 104, picBottom: 1222, picH: 700, chips: [[196, 700], [900, 790], [870, 1030]], chipPx: 28, code: 1306, codePx: 190, sub: 1376, pct: 1452, ask: 1542, url: 1592, focus: 840 }
+      : { brand: 74, head: 186, headPx: 88, picBottom: 852, picH: 610, chips: [[196, 420], [900, 500], [880, 700]], chipPx: 25, code: 944, codePx: 160, sub: 1004, pct: 1072, ask: 1168, url: 1224, focus: 560 };
+    backdrop(ctx, W, H, c, L.focus);
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillStyle = 'rgba(255,255,255,0.62)';
-    ctx.font = font(600, 30);
-    ctx.fillText('SOCIO-NIK', W / 2, L.brand);
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.font = font(600, 40);
-    ctx.fillText('Мой соционический тип', W / 2, L.title);
+    pill(ctx, 'Socio-Nik · тест на тип личности', W / 2, L.brand, { px: 24, weight: 700, fill: 'rgba(255,255,255,0.06)', stroke: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.8)' });
 
-    // портрет персонажа (или эмблема, пока он не загрузился)
+    const head = `Я — ${t.role}`;
+    fit(ctx, head, W - 120, 900, L.headPx);
+    silver(ctx, head, W / 2, L.head, L.headPx);
+
     if (pics[t.id]) drawPortrait(ctx, pics[t.id], W / 2, L.picBottom, L.picH);
     else {
       ctx.save();
-      ctx.translate(W / 2, L.ey);
-      ctx.scale(L.ek, L.ek);
+      ctx.translate(W / 2, L.picBottom - L.picH * 0.5);
+      ctx.scale(2.2, 2.2);
       S.art.toCanvas(ctx, S.art.emblemNodes(t, 'dark', { at: 22 }));
       ctx.restore();
     }
+    drawArt(ctx, 'sparkles', W * 0.8, L.picBottom - L.picH * 0.86, story ? 120 : 100, 8, 0.95);
+    traitsOf(t.id).forEach((x, i) => pill(ctx, x, L.chips[i][0], L.chips[i][1], { px: L.chipPx, dot: c }));
 
-    // код и имя
     ctx.fillStyle = '#fff';
-    ctx.font = font(800, L.codePx);
+    ctx.font = font(900, L.codePx);
     ctx.fillText(t.code, W / 2, L.code);
-    ctx.fillStyle = 'rgba(255,255,255,0.86)';
-    fit(ctx, t.name, W - 160, 600, 46);
-    ctx.fillText(t.name, W / 2, L.name);
-    const sub = `«${t.alias}» · ${t.role} · квадра ${q.name}`;
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    fit(ctx, sub, W - 160, 500, 38);
-    ctx.fillText(sub, W / 2, L.alias);
-
-    // процент
-    ctx.fillStyle = '#fff';
-    ctx.font = font(700, L.pctPx);
-    const pctText = String(res.top.pct);
-    const pw = ctx.measureText(pctText).width;
-    ctx.textAlign = 'right';
-    ctx.fillText(pctText, W / 2 + pw / 2 - 16, L.pct);
-    ctx.textAlign = 'left';
-    ctx.font = font(600, L.pcPx);
-    ctx.fillText('%', W / 2 + pw / 2 - 6, L.pct);
-    ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.font = font(500, 32);
-    ctx.fillText('вероятность типа по ответам', W / 2, L.pctLab);
-
-    // топ-3 (только в сторис — в посте мало места)
-    const x0 = 150, x1 = W - 150;
-    if (L.top3) {
-      res.dist.slice(0, 3).forEach((row, i) => {
-        const tt = M.type(row.id), qc = S.data.quadras.find(x => x.id === tt.quadra).color.dark;
-        const yy = L.top3 + i * L.topRow;
-        ctx.textAlign = 'left';
-        ctx.fillStyle = 'rgba(255,255,255,0.92)';
-        ctx.font = font(700, 34);
-        ctx.fillText(tt.code, x0, yy + 12);
-        ctx.textAlign = 'right';
-        ctx.font = font(600, 32);
-        ctx.fillText(row.pct + ' %', x1, yy + 12);
-        const bx = x0 + 130, bw = x1 - x0 - 130 - 120;
-        ctx.fillStyle = 'rgba(255,255,255,0.1)';
-        roundRect(ctx, bx, yy - 8, bw, 16, 8); ctx.fill();
-        ctx.fillStyle = qc;
-        roundRect(ctx, bx, yy - 8, Math.max(16, bw * row.pct / 100), 16, 8); ctx.fill();
-      });
-    }
-
-    // 4 шкалы
-    const AX = [['EI', 'Экстраверсия', 'Интроверсия'], ['NS', 'Интуиция', 'Сенсорика'], ['TF', 'Логика', 'Этика'], ['RP', 'Рациональность', 'Иррациональность']];
-    AX.forEach(([ax, a, b], i) => {
-      const v = res.axes[ax], yy = L.axes + i * L.axRow;
-      ctx.font = font(600, 29);
-      ctx.textAlign = 'left';
-      ctx.fillStyle = v >= 50 ? '#fff' : 'rgba(255,255,255,0.5)';
-      ctx.fillText(`${a} ${v} %`, x0, yy);
-      ctx.textAlign = 'right';
-      ctx.fillStyle = v < 50 ? '#fff' : 'rgba(255,255,255,0.5)';
-      ctx.fillText(`${100 - v} % ${b}`, x1, yy);
-      const bw = x1 - x0, split = bw * v / 100;
-      ctx.fillStyle = v >= 50 ? tone(c, 0.15) : 'rgba(255,255,255,0.18)';
-      roundRect(ctx, x0, yy + 16, Math.max(8, split - 2), 12, 6); ctx.fill();
-      ctx.fillStyle = v < 50 ? tone(c, 0.15) : 'rgba(255,255,255,0.18)';
-      roundRect(ctx, x0 + split + 2, yy + 16, Math.max(8, bw - split - 2), 12, 6); ctx.fill();
-    });
-
-    // подпись
-    ctx.textAlign = 'center';
+    const sub = `«${t.alias}» · квадра ${q.name}`;
     ctx.fillStyle = 'rgba(255,255,255,0.72)';
-    ctx.font = font(600, 34);
-    const site = S.config && S.config.SITE_URL ? S.config.SITE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '') : 'Socio-Nik';
-    ctx.fillText(`Узнай свой тип — ${site}`, W / 2, L.foot);
+    fit(ctx, sub, W - 160, 600, 40);
+    ctx.fillText(sub, W / 2, L.sub);
+    pill(ctx, `совпадение ${res.top.pct} %`, W / 2, L.pct, { px: 28, fill: rgba(c, 0.22), stroke: rgba(c, 0.8) });
+
+    ctx.fillStyle = '#fff';
+    ctx.font = font(800, story ? 64 : 56);
+    ctx.fillText('А какой тип у тебя?', W / 2, L.ask);
+    ctx.fillStyle = 'rgba(255,255,255,0.72)';
+    fit(ctx, `Тест за 4 минуты → ${site()}`, W - 140, 600, 34);
+    ctx.fillText(`Тест за 4 минуты → ${site()}`, W / 2, L.url);
     return canvas;
   }
 
@@ -203,7 +237,7 @@
   function text(axes, { withUrl = true } = {}) {
     const res = S.core.scoring.result(axes), t = S.core.modelA.type(res.top.id);
     const link = withUrl && url(axes) ? ' ' + url(axes) : '';
-    return `Мой соционический тип — ${t.code}, «${t.alias}» (${res.top.pct} %). Узнай свой на Socio-Nik${link}`;
+    return `Я — ${t.code} «${t.alias}», ${t.role.toLowerCase()} (совпадение ${res.top.pct} %). А ты кто из 16 типов? Тест за 4 минуты на Socio-Nik${link}`;
   }
 
   const toBlob = canvas => new Promise((ok, fail) => canvas.toBlob(b => (b ? ok(b) : fail(new Error('PNG не собрался'))), 'image/png'));
@@ -265,7 +299,24 @@
     return lines;
   }
 
-  // Факт из mystery box картинкой для сторис (1080×1920): сторис принимают картинку, а не ссылку
+  // Персонаж выглядывает из открытой коробки: всё, что ниже кромки проёма, — «внутри» (кромка — ломаная по рисунку коробки)
+  const RIM = [[0.18, 0.49], [0.384, 0.542], [0.8, 0.5]];
+  function bustInBox(ctx, im, bx, by, bw, w) {
+    const h = w * 1.25, rimMid = by + bw * 0.52, top = rimMid - h * 0.74, cx = bx + bw * 0.49;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx - w, 0);
+    ctx.lineTo(cx + w, 0);
+    ctx.lineTo(cx + w, by + bw * RIM[2][1]);
+    RIM.slice().reverse().forEach(([x, y]) => ctx.lineTo(bx + bw * x, by + bw * y));
+    ctx.lineTo(cx - w, by + bw * RIM[0][1]);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(im, cx - w / 2, top, w, h);
+    ctx.restore();
+  }
+
+  // Факт из mystery box для сторис (1080×1920): вопрос-крючок, персонаж выскакивает из коробки, факт в стеклянной карточке
   function renderFact(canvas, fact) {
     const W = 1080, H = 1920;
     canvas.width = W;
@@ -273,76 +324,63 @@
     const ctx = canvas.getContext('2d');
     const t = fact.type ? S.core.modelA.type(fact.type) : null;
     const q = t ? S.data.quadras.find(x => x.id === t.quadra) : null;
-    const c = q ? q.color.dark : '#3987e5';
-
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, W, H);
-    S.data.quadras.forEach((qq, i) => {
-      const pos = [[0.08, 0.06], [0.95, 0.12], [0.05, 0.92], [0.92, 0.88]][i];
-      blob(ctx, W * pos[0], H * pos[1], W * 0.55, qq.color.dark, q && qq.id === q.id ? 0 : 0.16);
-    });
-    blob(ctx, W / 2, 470, W * 0.6, c, 0.45);
-
+    const c = q ? q.color.dark : '#8b3fd1';
+    const all = S.facts ? S.facts.all() : [], no = all.findIndex(f => f.id === fact.id) + 1;
+    backdrop(ctx, W, H, c, 800);
     ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(255,255,255,0.62)';
-    ctx.font = font(600, 30);
-    ctx.fillText('SOCIO-NIK · MYSTERY BOX', W / 2, 118);
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.font = font(600, 40);
+    pill(ctx, 'Socio-Nik · mystery box', W / 2, 288, { px: 24, fill: 'rgba(255,255,255,0.06)', stroke: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.8)' });
+    const head = t ? 'Узнаёшь кого-то?' : 'Факт о соционике';
+    fit(ctx, head, W - 120, 900, 96);
+    silver(ctx, head, W / 2, 410, 96);
     const cat = S.factCats && S.factCats[fact.cat];
-    ctx.fillText(cat ? 'Факт · ' + cat.charAt(0).toLowerCase() + cat.slice(1) : 'Факт', W / 2, 176);
+    ctx.fillStyle = 'rgba(255,255,255,0.62)';
+    ctx.font = font(600, 32);
+    ctx.fillText([no ? `Факт № ${no} из ${all.length}` : 'Факт', cat ? cat.toLowerCase() : ''].filter(Boolean).join(' · '), W / 2, 468);
 
-    if (t) {
-      if (pics[t.id]) drawPortrait(ctx, pics[t.id], W / 2, 820, 620);
-      else {
-        ctx.save();
-        ctx.translate(W / 2, 470);
-        ctx.scale(2.05, 2.05);
-        S.art.toCanvas(ctx, S.art.emblemNodes(t, 'dark', { at: 22 }));
-        ctx.restore();
-      }
-      ctx.fillStyle = '#fff';
-      ctx.font = font(800, 170);
-      ctx.fillText(t.code, W / 2, 860);
-      const sub = `«${t.alias}» · ${t.role}`;
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      fit(ctx, sub, W - 160, 500, 42);
-      ctx.fillText(sub, W / 2, 924);
-    } else {
-      S.data.quadras.forEach((qq, i) => {
-        const x = W / 2 + (i - 1.5) * 130, y = 500, g = ctx.createRadialGradient(x - 16, y - 18, 4, x, y, 52);
-        g.addColorStop(0, tone(qq.color.dark, 0.55));
-        g.addColorStop(1, tone(qq.color.dark, -0.35));
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(x, y, 48, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.fillStyle = '#fff';
-      ctx.font = font(800, 130);
-      ctx.fillText('Соционика', W / 2, 860);
+    // коробка, тёплый свет из проёма и тот, кто из неё выскочил
+    const bw = 500, bx = W / 2 - bw / 2 - 6, by = 520;
+    blob(ctx, W / 2, by + bw * 0.46, 300, '#ffc37a', 0.32);
+    drawArt(ctx, 'box-open', bx + bw / 2, by + bw / 2, bw);
+    if (t && pics[t.id]) bustInBox(ctx, pics[t.id], bx, by, bw, 330);
+    else {
+      drawArt(ctx, t ? 'heart' : 'question', bx + bw * 0.42, by + bw * 0.24, 170, -10);
+      drawArt(ctx, t ? 'sparkles' : 'bulb', bx + bw * 0.66, by + bw * 0.14, 140, 12);
     }
+    drawArt(ctx, 'sparkles', 210, 690, 130, -12, 0.95);
+    drawArt(ctx, t ? 'heart' : 'puzzle', 880, 640, 110, 14, 0.95);
 
-    // текст факта в полупрозрачной карточке; кегль уменьшается, пока текст не влезет в 9 строк
-    let size = 60, lines = [];
-    for (; size >= 40; size -= 2) {
+    // кто это и сам факт
+    const label = t ? `${t.code} «${t.alias}» · ${t.role}` : 'Соционика';
+    let y = by + bw + 46;
+    pill(ctx, label, W / 2, y, { px: 30, dot: t ? c : null, fill: rgba(c, 0.2), stroke: rgba(c, 0.75) });
+    // кегль — самый крупный, при котором карточка кончается до 1520 px (ниже — строка ответа в сторис)
+    const top = y + 54;
+    let size = 46, lines = [], lh = 0, boxH = 0;
+    for (; size >= 30; size -= 2) {
       ctx.font = font(600, size);
-      lines = wrap(ctx, fact.text, W - 240);
-      if (lines.length <= 9) break;
+      lines = wrap(ctx, fact.text, W - 280);
+      lh = Math.round(size * 1.34);
+      boxH = lines.length * lh + 92;
+      if (top + boxH <= 1520) break;
     }
-    const lh = Math.round(size * 1.34), top = 1080;
-    ctx.fillStyle = 'rgba(255,255,255,0.08)';
-    roundRect(ctx, 70, top - size - 44, W - 140, lines.length * lh + 96, 48);
+    ctx.fillStyle = 'rgba(255,255,255,0.075)';
+    roundRect(ctx, 80, top, W - 160, boxH, 44);
     ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+    ctx.stroke();
+    ctx.fillStyle = rgba(c, 0.95);
+    ctx.font = font(900, 130);
     ctx.textAlign = 'left';
+    ctx.fillText('“', 92, top + 58);
     ctx.fillStyle = '#fff';
-    lines.forEach((l, i) => ctx.fillText(l, 120, top + i * lh));
-
+    ctx.font = font(600, size);
+    lines.forEach((l, i) => ctx.fillText(l, 140, top + 50 + size + i * lh));
     ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(255,255,255,0.72)';
-    ctx.font = font(600, 34);
-    const site = S.config && S.config.SITE_URL ? S.config.SITE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '') : 'Socio-Nik';
-    ctx.fillText(`Открой свою коробку — ${site}`, W / 2, H - 110);
+    y = Math.min(top + boxH + 62, 1584);
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    fit(ctx, `Открой свою коробку → ${site()}`, W - 140, 600, 34);
+    ctx.fillText(`Открой свою коробку → ${site()}`, W / 2, y);
     return canvas;
   }
 
@@ -384,7 +422,7 @@
     return canvas;
   }
 
-  const factImage = fact => (fact.type ? portrait(fact.type) : Promise.resolve()).then(() => toBlob(renderFact(document.createElement('canvas'), fact)));
+  const factImage = fact => Promise.all([fact.type ? portrait(fact.type) : null, art()]).then(() => toBlob(renderFact(document.createElement('canvas'), fact)));
 
-  S.share = { render, renderFact, factImage, renderOG, portrait, url, text, toBlob, download, copy, canShareFiles, share };
+  S.share = { render, renderFact, factImage, renderOG, portrait, art, url, text, toBlob, download, copy, canShareFiles, share };
 })(window);

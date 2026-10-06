@@ -1,5 +1,7 @@
-/* Socio-Nik · главная: герой «Привет, я …» с персонажем, лента 16 типов, «Соционика»,
-   белая «Что внутри», стопка квадр */
+/* Socio-Nik · главная. Новому человеку: герой «Привет, я …» со случайным персонажем, лента 16 типов, «Соционика»,
+   белая «Что внутри», стопка квадр. После теста страница подстраивается под тип: «Привет, Драйзер», твой персонаж
+   и три шага — про тип, твои отношения (карта-орбиты прямо тут), поделиться картинкой; дальше факты про твой тип,
+   лента с отметкой «ты» и квадры, начиная с твоей. */
 (function (root) {
   const S = root.Socio;
   const V = S.views = S.views || {};
@@ -9,9 +11,18 @@
   const NB = '\u00A0';
 
   let introDone = false;
-  const heroType = () => M().type(document.documentElement.dataset.hero) || M().type('iee');
-
   const mineType = () => (S.state.myType() ? M().type(S.state.myType()) : null);
+  // После теста герой — твой тип; иначе случайный, выбранный скриптом в <head>
+  const heroType = () => {
+    const mine = mineType();
+    if (mine) {
+      document.documentElement.dataset.hero = mine.id;
+      // для скрипта в <head>: в следующий раз сразу предзагрузит твой портрет
+      if (!S.state.demo && S.store.get('mine', null) !== mine.id) S.store.set('mine', mine.id);
+      return mine;
+    }
+    return M().type(document.documentElement.dataset.hero) || M().type('iee');
+  };
   // Вопрос-крючок под приветствием: личный вопрос рядом с кнопкой — главный рычаг перехода в тест
   function ask(t) {
     const mine = mineType();
@@ -32,37 +43,44 @@
 
   // ---------- герой ----------
   function hero(t) {
-    const mine = mineType();
+    const mine = mineType(), me = Boolean(mine && mine.id === t.id);
     const intro = !introDone && !S.dom.reducedMotion();
+    const pct = me ? S.core.scoring.result(S.state.result()).top.pct : 0;
+    const tagline = me ? (ui.content(t.id).tagline || '') : '';
     return `
-      <section class="hero${intro ? ' intro' : ''}" data-hero style="${ui.qStyle(t.quadra)}">
+      <section class="hero${intro ? ' intro' : ''}${me ? ' hero-me' : ''}" data-hero style="${ui.qStyle(t.quadra)}">
         <nav class="hero-menu h-in" style="--d:0s;--y:-20px" aria-label="Разделы">
           <a href="#/test">Тест</a><a href="#/types">Типы</a><a href="#/relations">Отношения</a><a href="#/about">О${NB}соционике</a>
         </nav>
         <h1 class="hero-title display h-in" style="--d:.15s;--y:40px" data-fit data-min="12" data-max="17.5" data-maxh="21">
-          <span class="fit-in"><span class="fit-line"><span class="sv">Привет, я</span></span> <span class="fit-line"><span class="sv hero-name" data-hero-name>${esc(ui.short(t))}</span></span></span>
+          <span class="fit-in"><span class="fit-line"><span class="sv">${me ? 'Привет,' : 'Привет, я'}</span></span> <span class="fit-line"><span class="sv hero-name" data-hero-name>${esc(ui.short(t))}</span></span></span>
         </h1>
         <div class="hero-char h-in" style="--d:.6s;--y:30px">
           <div class="hero-magnet" data-magnet><div class="hero-mag"><div class="hero-look">
-            <div class="hero-fig" data-hero-next>${ui.character(t, { sizes: ui.CHAR.hero, eager: true })}</div>
+            <div class="hero-fig"${me ? '' : ' data-hero-next'}>${ui.character(t, { sizes: ui.CHAR.hero, eager: true })}</div>
           </div></div></div>
-          <p class="hero-bubble" aria-hidden="true" data-hero-bubble>${esc(cheer(t))}</p>
+          <p class="hero-bubble" aria-hidden="true" data-hero-bubble>${esc(me ? 'Покажи друзьям, кто ты!' : cheer(t))}</p>
           <span class="hero-sparks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
           <ul class="hero-traits" aria-label="Коротко о типе" data-hero-traits data-anim>${traitItems(t)}</ul>
         </div>
         <div class="hero-foot">
           <ul class="hero-traits-m h-in" style="--d:.35s;--y:20px" aria-label="Коротко о типе" data-hero-traits>${traitItems(t)}</ul>
           <div class="hero-ask h-in" style="--d:.3s;--y:20px">
-            <p class="hero-q${mine && mine.id !== t.id ? ' long' : ''}" data-hero-q>${esc(ask(t))}</p>
-            <p class="hero-cap" data-hero-cap>${esc(caption(t))}</p>
+            ${me ? `<p class="hero-q">Ты${NB}— ${esc(t.role.toLowerCase())}</p>
+            <p class="hero-cap">${esc(tagline)}</p>
+            <a class="hero-meta" href="#/result">${t.code} «${esc(t.alias)}» · совпадение ${pct}${NB}%</a>`
+            : `<p class="hero-q${mine ? ' long' : ''}" data-hero-q>${esc(ask(t))}</p>
+            <p class="hero-cap" data-hero-cap>${esc(caption(t))}</p>`}
           </div>
           <div class="hero-right">
-          ${mine ? `<nav class="hero-steps h-in" style="--d:.45s;--y:20px" aria-label="Что дальше">
-            <a href="#/types/${mine.id}">Про мой тип</a><a href="#/types/${mine.id}#relations">Мои отношения</a><a href="#/result#share">Поделиться</a><a href="#/test" data-restart-test>Пройти заново</a>
+          ${me ? `<nav class="hero-steps h-in" style="--d:.45s;--y:20px" aria-label="Что дальше">
+            <a href="#/types/${t.id}">Про мой тип</a><a href="#/#rel">Мои отношения</a><a href="#/test" data-restart-test>Пройти заново</a>
+          </nav>` : mine ? `<nav class="hero-steps h-in" style="--d:.45s;--y:20px" aria-label="Что дальше">
+            <a href="#/types/${mine.id}">Про мой тип</a><a href="#/#rel">Мои отношения</a><a href="#/#share">Поделиться</a>
           </nav>` : ''}
           <div class="hero-actions h-in" style="--d:.5s;--y:20px">
-            <button class="btn-ghost hero-next" type="button" data-hero-next title="Другой тип"><span class="hero-next-l">Другой тип</span>${ui.ICON.cycle}</button>
-            ${mine ? '<a class="btn hero-cta" href="#/result" data-cheer>Мой результат</a>' : '<a class="btn hero-cta" href="#/test" data-cheer>Узнать свой тип</a>'}
+            ${me ? '' : `<button class="btn-ghost hero-next" type="button" data-hero-next title="Другой тип"><span class="hero-next-l">Другой тип</span>${ui.ICON.cycle}</button>`}
+            ${me ? '<a class="btn hero-cta" href="#/#share" data-cheer>Поделиться результатом</a>' : mine ? '<a class="btn hero-cta" href="#/result" data-cheer>Мой результат</a>' : '<a class="btn hero-cta" href="#/test" data-cheer>Узнать свой тип</a>'}
           </div>
           ${mine ? '' : `<p class="hero-micro h-in" style="--d:.55s;--y:12px">20${NB}вопросов · 4${NB}минуты · без регистрации</p>`}
           </div>
@@ -140,9 +158,11 @@
     const io = new IntersectionObserver(([e]) => de.classList.toggle('hero-on', e.isIntersecting));
     io.observe(menu);
 
-    let queued = prefetch(nextType(de.dataset.hero)), busy = false;
+    // после теста герой — ты: персонажей не перебираем
+    const me = el.classList.contains('hero-me');
+    let queued = me ? null : prefetch(nextType(de.dataset.hero)), busy = false;
     const swap = () => {
-      if (busy) return;
+      if (busy || me) return;
       busy = true;
       const img = queued, next = M().type(img.dataset.id);
       const ready = img.decode ? img.decode().catch(() => {}) : Promise.resolve();
@@ -200,8 +220,9 @@
   function marquee() {
     const qs = S.data.quadras;
     const rows = [[qs[0], qs[1]], [qs[2], qs[3]]].map(pair => pair.flatMap(q => ui.typesOf(q.id)));
-    const tile = (t, live) => `<a class="mq-tile" href="#/types/${t.id}" style="${ui.qStyle(t.quadra)}"${live ? '' : ' tabindex="-1"'}>
-        <span class="mq-text"><span class="mq-code">${t.code}</span><span class="mq-alias">${esc(t.alias)}</span><span class="mq-role">${esc(t.role)} · ${ui.quadra(t.quadra).name}</span></span>
+    const mine = S.state.myType();
+    const tile = (t, live) => `<a class="mq-tile${t.id === mine ? ' is-you' : ''}" href="#/types/${t.id}" style="${ui.qStyle(t.quadra)}"${live ? '' : ' tabindex="-1"'}>
+        ${t.id === mine ? '<span class="mq-you">Ты</span>' : ''}<span class="mq-text"><span class="mq-code">${t.code}</span><span class="mq-alias">${esc(t.alias)}</span><span class="mq-role">${esc(t.role)} · ${ui.quadra(t.quadra).name}</span></span>
         ${ui.character(t, { sizes: ui.CHAR.tile, alt: '', cls: 'mq-img' })}
       </a>`;
     const copy = (row, live) => `<div class="mq-copy"${live ? '' : ' inert aria-hidden="true"'}>${row.map(t => tile(t, live)).join('')}</div>`;
@@ -254,15 +275,15 @@
   }
 
   // ---------- стопка квадр ----------
-  ui.quadraCard = (q, i) => {
+  ui.quadraCard = (q, i, { n = i, mine = false } = {}) => {
     const qc = (S.content.quadras || {})[q.id] || {};
     return `
       <div class="stack-item" style="--i:${i}">
         <article class="stack-card" style="${ui.qStyle(q.id)}" aria-labelledby="qc-${q.id}">
           <header class="qc-head">
-            <span class="qc-num" aria-hidden="true">0${i + 1}</span>
+            <span class="qc-num" aria-hidden="true">0${n + 1}</span>
             <div class="qc-titles">
-              <p class="qc-kicker caption" id="qc-${q.id}">Квадра · ${q.name}</p>
+              <p class="qc-kicker caption" id="qc-${q.id}">Квадра · ${q.name}${mine ? '<span class="qc-you">Твоя квадра</span>' : ''}</p>
               <p class="qc-motto">${esc(qc.motto || '')}</p>
             </div>
             <a class="btn-ghost btn-sm qc-go" href="#/quadras#${q.id}">Смотреть квадру</a>
@@ -283,21 +304,61 @@
         </article>
       </div>`;
   };
-  ui.quadraStack = () => `<div class="stack wrap" data-stack>${S.data.quadras.map(ui.quadraCard).join('')}</div>`;
+  // first — квадра, которую показать первой (после теста — своя)
+  ui.quadraStack = (first = null) => {
+    const qs = S.data.quadras.map((q, n) => ({ q, n }));
+    if (first) qs.sort((a, b) => (b.q.id === first) - (a.q.id === first));
+    return `<div class="stack wrap" data-stack>${qs.map(({ q, n }, i) => ui.quadraCard(q, i, { n, mine: q.id === first })).join('')}</div>`;
+  };
 
-  function quadras() {
+  function quadras(mine) {
     return `
       <section class="sec qs-sec">
         <div class="wrap sec-head">
           <h2 class="h2 reveal"><span class="sv">Квадры</span></h2>
-          <p class="lead reveal">Четыре компании по${NB}ценностям. В${NB}своей квадре человеку проще всего: там ценят то${NB}же, что и${NB}он.</p>
+          <p class="lead reveal">${mine ? `Твоя квадра${NB}— ${ui.quadra(mine.quadra).name}: здесь ценят то${NB}же, что и${NB}ты. Остальные три${NB}— ниже.` : `Четыре компании по${NB}ценностям. В${NB}своей квадре человеку проще всего: там ценят то${NB}же, что и${NB}он.`}</p>
         </div>
-        ${ui.quadraStack()}
+        ${ui.quadraStack(mine ? mine.quadra : null)}
+      </section>`;
+  }
+
+  // ---------- после теста: всё про тебя ----------
+  function yours(t) {
+    return `
+      <section class="sec rm-sec" id="rel">
+        <div class="wrap">
+          <div class="rm-head">
+            <h2 class="h2 reveal"><span class="sv">С${NB}кем тебе легко</span></h2>
+            <p class="rm-sub reveal">Ты${NB}— в${NB}центре. Чем ближе орбита, тем легче с${NB}этим типом. Нажми на${NB}аватар${NB}— увидишь, как вы ладите.</p>
+          </div>
+          ${ui.relMap(t, { uid: 'rmh' })}
+        </div>
+      </section>
+      ${ui.resultShare(S.state.result(), { title: 'Покажи друзьям, кто ты' })}
+      <section class="sec sec-line home-box">
+        <div class="wrap center">
+          <h2 class="h2 h2-sm reveal"><span class="sv">Факты про ${t.code}</span></h2>
+          <p class="lead sec-sub reveal">Открой коробку${NB}— внутри факт про твой тип. Узнаешь себя${NB}— отправь друзьям.</p>
+          <div class="reveal">${ui.box({ typeId: t.id, compact: true })}</div>
+        </div>
       </section>`;
   }
 
   V.home = {
-    render: () => hero(heroType()) + marquee() + socionics() + inside() + quadras(),
-    mount: root => mountHero(root)
+    render: () => {
+      const mine = mineType();
+      return mine
+        ? hero(heroType()) + yours(mine) + marquee() + quadras(mine)
+        : hero(heroType()) + marquee() + socionics() + inside() + quadras(null);
+    },
+    mount: root => {
+      const offs = [mountHero(root)];
+      if (mineType()) {
+        offs.push(ui.mountRelMap(root.querySelector('#rel')));
+        offs.push(ui.mountResultShare(root, S.state.result()));
+        offs.push(ui.mountBox(root.querySelector('.home-box')));
+      }
+      return () => offs.forEach(f => f && f());
+    }
   };
 })(window);

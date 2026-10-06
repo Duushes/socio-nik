@@ -113,7 +113,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     check('на картинке — портрет персонажа типа (data:-URI, canvas чистый)', share.portrait && share.size > 50000, JSON.stringify({ portrait: share.portrait, size: share.size }));
     const siteUrl = await b.eval('Socio.config.SITE_URL');
     if (siteUrl) {
-      check('текст шера со ссылкой на результат', /Socio-Nik https:\/\/\S+\/#\/r\/1-\d+-\d+-\d+-\d+$/.test(share.text), share.text);
+      check('текст шера: «кто я», вопрос к друзьям и ссылка на результат', /^Я — .+ А ты кто из 16 типов\? Тест за 4 минуты на Socio-Nik https:\/\/\S+\/#\/r\/1-\d+-\d+-\d+-\d+$/.test(share.text), share.text);
       const round = await b.eval(async () => {
         const code = document.querySelector('.res-code').textContent;
         const hash = Socio.share.url(Socio.state.result()).split('#')[1];
@@ -123,18 +123,25 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       });
       check('ссылка на результат открывает тот же тип', round.view === 'shared' && round.shared === round.code, JSON.stringify(round));
       await go('#/result', 900);
-      const soc = await b.eval(() => {
-        const bar = document.querySelector('.share .socials');
-        const href = n => (bar.querySelector(`[data-social="${n}"]`) || {}).href || '';
-        return { tg: href('telegram'), wa: href('whatsapp'), x: href('x'), vk: href('vk'), story: Boolean(bar.querySelector('[data-social="story"]')), meta: /instagram|инстаграм/i.test(document.body.innerHTML), copy: Boolean(bar.querySelector('[data-social="copy"]')) };
+      const soc = await b.eval(async () => {
+        const box = document.querySelector('[data-share]');
+        const href = n => (box.querySelector(`[data-net="${n}"]`) || {}).href || '';
+        const copy = box.querySelector('[data-sk="copy"]');
+        copy.click();
+        await new Promise(r => setTimeout(r, 300));
+        const copied = copy.classList.contains('done') || /Не удалось/.test(box.querySelector('.sk-status').textContent);
+        box.querySelector('[data-sk="go"]').click();
+        await new Promise(r => setTimeout(r, 900));
+        return { tg: href('telegram'), wa: href('whatsapp'), vk: href('vk'), go: box.querySelector('[data-sk="go"]').textContent.trim(), copied, status: box.querySelector('.sk-status').textContent,
+          phone: Boolean(box.querySelector('.share-phone canvas')), meta: /instagram|инстаграм/i.test(document.body.innerHTML) };
       });
       const enc = encodeURIComponent(await b.eval('Socio.share.url(Socio.state.result())'));
-      check('результат: Telegram, WhatsApp, X, ВКонтакте, «Картинка для сторис» и «Скопировать ссылку»; упоминаний Instagram нет',
-        soc.tg.startsWith('https://t.me/share/url?url=' + enc) && soc.wa.startsWith('https://wa.me/?text=') && soc.wa.includes(enc) &&
-        soc.x.startsWith('https://x.com/intent/tweet?text=') && soc.x.includes('&url=' + enc) && soc.vk.startsWith('https://vk.com/share.php?url=' + enc) && soc.story && soc.copy && !soc.meta,
-        JSON.stringify(soc));
+      check('результат: превью в «телефоне», главная кнопка, Telegram, WhatsApp, ВКонтакте и ссылка с «Копировать»; упоминаний Instagram нет',
+        soc.phone && soc.tg.startsWith('https://t.me/share/url?url=' + enc) && soc.wa.startsWith('https://wa.me/?text=') && soc.wa.includes(enc) &&
+        soc.vk.startsWith('https://vk.com/share.php?url=' + enc) && soc.copied && !soc.meta, JSON.stringify(soc));
+      check('результат: главная кнопка отдаёт картинку (на компьютере — скачивает)', /Скачать картинку|Поделиться картинкой/.test(soc.go) && (/сохранена/.test(soc.status) || /Поделиться/.test(soc.go)), JSON.stringify(soc));
     } else {
-      check('текст шера без ссылки, пока нет SITE_URL', /^Мой соционический тип — .+ Socio-Nik$/.test(share.text), share.text);
+      check('текст шера без ссылки, пока нет SITE_URL', /^Я — .+ Socio-Nik$/.test(share.text), share.text);
     }
     await shot('d-result-dist', '.dist');
     await shot('d-result-share', '[data-share]');
@@ -146,30 +153,31 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       document.querySelector('.bx').click();
       await sleep(1500);
       const t1 = (document.querySelector('.bx-text') || {}).textContent || '';
-      const count1 = document.querySelector('.box-count b').textContent;
+      const count1 = document.querySelector('.box-progress b').textContent;
       document.querySelector('[data-more]').click();
       await sleep(1900);
       const t2 = (document.querySelector('.bx-text') || {}).textContent || '';
-      return { t1: t1.slice(0, 50), t2: t2.slice(0, 50), count1, count2: document.querySelector('.box-count b').textContent, open: document.querySelector('.box-stage').classList.contains('is-open') };
+      return { t1: t1.slice(0, 50), t2: t2.slice(0, 50), count1, count2: document.querySelector('.box-progress b').textContent, open: document.querySelector('.box-stage').classList.contains('is-open'),
+        pop: Boolean(document.querySelector('.bx-pop .bx-who')), moons: document.querySelectorAll('.bx-moon').length };
     });
-    check('mystery box открывается и показывает факт', box.open && box.t1.length > 20, JSON.stringify(box));
+    check('mystery box открывается: из коробки выскакивает герой факта, вокруг летали 6 символов', box.open && box.t1.length > 20 && box.pop && box.moons === 6, JSON.stringify(box));
     check('«Ещё факт» — другой факт, счётчик растёт', box.t2 && box.t2 !== box.t1 && Number(box.count2) > Number(box.count1), JSON.stringify(box));
     const fsoc = await b.eval(async () => {
       const card = document.querySelector('.bx-card');
-      const nets = Array.from(card.querySelectorAll('[data-social]')).map(el => el.dataset.social);
-      const tg = (card.querySelector('[data-social="telegram"]') || {}).href || '';
+      const nets = Array.from(card.querySelectorAll('[data-net]')).map(el => el.dataset.net);
+      const tg = (card.querySelector('[data-net="telegram"]') || {}).href || '';
       const png = await Socio.share.factImage(Socio.facts.all()[0]);
       const canFiles = Socio.share.canShareFiles();
       let status = '';
       if (!canFiles) {
-        card.querySelector('[data-social="story"]').click();
-        await new Promise(r => setTimeout(r, 800));
-        status = card.querySelector('.bx-share-status').textContent;
+        card.querySelector('[data-sk="go"]').click();
+        await new Promise(r => setTimeout(r, 1500));
+        status = card.querySelector('.sk-status').textContent;
       }
-      return { nets, tg, png: png.size, canFiles, status, meta: /instagram|инстаграм/i.test(card.innerHTML) };
+      return { nets, tg, png: png.size, canFiles, status, hook: (card.querySelector('.fc-hook') || {}).textContent, copy: Boolean(card.querySelector('[data-sk="copy"]')), meta: /instagram|инстаграм/i.test(card.innerHTML) };
     });
-    check('факт: четыре сети, картинка для сторис и ссылка на тип; упоминаний Instagram нет', ['telegram', 'whatsapp', 'x', 'vk', 'story'].every(n => fsoc.nets.includes(n)) && !fsoc.meta && /%23%2Ftypes%2F[a-z]{3}|%23%2Fbox/.test(fsoc.tg), JSON.stringify(fsoc));
-    check('факт: картинка для сторис собирается', fsoc.png > 60000 && (fsoc.canFiles || /сохранена/.test(fsoc.status)), JSON.stringify(fsoc));
+    check('факт: крючок «Узнаёшь кого-то…», Telegram, WhatsApp, ВКонтакте и ссылка на тип; упоминаний Instagram нет', fsoc.nets.join() === 'telegram,whatsapp,vk' && fsoc.copy && /Узна|Удиви/.test(fsoc.hook) && !fsoc.meta && /%23%2Ftypes%2F[a-z]{3}|%23%2Fbox/.test(fsoc.tg), JSON.stringify(fsoc));
+    check('факт: картинка для сторис собирается и отдаётся главной кнопкой', fsoc.png > 60000 && (fsoc.canFiles || /сохранена/.test(fsoc.status)), JSON.stringify(fsoc));
     await shot('d-box-open', '.box-stage', 140);
 
     // ---------- калькулятор ----------
@@ -299,9 +307,19 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     check('плитка ленты открывает страницу типа', tileNav.hash === tileNav.href && tileNav.view === 'type', JSON.stringify(tileNav));
     await b.eval(`localStorage.setItem('socio.result', ${JSON.stringify(savedResult)})`);
     await go('#/', 1200);
-    const mineHero = await b.eval(`({ cta: document.querySelector('.hero-actions .btn').getAttribute('href'), steps: Array.from(document.querySelectorAll('.hero-steps a')).map(a => a.getAttribute('href')), mine: Socio.state.myType(), bubble: (document.querySelector('[data-hero-bubble]') || {}).textContent || '' })`);
-    check('с результатом: «Мой результат» и ряд «Про мой тип · Мои отношения · Поделиться · Пройти заново»',
-      mineHero.cta === '#/result' && mineHero.steps.join() === `#/types/${mineHero.mine},#/types/${mineHero.mine}#relations,#/result#share,#/test` && mineHero.bubble.length > 5, JSON.stringify(mineHero));
+    const mineHero = await b.eval(`({ cta: document.querySelector('.hero-actions .btn').getAttribute('href'), ctaText: document.querySelector('.hero-actions .btn').textContent.trim(),
+      title: document.querySelector('.hero-title').textContent.replace(/\\s+/g, ' ').trim(), name: document.querySelector('[data-hero-name]').textContent,
+      steps: Array.from(document.querySelectorAll('.hero-steps a')).map(a => a.getAttribute('href')), mine: Socio.state.myType(), short: Socio.ui.short(Socio.core.modelA.type(Socio.state.myType())),
+      hero: document.documentElement.dataset.hero, next: Boolean(document.querySelector('.hero-next')), bubble: (document.querySelector('[data-hero-bubble]') || {}).textContent || '',
+      map: (document.querySelector('#rel [data-relmap]') || {}).dataset ? document.querySelector('#rel [data-relmap]').dataset.relmap : '',
+      share: Boolean(document.querySelector('#share .share-phone canvas')), box: Boolean(document.querySelector('.home-box [data-box]')),
+      you: document.querySelectorAll('.mq-you').length, firstQuadra: (document.querySelector('.stack-card') || {}).getAttribute ? document.querySelector('.stack-card .qc-you') !== null : false,
+      mineStored: localStorage.getItem('socio.mine') })`);
+    check('после теста: «Привет, <твой тип>», твой персонаж, «Поделиться результатом» и шаги «Про мой тип · Мои отношения · Пройти заново»',
+      mineHero.title === `Привет, ${mineHero.short}` && mineHero.hero === mineHero.mine && !mineHero.next && mineHero.cta === '#/#share' && mineHero.ctaText === 'Поделиться результатом' &&
+      mineHero.steps.join() === `#/types/${mineHero.mine},#/#rel,#/test` && mineHero.bubble.length > 5, JSON.stringify(mineHero));
+    check('после теста главная про тебя: карта отношений, картинка для шера, факты про тип, «ты» в ленте и своя квадра первой',
+      mineHero.map === mineHero.mine && mineHero.share && mineHero.box && mineHero.you === 3 && mineHero.firstQuadra && mineHero.mineStored === JSON.stringify(mineHero.mine), JSON.stringify(mineHero));
 
     // ---------- страницы для глаз ----------
     await b.goto(BASE + '#/types/esi');

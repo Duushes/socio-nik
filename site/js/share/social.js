@@ -1,11 +1,10 @@
-/* Socio-Nik · кнопки шера: Telegram, WhatsApp, X, ВКонтакте + «Картинка для сторис», «Скопировать ссылку» и системное «Ещё…».
-   Ссылочные сети открываются в новой вкладке по своим share-адресам. Картинку для сторис отдаём файлом:
-   на телефоне через системное меню, на компьютере — скачиванием.
+/* Socio-Nik · адреса шера и значки мессенджеров (сами кнопки — js/ui/sharekit.js).
+   Ссылочные сети открываются в новой вкладке по своим share-адресам; картинку отдаём файлом через системное меню
+   или скачиванием.
    Логотипа и названия Instagram на сайте нет: в России их показ — риск по ст. 20.3 КоАП
    (решение суда о Meta не распространяется на WhatsApp). */
 (function (root) {
   const S = root.Socio = root.Socio || {};
-  const { esc } = S.dom;
   const enc = encodeURIComponent;
   const clip = (s, n) => (s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s);
 
@@ -19,7 +18,6 @@
     copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.2 13.8a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.1 1.1M13.8 10.2a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
     more: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v11M8 7.3l4-3.8 4 3.8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.5 10.5H6.8a1.8 1.8 0 0 0-1.8 1.8v6.4c0 1 .8 1.8 1.8 1.8h10.4c1 0 1.8-.8 1.8-1.8v-6.4c0-1-.8-1.8-1.8-1.8h-.7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>'
   };
-  const NAMES = { telegram: 'Telegram', whatsapp: 'WhatsApp', x: 'X (Twitter)', vk: 'ВКонтакте', story: 'Картинка для сторис', copy: 'Скопировать ссылку', more: 'Ещё…' };
 
   function href(net, text, url) {
     switch (net) {
@@ -31,51 +29,5 @@
     }
   }
 
-  // compact — только значки (карточка факта); без url ВКонтакте и «Скопировать ссылку» не показываем
-  function bar({ text, url = '', compact = false, label = 'Поделиться' }) {
-    const tip = name => (compact ? ` aria-label="${esc(label)}: ${name}" title="${name}"` : '');
-    const inner = net => ICONS[net] + (compact ? '' : `<span>${NAMES[net]}</span>`);
-    const cls = net => `soc soc-${net}${compact ? ' soc-icon' : ''}`;
-    const items = ['telegram', 'whatsapp', 'x', 'vk', 'story'].map(net => {
-      if (net === 'story') return `<button type="button" class="${cls(net)}" data-social="story"${tip(NAMES[net])}>${inner(net)}</button>`;
-      const h = href(net, text, url);
-      return h ? `<a class="${cls(net)}" data-social="${net}" href="${esc(h)}" target="_blank" rel="noopener"${tip(NAMES[net])}>${inner(net)}</a>` : '';
-    });
-    if (url) items.push(`<button type="button" class="${cls('copy')}" data-social="copy"${tip(NAMES.copy)}>${inner('copy')}</button>`);
-    if (typeof navigator !== 'undefined' && navigator.share) items.push(`<button type="button" class="${cls('more')}" data-social="more"${tip('Другие приложения')}>${inner('more')}</button>`);
-    return `<div class="socials${compact ? ' socials-compact' : ''}" role="group" aria-label="${esc(label)}">${items.join('')}</div>`;
-  }
-
-  // get: { text(), url(), image() → Promise<Blob>, status() → элемент для сообщений }
-  function mount(scope, get) {
-    const onClick = async e => {
-      const b = e.target.closest && e.target.closest('[data-social]');
-      if (!b || !scope.contains(b)) return;
-      const say = msg => { const el = get.status && get.status(); if (el) el.textContent = msg; };
-      const net = b.dataset.social;
-      try {
-        if (net === 'copy') say((await S.share.copy(get.url())) ? 'Ссылка скопирована' : 'Не удалось скопировать ссылку');
-        if (net === 'more') await navigator.share({ text: get.text(), url: get.url() || undefined });
-        if (net === 'story') {
-          say('Готовим картинку…');
-          const blob = await get.image();
-          const file = new File([blob], 'socio-nik-story.png', { type: 'image/png' });
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file] });
-            say('');
-          } else {
-            S.share.download(blob, file.name);
-            say('Картинка для сторис сохранена');
-          }
-        }
-      } catch (err) {
-        if (err && err.name === 'AbortError') say('');
-        else say('Не получилось — попробуй ещё раз');
-      }
-    };
-    scope.addEventListener('click', onClick);
-    return () => scope.removeEventListener('click', onClick);
-  }
-
-  S.social = { bar, mount, href };
+  S.social = { href, icon: net => ICONS[net] || '' };
 })(window);
