@@ -13,15 +13,24 @@
     history: 'История'
   };
 
+  // Короткое имя типа для текста: «Максим», «Джек», остальные — псевдоним целиком
+  const nm = t => t.short || t.alias;
+  // Аспект словами, без аббревиатур
+  const PLAIN = {
+    Ne: 'чутьё на новые идеи', Ni: 'чувство времени', Se: 'воля и напор', Si: 'чувство комфорта',
+    Te: 'деловая хватка', Ti: 'системное мышление', Fe: 'эмоциональность', Fi: 'чуткость к отношениям'
+  };
+
   function generated(t) {
-    const M = S.core.modelA, A = S.data.aspects;
+    const M = S.core.modelA;
     const m = M.modelA(t.ego);
     const q = S.data.quadras.find(x => x.id === t.quadra);
-    const mates = S.data.types.filter(x => x.quadra === t.quadra && x.id !== t.id).map(x => x.code);
+    const mates = S.data.types.filter(x => x.quadra === t.quadra && x.id !== t.id).map(nm);
     const act = M.partner(t, 'activation'), mirror = M.partner(t, 'mirror');
+    // псевдонимы — в именительном падеже и в кавычках: склонять «Дюма» или «Гексли» нельзя, а «Дон Кихота» легко исказить
     return [
-      { cat: 'modelA', text: `Эго ${t.code} — ${A[m[0]].short} и ${A[m[1]].short}: базовая функция — ${A[m[0]].name.toLowerCase()}, творческая — ${A[m[1]].name.toLowerCase()}. Всё остальное в модели А этого типа выводится из этой пары.` },
-      { cat: 'quadra', text: `${t.code} живёт в квадре ${q.name} вместе с ${mates.join(', ')}. С ${act.code} у него отношения активации, с ${mirror.code} — зеркальные: внутри квадры все ценят одно и то же.` }
+      { cat: 'modelA', text: `У типа «${nm(t)}» две сильнейшие стороны: ${PLAIN[m[0]]} и ${PLAIN[m[1]]}. Первое — то, чем этот тип живёт, второе — то, чем действует. Из этой пары выводится вся модель А.` },
+      { cat: 'quadra', text: `«${nm(t)}» — из квадры ${q.name}, там же «${mates[0]}», «${mates[1]}» и «${mates[2]}». Пара «${nm(t)} — ${nm(act)}» здесь в отношениях активации, «${nm(t)} — ${nm(mirror)}» — в зеркальных: внутри квадры все ценят одно и то же.` }
     ];
   }
 

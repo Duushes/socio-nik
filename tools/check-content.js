@@ -66,6 +66,7 @@ if (full) {
     const list = tr[id];
     if (!Array.isArray(list) || list.length !== 3) return err(`traits.${id}`, 'нужно ровно 3 черты');
     list.forEach((x, i) => checkText(`traits.${id}[${i}]`, x, 22));
+    checkText(`cheers.${id}`, (C.cheers || {})[id], 34);
   });
 }
 

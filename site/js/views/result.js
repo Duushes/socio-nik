@@ -114,7 +114,7 @@
         </div>
       </section>
 
-      <section class="sec">
+      <section class="sec" id="share">
         <div class="wrap">
           <div class="share" data-share>
             <div class="share-preview reveal">

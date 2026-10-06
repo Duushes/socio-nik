@@ -11,18 +11,22 @@
   let introDone = false;
   const heroType = () => M().type(document.documentElement.dataset.hero) || M().type('iee');
 
+  const mineType = () => (S.state.myType() ? M().type(S.state.myType()) : null);
   function caption(t) {
-    if (S.state.myType() === t.id) return `Это твой тип. Посмотри, с${NB}кем тебе легко`;
+    const mine = mineType();
+    if (mine && mine.id === t.id) return `Это твой тип. Посмотри, с${NB}кем тебе легко, и${NB}поделись результатом`;
+    if (mine) return `${t.alias} — так в${NB}соционике называют тип${NB}${t.code}. А${NB}твой тип — ${mine.alias}`;
     return `${t.alias} — так в${NB}соционике называют тип${NB}${t.code}. Узнай свой тип: 20${NB}вопросов, 4${NB}минуты`;
   }
+  const cheer = t => (S.content.cheers && S.content.cheers[t.id]) || 'Давай узнаем твой тип!';
 
   const traits = t => (S.content.traits && S.content.traits[t.id]) || [];
   const traitItems = t => traits(t).map((x, i) => `<li style="--k:${i}">${esc(x)}</li>`).join('');
 
   // Значок-призыв: текст бежит по кругу, в центре стрелка; без результата ведёт в тест
   function badge(has) {
-    const text = (has ? 'Твой тип · Твой персонаж · Твои отношения · ' : `Узнай свой тип · 20${NB}вопросов · 4${NB}минуты · `).toUpperCase();
-    return `<a class="hero-badge" href="${has ? '#/result' : '#/test'}" data-anim aria-label="${has ? 'Мой результат' : 'Узнай свой тип — пройти тест'}">
+    const text = (has ? 'Поделись результатом · Сравни с друзьями · ' : `Узнай свой тип · 20${NB}вопросов · 4${NB}минуты · `).toUpperCase();
+    return `<a class="hero-badge" href="${has ? '#/result#share' : '#/test'}" data-anim data-cheer aria-label="${has ? 'Поделиться результатом' : 'Узнай свой тип — пройти тест'}">
       <svg class="hb-ring" viewBox="0 0 120 120" aria-hidden="true"><defs><path id="hb-path" d="M60,60 m-45,0 a45,45 0 1,1 90,0 a45,45 0 1,1 -90,0"/></defs>
         <text><textPath href="#hb-path" textLength="282" lengthAdjust="spacing">${esc(text)}</textPath></text></svg>
       <span class="hb-core" aria-hidden="true">${ui.ICON.arrow}</span>
@@ -31,7 +35,7 @@
 
   // ---------- герой ----------
   function hero(t) {
-    const has = Boolean(S.state.result());
+    const has = Boolean(S.state.result()), mine = mineType();
     const intro = !introDone && !S.dom.reducedMotion();
     return `
       <section class="hero${intro ? ' intro' : ''}" data-hero style="${ui.qStyle(t.quadra)}">
@@ -42,18 +46,25 @@
           <span class="fit-in"><span class="fit-line"><span class="sv">Привет, я</span></span> <span class="fit-line"><span class="sv hero-name" data-hero-name>${esc(ui.short(t))}</span></span></span>
         </h1>
         <div class="hero-char h-in" style="--d:.6s;--y:30px">
-          <div class="hero-magnet" data-magnet><div class="hero-mag">
+          <div class="hero-magnet" data-magnet><div class="hero-mag"><div class="hero-look">
             <div class="hero-fig" data-hero-next>${ui.character(t, { sizes: ui.CHAR.hero, eager: true })}</div>
-          </div></div>
+          </div></div></div>
+          <p class="hero-bubble" aria-hidden="true" data-hero-bubble>${esc(cheer(t))}</p>
+          <span class="hero-sparks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
           <ul class="hero-traits" aria-label="Коротко о типе" data-hero-traits data-anim>${traitItems(t)}</ul>
           ${badge(has)}
         </div>
         <div class="hero-foot">
           <ul class="hero-traits-m h-in" style="--d:.35s;--y:20px" aria-label="Коротко о типе" data-hero-traits>${traitItems(t)}</ul>
           <p class="hero-cap caption h-in" style="--d:.35s;--y:20px" data-hero-cap>${esc(caption(t))}</p>
+          <div class="hero-right">
+          ${mine ? `<nav class="hero-steps h-in" style="--d:.45s;--y:20px" aria-label="Что дальше">
+            <a href="#/types/${mine.id}">Про мой тип</a><a href="#/types/${mine.id}#relations">Мои отношения</a><a href="#/result#share">Поделиться</a><a href="#/test" data-restart-test>Пройти заново</a>
+          </nav>` : ''}
           <div class="hero-actions h-in" style="--d:.5s;--y:20px">
             <button class="btn-ghost hero-next" type="button" data-hero-next><span class="hero-next-l">Другой тип</span>${ui.ICON.cycle}</button>
-            ${has ? '<a class="btn" href="#/result">Мой результат</a>' : '<a class="btn" href="#/test">Пройти тест</a>'}
+            ${mine ? '<a class="btn hero-cta" href="#/result" data-cheer>Мой результат</a>' : '<a class="btn hero-cta" href="#/test" data-cheer>Пройти тест</a>'}
+          </div>
           </div>
         </div>
       </section>`;
@@ -117,6 +128,7 @@
     const title = el.querySelector('.hero-title'), figEl = el.querySelector('.hero-fig');
     const nameEl = el.querySelector('[data-hero-name]'), capEl = el.querySelector('[data-hero-cap]');
     const traitEls = Array.from(el.querySelectorAll('[data-hero-traits]'));
+    const bubble = el.querySelector('[data-hero-bubble]'), look = el.querySelector('.hero-look');
     const layout = () => layoutHero(el);
     el.addEventListener('fitted', layout);
     addEventListener('resize', layout);
@@ -146,6 +158,7 @@
         nameEl.textContent = ui.short(next);
         capEl.textContent = caption(next);
         traitEls.forEach(ul => { ul.innerHTML = traitItems(next); });
+        bubble.textContent = cheer(next);
         el.style.setProperty('--q', `var(--q-${next.quadra})`);
         S.fx.fit(title);
         figEl.classList.remove('is-out');
@@ -154,9 +167,42 @@
         later(() => { busy = false; }, 160);
       });
     };
-    const onClick = e => { if (e.target.closest('[data-hero-next]')) swap(); };
+    const onClick = e => {
+      if (e.target.closest('[data-hero-next]')) swap();
+      if (e.target.closest('[data-restart-test]')) S.store.del('test');
+    };
     el.addEventListener('click', onClick);
+
+    // Персонаж поворачивается к курсору (мышь, не в щадящем режиме)
+    let raf = 0, px = 0, py = 0;
+    const look2 = () => {
+      raf = 0;
+      const r = look.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height * 0.35;
+      const dx = Math.max(-1, Math.min(1, (px - cx) / (innerWidth * 0.5))), dy = Math.max(-1, Math.min(1, (py - cy) / (innerHeight * 0.6)));
+      look.style.setProperty('--ry', (dx * 16).toFixed(2) + 'deg');
+      look.style.setProperty('--rx', (-dy * 9).toFixed(2) + 'deg');
+    };
+    const onMove = e => { if (e.pointerType !== 'mouse') return; px = e.clientX; py = e.clientY; if (!raf) raf = requestAnimationFrame(look2); };
+    const follow = !S.dom.reducedMotion() && S.fx.fineMouse();
+    if (follow) addEventListener('pointermove', onMove, { passive: true });
+
+    // Наведение на главную кнопку или значок: персонаж радуется и подбадривает
+    let cheerT = 0;
+    const cheerOn = () => { clearTimeout(cheerT); el.classList.add('cheer'); };
+    const cheerOff = () => { clearTimeout(cheerT); cheerT = setTimeout(() => el.classList.remove('cheer'), 350); };
+    const enter = e => { if (e.target.closest && e.target.closest('[data-cheer]')) cheerOn(); };
+    const leave = e => { const c = e.target.closest && e.target.closest('[data-cheer]'); if (c && !(e.relatedTarget && c.contains(e.relatedTarget))) cheerOff(); };
+    el.addEventListener('pointerover', enter);
+    el.addEventListener('pointerout', leave);
+    el.addEventListener('focusin', enter);
+    el.addEventListener('focusout', leave);
+    // на телефоне наведения нет — один раз подбадривает сам после появления
+    if (!S.fx.fineMouse()) later(() => { cheerOn(); later(cheerOff, 3600); }, 2400);
+
     return () => {
+      removeEventListener('pointermove', onMove);
+      cancelAnimationFrame(raf);
+      clearTimeout(cheerT);
       io.disconnect();
       de.classList.remove('hero-on');
       removeEventListener('resize', layout);

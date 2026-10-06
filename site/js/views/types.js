@@ -92,12 +92,12 @@
           </div>
         </section>
 
-        <section class="sec">
+        <section class="sec" id="relations">
           <div class="wrap">
             <h2 class="h2 h2-md reveal"><span class="sv">Отношения со${NB}всеми типами</span></h2>
             <p class="lead sec-sub reveal">${esc(c.inRelations || '')}</p>
-            <p class="reveal sec-sub"><a class="link" href="#/relations/${t.id}/${dual.id}">${t.code} и${NB}${dual.code}: дуальные отношения</a></p>
-            ${ui.relList(t)}
+            ${ui.relMap(t)}
+            <details class="rel-all reveal"><summary>Все 15 типов списком</summary>${ui.relList(t)}</details>
           </div>
         </section>
 
@@ -120,7 +120,7 @@
         if (cell && root.contains(cell)) ui.openFunction(t, Number(cell.dataset.fn), cell);
       };
       root.addEventListener('click', onClick);
-      const offs = [ui.mountBox(root), ui.mountOverlap(root)];
+      const offs = [ui.mountBox(root), ui.mountOverlap(root), ui.mountRelMap(root)];
       return () => { root.removeEventListener('click', onClick); offs.forEach(f => f()); };
     }
   };

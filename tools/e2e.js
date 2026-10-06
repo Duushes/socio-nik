@@ -277,7 +277,9 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     check('плитка ленты открывает страницу типа', tileNav.hash === tileNav.href && tileNav.view === 'type', JSON.stringify(tileNav));
     await b.eval(`localStorage.setItem('socio.result', ${JSON.stringify(savedResult)})`);
     await go('#/', 1200);
-    check('с результатом кнопка героя — «Мой результат»', (await b.eval(`document.querySelector('.hero-actions .btn').getAttribute('href')`)) === '#/result');
+    const mineHero = await b.eval(`({ cta: document.querySelector('.hero-actions .btn').getAttribute('href'), steps: Array.from(document.querySelectorAll('.hero-steps a')).map(a => a.getAttribute('href')), mine: Socio.state.myType(), bubble: (document.querySelector('[data-hero-bubble]') || {}).textContent || '' })`);
+    check('с результатом: «Мой результат» и ряд «Про мой тип · Мои отношения · Поделиться · Пройти заново»',
+      mineHero.cta === '#/result' && mineHero.steps.join() === `#/types/${mineHero.mine},#/types/${mineHero.mine}#relations,#/result#share,#/test` && mineHero.bubble.length > 5, JSON.stringify(mineHero));
 
     // ---------- страницы для глаз ----------
     await b.goto(BASE + '#/types/esi');
@@ -285,6 +287,25 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     await shot('d-type-top');
     await shot('d-type-modelA', '.ma', 120);
     await shot('d-type-relations', '.rel-groups', 120);
+
+    // ---------- карта отношений типа ----------
+    const rmap = await b.eval(async () => {
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      const box = document.querySelector('[data-relmap]');
+      box.scrollIntoView({ block: 'center' });
+      await sleep(1600);
+      const nodes = box.querySelectorAll('.rm-node').length, lines = box.querySelectorAll('.rm-line').length;
+      const first = box.querySelector('.rd-title').textContent;
+      const conflict = Array.from(box.querySelectorAll('.rm-node')).find(n => /Конфликтные/.test(n.getAttribute('aria-label')));
+      conflict.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await sleep(300);
+      const after = box.querySelector('.rd-title').textContent, link = box.querySelector('.rd .link').getAttribute('href');
+      box.querySelector('.rm-chip[data-tone="tense"]').click();
+      await sleep(100);
+      return { nodes, lines, first, after, link, filtered: box.classList.contains('filtered') && box.classList.contains('f-tense') };
+    });
+    check('карта отношений: 15 типов и 15 дуг, сначала — дуал', rmap.nodes === 15 && rmap.lines === 15 && rmap.first === 'Дуальные отношения', JSON.stringify(rmap));
+    check('карта: нажатие на тип открывает разбор пары, фильтр по тону работает', rmap.after === 'Конфликтные отношения' && rmap.link === '#/relations/esi/ile' && rmap.filtered, JSON.stringify(rmap));
 
     // ---------- шторка функции модели А ----------
     const fn = await b.eval(async () => {

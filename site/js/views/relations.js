@@ -47,6 +47,15 @@
           </div>
         </section>
 
+        <section class="sec sec-line" id="map">
+          <div class="wrap">
+            <h2 class="h2 h2-md reveal"><span class="sv">Карта отношений</span></h2>
+            <p class="lead sec-sub reveal">Выбери тип — увидишь, с${NB}кем ему легко, с${NB}кем по${NB}делу, а${NB}с${NB}кем непросто. Нажми на${NB}любой тип на${NB}карте, чтобы прочитать разбор пары.</p>
+            <div class="rm-pick reveal">${ui.typeSelect('rmtype', a, 'Тип')}</div>
+            <div class="rm-holder">${ui.relMap(M().type(a), { uid: 'rmr' })}</div>
+          </div>
+        </section>
+
         <section class="sec sec-white">
           <div class="wrap">
             <h2 class="h2 reveal">14${NB}видов</h2>
@@ -83,6 +92,14 @@
     },
     mount(root) {
       const offs = [ui.mountCalc(root), ui.mountTips(root)];
+      // карта: смена типа перерисовывает её целиком
+      const holder = root.querySelector('.rm-holder'), pick = root.querySelector('[data-rmtype]');
+      ui.mountRelMap(holder);
+      if (pick) pick.addEventListener('change', () => {
+        holder.innerHTML = ui.relMap(M().type(pick.value), { uid: 'rmr' });
+        holder.querySelectorAll('.reveal').forEach(S.fx.show);
+        ui.mountRelMap(holder);
+      });
       const sel = root.querySelector('[data-mlist]'), out = root.querySelector('.mlist-out');
       if (sel) sel.addEventListener('change', () => { out.innerHTML = ui.relList(M().type(sel.value)); out.querySelectorAll('.reveal').forEach(S.fx.show); });
       const table = root.querySelector('.matrix');

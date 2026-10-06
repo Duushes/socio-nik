@@ -190,5 +190,5 @@
     scroll-behavior: auto !important;
   }
   .js .reveal { opacity: 1; translate: none; }
-  .stack-card, .mq-track, .hero-mag { transform: none !important; }
+  .stack-card, .mq-track, .hero-mag, .hero-look { transform: none !important; }
 }
