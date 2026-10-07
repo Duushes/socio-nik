@@ -5,6 +5,8 @@
   const S = root.Socio = root.Socio || {};
   const { reducedMotion } = S.dom;
   const fineMouse = () => Boolean(root.matchMedia && root.matchMedia('(hover: hover) and (pointer: fine)').matches);
+  // телефон: эффекты, которые пересчитывают стили на каждом кадре прокрутки, выключаем — там они давали подтормаживание
+  const compactScreen = () => Boolean(root.matchMedia && root.matchMedia('(max-width: 767px), (pointer: coarse)').matches);
   const clamp01 = v => Math.max(0, Math.min(1, v));
 
   // Обработчик прокрутки и размера окна через один кадр; работает, только пока секция на экране
@@ -126,6 +128,7 @@
   function animText(scope) {
     const els = Array.from(scope.querySelectorAll('[data-anim-text]'));
     if (!els.length) return () => {};
+    if (compactScreen()) { els.forEach(el => el.style.setProperty('--p', 1)); return () => {}; }
     els.forEach(splitText);
     if (reducedMotion()) { els.forEach(el => el.style.setProperty('--p', 1)); return () => {}; }
     const offs = els.map(el => onScrollFrame(el, () => {
@@ -138,7 +141,7 @@
   // ---------- стопка: карточки прилипают и уменьшаются до 1 − (n − 1 − i) × 0,03 ----------
   function stack(scope) {
     const box = scope.querySelector('[data-stack]');
-    if (!box || reducedMotion()) return () => {};
+    if (!box || reducedMotion() || compactScreen()) return () => {};
     const cards = Array.from(box.querySelectorAll('.stack-card'));
     const n = cards.length;
     return onScrollFrame(box, () => {

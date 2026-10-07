@@ -100,8 +100,8 @@
           <p class="lead sec-sub reveal">Какой полюс каждой пары тебе ближе.</p>
           ${ui.axisBars(res.axes)}
           <h2 class="h2 h2-md gap-top reveal"><span class="sv">Все 16 типов</span></h2>
-          <p class="lead sec-sub reveal">Вероятности по всем типам складываются в${NB}100${NB}%. Наведи на строку — увидишь подробности.</p>
-          ${ui.distribution(res)}
+          <p class="lead sec-sub reveal">Вероятности по всем типам складываются в${NB}100${NB}%. ${S.fx.fineMouse() ? 'Наведи на строку — увидишь подробности.' : 'Нажми на тип — откроется его описание.'}</p>
+          ${ui.distribution(res, { fold: Boolean(root.matchMedia && root.matchMedia('(max-width: 767px)').matches) })}
         </div>
       </section>
 
@@ -185,18 +185,18 @@
     const test = label => `<a class="btn" href="#/test" data-friend>${label}</a>`;
     return `
       <section class="res-hero sh-hero" style="${ui.qStyle(t.quadra)}">
-        <p class="sh-badge"><i aria-hidden="true"></i>Тебе прислали результат теста Socio-Nik</p>
+        <p class="sh-badge"><i aria-hidden="true"></i>Тебе прислали результат теста</p>
         ${greet('Это', t)}
         <div class="res-meta">
           <p class="res-code">${t.code}</p>
           <p class="res-name">${esc(t.name)}</p>
           <p class="res-alias">«${esc(t.alias)}» · ${esc(t.role)} · квадра ${q.name} · ${res.top.pct}${NB}%</p>
-          <p class="sh-motto"><span>Коротко о типе</span>«${esc(c.tagline || '')}»</p>
           <div class="cta">
             ${mine ? `<a class="btn" href="#/relations/${mine.id}/${t.id}">Ваши отношения</a><a class="link" href="#/test" data-friend>Пройти тест заново</a>`
                    : `${test('Узнать свой тип')}<a class="link" href="#/types/${t.id}">Подробнее о${NB}${t.code}</a>`}
           </div>
           <p class="sh-note">20 вопросов · около 4 минут · без регистрации</p>
+          <p class="sh-motto"><span>Коротко о типе</span>«${esc(c.tagline || '')}»</p>
         </div>
       </section>
 

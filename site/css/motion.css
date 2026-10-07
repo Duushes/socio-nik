@@ -164,8 +164,10 @@
 @keyframes hit { 0%, 30%, 55%, 100% { opacity: 0; transform: scale(0.5); } 36% { opacity: 1; transform: scale(1.25); } }
 
 /* ---------- страница результата по ссылке ---------- */
-.sh-badge i { animation: sh-ping 2.2s var(--out) infinite; }
-@keyframes sh-ping { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--q) 55%, transparent); } to { box-shadow: 0 0 0 12px transparent; } }
+/* «живая» точка: расходится кольцо — transform и opacity, без перерисовки box-shadow на каждом кадре */
+.sh-badge i { position: relative; }
+.sh-badge i::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--q); animation: sh-ping 2.2s var(--out) infinite; }
+@keyframes sh-ping { from { opacity: 0.55; transform: scale(1); } to { opacity: 0; transform: scale(3.4); } }
 .sc-mystery .sa { animation: bob 4s ease-in-out infinite; }
 .sc-mystery .sb { animation: mystery 2.8s ease-in-out infinite; }
 .sc-mystery .sc-q { transform-box: fill-box; transform-origin: center; animation: q-pulse 2.8s ease-in-out infinite; }
@@ -194,7 +196,7 @@
 @keyframes fx-drift { 0%, 100% { transform: translateX(-26%) translateY(0); } 50% { transform: translateX(26%) translateY(-12%); } }
 @keyframes fx-twinkle { 0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(30deg); } }
 @keyframes fx-flash { 0%, 12%, 64%, 100% { opacity: 0; transform: scale(0.5) translateY(30%); } 24%, 52% { opacity: 1; transform: scale(1) translateY(0); } }
-@keyframes fx-glow { 0%, 100% { opacity: 0.5; transform: scale(0.8); filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45)); } 50% { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 18px rgba(255, 210, 63, 0.75)); } }
+@keyframes fx-glow { 0%, 100% { opacity: 0.5; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.1); } }
 @keyframes fx-shake { 0%, 18%, 74%, 100% { opacity: 0; transform: scale(0.4); } 28%, 64% { opacity: 1; transform: scale(1) rotate(0deg); } 36% { transform: scale(1) rotate(-12deg); } 44% { transform: scale(1) rotate(10deg); } 52% { transform: scale(1) rotate(-6deg); } }
 @keyframes fx-pass { 0%, 6% { opacity: 0; transform: translate(-150%, 10%) scale(0.7) rotate(-10deg); } 14% { opacity: 1; } 46% { transform: translate(0, -70%) scale(1) rotate(6deg); } 78% { opacity: 1; transform: translate(150%, 10%) scale(0.9) rotate(-4deg); } 90%, 100% { opacity: 0; transform: translate(150%, 10%) scale(0.5); } }
 @keyframes fx-land { 0%, 74%, 100% { opacity: 0; transform: scale(0.3) rotate(-20deg); } 84% { opacity: 1; transform: scale(1.1) rotate(0deg); } 94% { opacity: 0; transform: scale(1.3) rotate(15deg); } }
@@ -243,7 +245,7 @@
 .act-kindred { --dur: 4s; }
 .act-kindred .duo-a { --p0: rotate(-1deg); --p1: translateX(5%) rotate(6deg); }
 .act-kindred .duo-b { --p0: rotate(1deg); --p1: translateX(-5%) rotate(-6deg); }
-.act-kindred .fx-1 { top: 7%; width: 13%; animation: fx-glow 4s ease-in-out infinite; }
+.act-kindred .fx-1 { top: 7%; width: 13%; filter: drop-shadow(0 0 14px rgba(255, 210, 63, 0.6)); animation: fx-glow 4s ease-in-out infinite; }
 /* деловые: ровно рядом, вежливый кивок и рукопожатие */
 .act-business { --mv: duo-beat; --dur: 3.6s; }
 .act-business .duo-a { --p0: none; --p1: translateY(2.5%) rotate(2deg); }

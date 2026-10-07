@@ -150,7 +150,7 @@
         <header class="rd-head">
           <span class="rd-ava">${ui.character(b, { sizes: ui.CHAR.ava, alt: '' })}</span>
           <div>
-            <p class="rd-kicker">${b.code} «${esc(b.alias)}» · ${esc(b.role)}</p>
+            <p class="rd-kicker">${b.code} «${esc(b.alias)}»<span class="rd-k-role"> · ${esc(b.role)}</span></p>
             <h3 class="rd-title">${esc(ui.relTitle(r, t, b))}</h3>
             <span class="rd-tone"><img src="${ui.emoteSrc(ui.TONE_EMOTE[r.tone])}" alt="" width="40" height="40"><span>${ui.toneName(r.tone)}<span class="rd-tone-x"> — ${TONE_TEXT[r.tone]}</span></span></span>
           </div>
@@ -163,17 +163,17 @@
           ${tabs.map(([, html], i) => `<div class="rd-pane" role="tabpanel" id="${uid}-p${i}" aria-labelledby="${uid}-t${i}"${i === tab ? '' : ' hidden'}>${html}</div>`).join('')}
         </div>
         <footer class="rd-foot">
-          <a class="link" href="#/relations/${t.id}/${b.id}">Полный разбор пары</a>
+          <a class="link" href="#/relations/${t.id}/${b.id}">Советы для пары</a>
           ${refocus === 'button'
-            ? `<button type="button" class="rd-refocus" data-refocus="${b.id}" aria-label="Поставить ${b.code} в центр карты">${ui.ICON.cycle}Карта ${b.code}</button>`
-            : `<a class="rd-refocus" href="#/types/${b.id}#relations" aria-label="Карта отношений ${b.code}">${ui.ICON.cycle}Карта ${b.code}</a>`}
+            ? `<button type="button" class="rd-refocus" data-refocus="${b.id}" aria-label="Поставить ${b.code} в центр карты">${ui.ICON.cycle}<span class="rd-ref-w">Карта </span>${b.code}</button>`
+            : `<a class="rd-refocus" href="#/types/${b.id}#relations" aria-label="Карта отношений ${b.code}">${ui.ICON.cycle}<span class="rd-ref-w">Карта </span>${b.code}</a>`}
         </footer>
       </article>`;
   };
 
   // pick — выбор типа прямо в карте (страница «Отношения»); без него карта показывает один тип (страница типа)
   ui.relMap = (t, { uid = 'rm', pick = false } = {}) => `
-    <div class="relmap reveal" data-relmap="${t.id}" data-uid="${uid}"${pick ? ' data-pick' : ''} style="${ui.qStyle(t.quadra)}">
+    <div class="relmap reveal" data-anim data-relmap="${t.id}" data-uid="${uid}"${pick ? ' data-pick' : ''} style="${ui.qStyle(t.quadra)}">
       <div class="rm-ctl">
         ${pick ? `<div class="rm-pick">${ui.typeSelect('rmtype', t.id, 'Тип в центре', { short: true })}</div>` : ''}
         <div class="rm-filters" role="group" aria-label="Показать на карте">

@@ -134,14 +134,15 @@
   function orbit(stage) {
     const moons = Array.from(stage.querySelectorAll('.bx-moon'));
     if (!moons.length) return () => {};
-    let raf = 0, last = 0, a = 0, visible = true;
+    let raf = 0, last = 0, drawn = 0, a = 0, visible = true;
     const place = () => {
       const w = stage.clientWidth, R = Math.min(w * 0.42, 300), r = R * 0.36;
       moons.forEach((m, i) => {
         const t = a + i * (Math.PI * 2 / moons.length), d = Math.sin(t);
         const s = 0.7 + 0.3 * (d + 1) / 2;
         m.style.transform = `translate(${(Math.cos(t) * R).toFixed(1)}px, ${(d * r - 6).toFixed(1)}px) scale(${s.toFixed(3)})`;
-        m.style.zIndex = d > 0 ? 4 : 1;
+        const z = d > 0 ? '4' : '1';
+        if (m.style.zIndex !== z) m.style.zIndex = z;
         m.style.opacity = (0.55 + 0.45 * (d + 1) / 2).toFixed(2);
       });
     };
@@ -152,7 +153,8 @@
       if (!visible) return;
       if (last) a += (now - last) * 0.00026;          // ~24 с на круг
       last = now;
-      place();
+      // круг — 24 с, так что 30 кадров в секунду глазу не отличить, а работы вдвое меньше
+      if (now - drawn >= 32) { drawn = now; place(); }
       raf = requestAnimationFrame(tick);
     };
     const io = new IntersectionObserver(([e]) => {

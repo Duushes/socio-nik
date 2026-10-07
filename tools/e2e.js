@@ -647,6 +647,50 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       });
       check(`${w}×${h}: карта с панелью влезает в экран, аватары не мельче 30 px`, fit.bottom <= fit.vh && fit.minNode >= 30, JSON.stringify(fit));
     }
+
+    // ---------- телефон: разгрузка экранов и паузы (по аудиту мобильной версии) ----------
+    await b.viewport(390, 844, { mobile: true, scale: 2 });
+    await b.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    await b.goto(BASE + '#/r/1-72-64-58-19');
+    await b.sleep(1300);
+    const shCta = await b.eval(`(() => { scrollTo(0, 0); const r = document.querySelector('.sh-hero .cta .btn').getBoundingClientRect(); return { bottom: Math.round(r.bottom), vh: innerHeight }; })()`);
+    check('390 px: на странице по ссылке главная кнопка — на первом экране', shCta.bottom <= shCta.vh, JSON.stringify(shCta));
+    await b.goto(BASE + '#/');
+    await b.sleep(1500);
+    const heroM = await b.eval(`(() => {
+      const vis = el => getComputedStyle(el).display !== 'none';
+      const tr = document.querySelector('.hero-traits-m');
+      return { traits: Array.from(tr.children).filter(vis).length, overflow: tr.scrollWidth - tr.clientWidth,
+        steps: Array.from(document.querySelectorAll('.hero-steps a')).filter(vis).length, bubble: getComputedStyle(document.querySelector('.hero-bubble')).display };
+    })()`);
+    check('390 px: в герое не больше двух черт и двух шагов, без прокрутки вбок; реплика не закрывает имя',
+      heroM.traits <= 2 && heroM.overflow <= 1 && heroM.steps <= 2 && heroM.bubble === 'none', JSON.stringify(heroM));
+    const relM = await b.eval(async () => {
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      const map = document.querySelector('.relmap');
+      if (!map) return { none: true };
+      map.scrollIntoView({ block: 'center' });
+      await sleep(900);
+      const onScreen = map.classList.contains('is-off');
+      const rd = map.querySelector('.rd');
+      const out = { anim: map.hasAttribute('data-anim'), onScreen, panes: rd ? getComputedStyle(rd.querySelector('.rd-panes')).display : '', inner: rd ? rd.scrollHeight - rd.clientHeight : -1,
+        float: getComputedStyle(map.querySelector('.rm-orb')).animationName };
+      scrollTo(0, 0);
+      await sleep(900);
+      out.offScreen = map.classList.contains('is-off');
+      return out;
+    });
+    check('390 px: карта отношений на паузе вне экрана, аватары не парят, в панели нет окошка с прокруткой',
+      relM.anim && relM.onScreen === false && relM.offScreen === true && relM.float === 'none' && relM.panes === 'none' && relM.inner <= 1, JSON.stringify(relM));
+    await b.goto(BASE + '#/result');
+    await b.sleep(1300);
+    const foldM = await b.eval(`(() => { const d = document.querySelector('.dist-fold'); return { fold: Boolean(d), open: d ? d.open : null, hint: d && d.previousElementSibling ? d.previousElementSibling.textContent : '' }; })()`);
+    check('390 px: «Все 16 типов» свёрнуты в одну строку, подсказка без «наведи»', foldM.fold && foldM.open === false && !/Наведи/.test(foldM.hint), JSON.stringify(foldM));
+    await b.goto(BASE + '#/box');
+    await b.sleep(1100);
+    const bxM = await b.eval(`Math.round(document.querySelector('.bx-back').getBoundingClientRect().height)`);
+    check('390 px: заглушка коробки компактная, без пустого экрана', bxM < 420, String(bxM));
+    await b.send('Emulation.setTouchEmulationEnabled', { enabled: false });
     await b.viewport(375, 667, { mobile: true, scale: 2 });
     await b.goto(BASE + '#/');
     await b.sleep(1400);

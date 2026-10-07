@@ -279,10 +279,11 @@
     }).join('')}</div>`;
   };
 
-  ui.distribution = res => {
+  // fold — на телефоне 16 строк (из них обычно 12 по 0 %) прячем под одну строку: две верхние вероятности уже есть выше
+  ui.distribution = (res, { fold = false } = {}) => {
     const byId = {};
     res.dist.forEach(r => { byId[r.id] = r; });
-    return `
+    const body = `
       <div class="legend" aria-hidden="true">${S.data.quadras.map(q => `<span class="lg"><i style="background:var(--q-${q.id})"></i>${q.name}</span>`).join('')}</div>
       <div class="dist">${S.data.quadras.map(q => `
         <div class="dist-group reveal" style="${ui.qStyle(q.id)}">
@@ -303,6 +304,7 @@
           ${res.dist.map(r => { const t = M().type(r.id); return `<tr><td>${t.code} «${esc(t.alias)}»</td><td>${quadra(t.quadra).name}</td><td>${r.pct} %</td></tr>`; }).join('')}
         </tbody></table>
       </details>`;
+    return fold ? `<details class="dist-fold reveal"><summary>Показать все 16 типов</summary>${body}</details>` : body;
   };
 
   // ---------- знаменитости с похожим типом ----------
