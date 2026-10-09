@@ -544,7 +544,11 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
         qs: document.querySelectorAll('.pr-q').length, badges: Array.from(document.querySelectorAll('.pr-badge')).map(x => x.textContent.trim()),
         side: Array.from(document.querySelectorAll('.pr-side a')).map(a => a.getAttribute('href')),
         send: Boolean(document.querySelector('[data-sk="send"]')), toc: document.querySelectorAll('.pr-toc a').length,
-        imgs: Array.from(document.querySelectorAll('.pr-asp')).length
+        imgs: Array.from(document.querySelectorAll('.pr-asp')).length,
+        how: document.querySelectorAll('.pr-how-row').length, gives: document.querySelectorAll('.pr-gives > div').length,
+        stages: document.querySelectorAll('.pr-stages li').length, ctx: document.querySelectorAll('.pr-ctx-card').length,
+        pm: document.querySelectorAll('.pr-pm-col li').length, tips: document.querySelectorAll('.pr-tip').length,
+        tipsTop: document.getElementById('tips') ? 1 : 0
       };
       document.querySelector('.pr-toc a[href$="#spheres"]').click();
       await sleep(1100);
@@ -562,6 +566,9 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       out.qVisible = document.querySelectorAll('.pr-q:not([hidden])').length;
       return out;
     });
+    check('пара: «Об отношениях» — как устроено (4), кто что ведёт, этапы (3), в паре / дружбе / работе (3), сильные и слабые места (3 + 3)',
+      pr.how === 4 && pr.gives >= 2 && pr.stages === 3 && pr.ctx === 3 && pr.pm === 6, JSON.stringify(pr));
+    check('пара: отдельный раздел «Советы для пары» — 8 советов, фразы, ссора и ритуал', pr.tipsTop === 1 && pr.tips === 8 && pr.scripts === 3, JSON.stringify(pr));
     check('пара: неделя из жизни, 8 сфер со знаками и бейджами, 3 фразы, 6 вопросов, две стороны и отправка партнёру',
       pr.zones === 8 && pr.imgs === 8 && pr.story === 2 && pr.scripts === 3 && pr.qs === 6 && pr.badges.length === 8 && pr.badges.every(Boolean) &&
       pr.side[1] === '#/relations/lie/esi' && pr.send && pr.toc === 4, JSON.stringify(pr));

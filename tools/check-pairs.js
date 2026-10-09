@@ -10,7 +10,7 @@ const html = fs.readFileSync(path.join(SITE, 'index.html'), 'utf8');
 const scripts = [...html.matchAll(/<script src="([^"?]+)(?:\?[^"]*)?"><\/script>/g)].map(m => m[1])
   .filter(src => /^(config|js\/lib|js\/data|js\/core|js\/content)/.test(src));
 // тексты пары грузятся по требованию (ui.pairTexts) — в index.html их нет
-const LAZY = ['pair', 'pair-zones', 'pair-partner'].map(f => `js/content/${f}.js`);
+const LAZY = ['pair', 'pair-zones', 'pair-partner', 'pair-about'].map(f => `js/content/${f}.js`);
 const ctx = vm.createContext({ console });
 for (const src of scripts.concat(LAZY)) vm.runInContext(fs.readFileSync(path.join(SITE, src), 'utf8'), ctx, { filename: src });
 const S = ctx.Socio, PR = S.core.pair, P = S.content.pair, MA = S.content.modelA;
@@ -54,6 +54,22 @@ S.data.types.forEach(a => S.data.types.forEach(b => {
   words += sents.join(' ').split(/\s+/).length; n++;
   (byRel[rep.relation.id] = byRel[rep.relation.id] || []).push({ w, set: inner, couple: [a.id, b.id].sort().join('+') });
 }));
+
+// «Об отношениях» и «Советы для пары»: у каждого из 16 видов (с учётом сторон) — 3 этапа, 3 контекста, 3+3 пункта, 8 советов
+const REL_IDS = [...new Set(S.data.relations.map(r => r.id))];
+const LEN = { stage: 240, context: 300, item: 150, tt: 64, td: 260 };
+REL_IDS.forEach(id => {
+  const x = P.about && P.about[id];
+  if (!x) { err('об отношениях', `нет текстов для ${id}`); return; }
+  ['start', 'months', 'years'].forEach(k => { const v = x.stages && x.stages[k]; if (!v) err(id, `нет этапа ${k}`); else if (v.length > LEN.stage) err(id, `этап ${k}: ${v.length} знаков`); });
+  ['love', 'friends', 'work'].forEach(k => { const v = x.contexts && x.contexts[k]; if (!v) err(id, `нет контекста ${k}`); else if (v.length > LEN.context) err(id, `контекст ${k}: ${v.length} знаков`); });
+  ['plus', 'minus'].forEach(k => { if (!Array.isArray(x[k]) || x[k].length !== 3) err(id, `${k}: нужно 3 пункта`); else x[k].forEach((v, i) => { if (v.length > LEN.item) err(id, `${k}[${i}]: ${v.length} знаков`); }); });
+  if (!Array.isArray(x.tips) || x.tips.length !== 8) err(id, `советов ${x.tips ? x.tips.length : 0} ≠ 8`);
+  else x.tips.forEach((t, i) => { if (!t.t || !t.d) err(id, `совет ${i + 1} пустой`); else { if (t.t.length > LEN.tt) err(id, `совет ${i + 1}: заголовок ${t.t.length} знаков`); if (t.d.length > LEN.td) err(id, `совет ${i + 1}: пояснение ${t.d.length} знаков`); } });
+  const flat = JSON.stringify(x);
+  const fatal = flat.match(/обречен|несовместим|никогда не сложится|бегите|не по пути|приговор/i);
+  if (fatal) err(id, `приговор в тексте: «${fatal[0]}»`);
+});
 
 // род: все тексты пары целиком, а не только то, что попало на страницы
 const walk = (v, where) => {

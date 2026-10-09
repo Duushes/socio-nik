@@ -28,10 +28,10 @@
     document.head.appendChild(el);
   });
   let pairWait = null;
-  ui.pairReady = () => { const P = S.content.pair; return Boolean(P && P.zones && P.partnerView && P.relations && P.domains); };
+  ui.pairReady = () => { const P = S.content.pair; return Boolean(P && P.zones && P.partnerView && P.relations && P.domains && P.about); };
   ui.pairTexts = () => {
     if (ui.pairReady()) return Promise.resolve(S.content.pair);
-    if (!pairWait) pairWait = Promise.all(['pair', 'pair-zones', 'pair-partner'].map(f => loadScript(`js/content/${f}.js`)))
+    if (!pairWait) pairWait = Promise.all(['pair', 'pair-zones', 'pair-partner', 'pair-about'].map(f => loadScript(`js/content/${f}.js`)))
       .then(() => S.content.pair)
       .catch(e => { pairWait = null; throw e; });
     return pairWait;

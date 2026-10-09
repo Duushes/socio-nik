@@ -123,7 +123,7 @@
   // Всё, что про пару, считается по модели А обоих (core/pair.js); тексты грузятся по требованию (ui.pairTexts).
   const PR = () => S.core.pair;
   const GROUPS = ['fit', 'common', 'ask', 'care', 'gap'];
-  const SECTIONS = [['life', 'В жизни'], ['spheres', 'Восемь сфер'], ['hard', 'Когда трудно'], ['questions', 'Вопросы на вечер']];
+  const SECTIONS = [['about', 'Об отношениях'], ['spheres', 'Восемь сфер'], ['tips', 'Советы для пары'], ['questions', 'Вопросы на вечер']];
   const CHEV = '<svg class="ico pr-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9.5 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const CHECK = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const triedKey = (a, b) => `socio.tried.${a}-${b}`;
@@ -172,21 +172,76 @@
     </details>`;
   }
 
+  // «Как это устроено»: куда у партнёра попадают твои две сильные стороны (Эго) и куда у тебя — партнёра
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  function howHTML(a, b, P) {
+    const ma = M().modelA(a.ego), mb = M().modelA(b.ego), fill = s => s.replace(/\{b\}/g, b.code);
+    const row = (who, label, asp, pos, text) => `<div class="pr-how-row">
+        <p class="pr-k">${who}</p>
+        <p class="pr-how-asp"><b>${esc(cap(ui.PLAIN[asp]))}</b></p>
+        <p class="pr-how-pos">${esc(label)} ${esc(ui.FN[pos])}</p>
+        <p class="pr-how-t">${esc(fill(text))}</p>
+      </div>`;
+    const mine = [0, 1].map(i => { const asp = a.ego[i], pos = mb.indexOf(asp) + 1; return row(i ? 'Твой рабочий инструмент' : 'Твоя главная сила', `у${NB}${b.code} —`, asp, pos, P.lands.partner[pos]); });
+    const theirs = [0, 1].map(i => { const asp = b.ego[i], pos = ma.indexOf(asp) + 1; return row(i ? `Рабочий инструмент ${b.code}` : `Главная сила ${b.code}`, 'у тебя —', asp, pos, P.lands.you[pos]); });
+    return `<div class="pr-how">
+        <div class="pr-how-col"><p class="pr-how-h">Ты → ${b.code}</p>${mine.join('')}</div>
+        <div class="pr-how-col"><p class="pr-how-h">${b.code} → ты</p>${theirs.join('')}</div>
+      </div>`;
+  }
+
+  // «Что вы даёте друг другу»: кто какую сферу ведёт, кто поможет по просьбе, кому что важнее, что делить
+  function givesHTML(rep, b, P) {
+    const chips = list => list.map(asp => `<span class="pr-chip">${esc(P.domains[asp].short)}</span>`).join('');
+    const rows = [
+      ['Ты ведёшь', rep.lead.me], [`${b.code} ведёт`, rep.lead.partner],
+      ['Поможешь, если попросят', rep.can.me], [`${b.code} поможет, если попросить`, rep.can.partner],
+      ['Тебе важнее', rep.cares.me], [`${b.code} важнее`, rep.cares.partner],
+      ['Делите вдвоём', rep.split]
+    ].filter(([, list]) => list.length);
+    return `<dl class="pr-gives">${rows.map(([k, list]) => `<div><dt>${esc(k)}</dt><dd>${chips(list)}</dd></div>`).join('')}</dl>`;
+  }
+
+  const STAGES = [['start', 'Знакомство'], ['months', 'Через полгода'], ['years', 'Через годы']];
+  const CONTEXTS = [['love', 'В паре', 'heart'], ['friends', 'В дружбе', 'bubbles'], ['work', 'В работе', 'handshake']];
+
   function pairBody(a, b) {
     const P = S.content.pair, rep = PR().report(a, b, P, S.content.modelA), r = rep.relation, rel = rep.rel;
     const txt = ui.relText(r.kind), role = txt.roles && txt.roles[r.id], done = tried(a.id, b.id);
+    const more = (P.about && P.about[r.id]) || null;
     // сначала то, на что можно опереться, потом то, где бережнее
     const zones = rep.zones.slice().sort((x, y) => GROUPS.indexOf(x.group) - GROUPS.indexOf(y.group) || PR().ORDER.indexOf(x.aspect) - PR().ORDER.indexOf(y.aspect));
     const legend = GROUPS.filter(g => rep.summary[g]).map(g => `<li class="pr-${g}" title="${esc(P.groups[g].about)}"><i aria-hidden="true"></i>${esc(P.groups[g].short)}<b>${rep.summary[g]}</b></li>`).join('');
     return `
-      <section class="sec sec-white pr-life" id="life">
+      <section class="sec sec-white pr-about" id="about">
         <div class="wrap narrow">
-          <p class="eyebrow reveal">Как это выглядит в жизни</p>
+          <p class="eyebrow reveal">Об отношениях</p>
+          <p class="pr-essence reveal">${esc(txt.about || '')}</p>
+          ${role ? `<div class="pr-role reveal"><p class="pr-k">С${NB}позиции ${a.code}</p><p>${esc(role)}</p></div>` : ''}
+
+          <h3 class="pr-h3 reveal">Как это устроено</h3>
+          <p class="pr-h3-sub reveal">Две сильные стороны каждого и куда они попадают у второго — отсюда и характер пары.</p>
+          <div class="reveal">${howHTML(a, b, P)}</div>
+
+          <h3 class="pr-h3 reveal">Что вы даёте друг другу</h3>
+          <div class="reveal">${givesHTML(rep, b, P)}</div>
+
+          ${more ? `
+          <h3 class="pr-h3 reveal">Как развиваются отношения</h3>
+          <ol class="pr-stages">${STAGES.map(([k, name], i) => `<li class="reveal" style="--i:${i}"><p class="pr-k">${name}</p><p>${esc(more.stages[k])}</p></li>`).join('')}</ol>
+
+          <h3 class="pr-h3 reveal">В паре, дружбе и работе</h3>
+          <div class="pr-ctx">${CONTEXTS.map(([k, name, em], i) => `<div class="pr-ctx-card reveal" style="--i:${i}">
+              <img src="${ui.emoteSrc(em)}" alt="" width="56" height="56" loading="lazy" decoding="async">
+              <p class="pr-k">${name}</p><p>${esc(more.contexts[k])}</p></div>`).join('')}</div>
+
+          <div class="pr-pm">
+            <div class="pr-pm-col pr-plus reveal"><h3 class="pr-h4">Сильные стороны</h3><ul>${more.plus.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+            <div class="pr-pm-col pr-minus reveal" style="--i:1"><h3 class="pr-h4">Где спотыкаетесь</h3><ul>${more.minus.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+          </div>` : ''}
+
+          <h3 class="pr-h3 reveal">Обычная неделя</h3>
           ${rel.story.map((p, i) => `<p class="body pr-story reveal" style="--i:${i}">${esc(p)}</p>`).join('')}
-          <details class="pr-more reveal">
-            <summary>${esc(ui.kindTitle(r.kind))}: что это значит${CHEV}</summary>
-            <p>${esc(txt.about || '')}</p>${role ? `<p><b>С${NB}позиции ${a.code}.</b> ${esc(role)}</p>` : ''}
-          </details>
         </div>
       </section>
       <section class="sec pr-spheres" id="spheres">
@@ -202,10 +257,14 @@
           <div class="pr-zones">${zones.map((z, i) => zoneHTML(z, b, P, done, i)).join('')}</div>
         </div>
       </section>
-      <section class="sec sec-white pr-hard" id="hard">
+      <section class="sec sec-white pr-hard" id="tips">
         <div class="wrap narrow">
-          <h2 class="h2 h2-md reveal"><span class="sv">Когда трудно</span></h2>
-          <p class="lead sec-sub reveal">Фразы, которые сближают, — вместо тех, что вырываются в${NB}сердцах.</p>
+          <h2 class="h2 h2-md reveal"><span class="sv">Советы для пары</span></h2>
+          <p class="lead sec-sub reveal">${more ? `Восемь шагов на${NB}ближайшие недели — с${NB}примерами из${NB}жизни.` : `Как говорить и${NB}что делать, когда трудно.`}</p>
+          ${more ? `<ol class="pr-tips">${more.tips.map((x, i) => `<li class="pr-tip reveal" style="--i:${i % 2}">
+              <span class="pr-tip-n" aria-hidden="true">${i + 1}</span>
+              <div><h3>${esc(x.t)}</h3><p>${esc(x.d)}</p></div></li>`).join('')}</ol>` : ''}
+          <h3 class="pr-h3 reveal">Фразы, которые сближают</h3>
           <div class="pr-scripts">${rel.scripts.map((x, i) => `
             <figure class="pr-script reveal" style="--i:${i}">
               <p class="pr-instead"><span class="pr-k">Вместо</span><s>«${esc(x.instead)}»</s></p>
@@ -238,8 +297,8 @@
   }
 
   // Пока тексты грузятся — белая секция со строками-заглушками на месте будущей «Недели»
-  const skeleton = () => `<section class="sec sec-white pr-life" aria-busy="true"><div class="wrap narrow">
-      <p class="eyebrow">Как это выглядит в жизни</p>
+  const skeleton = () => `<section class="sec sec-white pr-about" aria-busy="true"><div class="wrap narrow">
+      <p class="eyebrow">Об отношениях</p>
       <div class="pr-skel" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div></section>`;
   // Если тексты не загрузились — короткое описание вида отношений, как было раньше
   const fallback = (a, b) => {
