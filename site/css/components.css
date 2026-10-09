@@ -1075,7 +1075,12 @@
 .pr-how { display: grid; gap: 18px; }
 @media (min-width: 768px) { .pr-how { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; } }
 .pr-how-col { display: grid; gap: 10px; align-content: start; }
-.pr-how-h { margin: 0 0 2px; font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.pr-how-h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 0 4px; font-size: 15px; font-weight: 800; line-height: 1.3; }
+.pr-who { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.pr-ava { flex: none; width: 32px; height: 32px; overflow: hidden; border-radius: 50%; background: color-mix(in srgb, var(--q) 30%, #e9ecef); box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px color-mix(in srgb, var(--q) 70%, transparent); }
+.pr-ava img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 6%; transform: scale(1.3); transform-origin: 50% 0; }
+.pr-to { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.pr-arrow { color: var(--muted); font-weight: 600; }
 .pr-how-row { padding: 16px 18px; border-radius: 20px; background: var(--chip); }
 .pr-how-row .pr-k { margin-bottom: 2px; }
 .pr-how-asp { margin: 0; font-size: 1.12rem; line-height: 1.3; }

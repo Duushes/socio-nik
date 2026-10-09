@@ -172,31 +172,35 @@
     </details>`;
   }
 
-  // «Как это устроено»: куда у партнёра попадают твои две сильные стороны (Эго) и куда у тебя — партнёра
-  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  // «Как это устроено»: куда у второго попадают две сильные стороны (Эго) каждого. Названия типов вместо «ты» —
+  // так блок проще читать, в том числе про чужую пару
+  const cap = str => str.charAt(0).toUpperCase() + str.slice(1);
+  const who = t => `<span class="pr-who"><span class="pr-ava" style="${ui.qStyle(t.quadra)}">${ui.character(t, { sizes: '32px', alt: '' })}</span>${t.code} «${esc(t.alias)}»</span>`;
   function howHTML(a, b, P) {
-    const ma = M().modelA(a.ego), mb = M().modelA(b.ego), fill = s => s.replace(/\{b\}/g, b.code);
-    const row = (who, label, asp, pos, text) => `<div class="pr-how-row">
-        <p class="pr-k">${who}</p>
-        <p class="pr-how-asp"><b>${esc(cap(ui.PLAIN[asp]))}</b></p>
-        <p class="pr-how-pos">${esc(label)} ${esc(ui.FN[pos])}</p>
-        <p class="pr-how-t">${esc(fill(text))}</p>
-      </div>`;
-    const mine = [0, 1].map(i => { const asp = a.ego[i], pos = mb.indexOf(asp) + 1; return row(i ? 'Твой рабочий инструмент' : 'Твоя главная сила', `у${NB}${b.code} —`, asp, pos, P.lands.partner[pos]); });
-    const theirs = [0, 1].map(i => { const asp = b.ego[i], pos = ma.indexOf(asp) + 1; return row(i ? `Рабочий инструмент ${b.code}` : `Главная сила ${b.code}`, 'у тебя —', asp, pos, P.lands.you[pos]); });
-    return `<div class="pr-how">
-        <div class="pr-how-col"><p class="pr-how-h">Ты → ${b.code}</p>${mine.join('')}</div>
-        <div class="pr-how-col"><p class="pr-how-h">${b.code} → ты</p>${theirs.join('')}</div>
-      </div>`;
+    const col = (from, to) => {
+      const mt = M().modelA(to.ego);
+      const rows = [0, 1].map(i => {
+        const asp = from.ego[i], pos = mt.indexOf(asp) + 1;
+        const text = P.lands[pos].replace(/\{to\}/g, to.code).replace(/\{from\}/g, from.code);
+        return `<div class="pr-how-row">
+          <p class="pr-k">${i ? 'Рабочий инструмент' : 'Главная сила'} ${from.code}</p>
+          <p class="pr-how-asp"><b>${esc(cap(ui.PLAIN[asp]))}</b></p>
+          <p class="pr-how-pos">у${NB}${to.code} — ${esc(ui.FN[pos])}</p>
+          <p class="pr-how-t">${esc(text)}</p>
+        </div>`;
+      });
+      return `<div class="pr-how-col"><p class="pr-how-h">${who(from)}<span class="pr-to"><span class="pr-arrow" aria-label="для">→</span>${who(to)}</span></p>${rows.join('')}</div>`;
+    };
+    return `<div class="pr-how">${col(a, b)}${col(b, a)}</div>`;
   }
 
   // «Что вы даёте друг другу»: кто какую сферу ведёт, кто поможет по просьбе, кому что важнее, что делить
-  function givesHTML(rep, b, P) {
+  function givesHTML(rep, a, b, P) {
     const chips = list => list.map(asp => `<span class="pr-chip">${esc(P.domains[asp].short)}</span>`).join('');
     const rows = [
-      ['Ты ведёшь', rep.lead.me], [`${b.code} ведёт`, rep.lead.partner],
-      ['Поможешь, если попросят', rep.can.me], [`${b.code} поможет, если попросить`, rep.can.partner],
-      ['Тебе важнее', rep.cares.me], [`${b.code} важнее`, rep.cares.partner],
+      [`${a.code} ведёт`, rep.lead.me], [`${b.code} ведёт`, rep.lead.partner],
+      [`${a.code} поможет, если ${b.code} попросит`, rep.can.me], [`${b.code} поможет, если ${a.code} попросит`, rep.can.partner],
+      [`Для ${a.code} важнее`, rep.cares.me], [`Для ${b.code} важнее`, rep.cares.partner],
       ['Делите вдвоём', rep.split]
     ].filter(([, list]) => list.length);
     return `<dl class="pr-gives">${rows.map(([k, list]) => `<div><dt>${esc(k)}</dt><dd>${chips(list)}</dd></div>`).join('')}</dl>`;
@@ -224,7 +228,7 @@
           <div class="reveal">${howHTML(a, b, P)}</div>
 
           <h3 class="pr-h3 reveal">Что вы даёте друг другу</h3>
-          <div class="reveal">${givesHTML(rep, b, P)}</div>
+          <div class="reveal">${givesHTML(rep, a, b, P)}</div>
 
           ${more ? `
           <h3 class="pr-h3 reveal">Как развиваются отношения</h3>
@@ -390,7 +394,11 @@
           const anchor = location.hash.split('#')[2];
           const el = anchor && document.getElementById(anchor);
           if (el) el.scrollIntoView({ block: 'start' });
-        }).catch(() => { if (alive) holder.innerHTML = fallback(a, b); });
+        }).catch(e => {
+          // ошибку видно в консоли (и e2e её ловит), а человек получает хотя бы короткое описание
+          console.error('Страница пары не собралась:', e);
+          if (alive) holder.innerHTML = fallback(a, b);
+        });
       }
       const onClick = e => {
         const t = e.target.closest && e.target.closest('[data-try], [data-q-next]');
