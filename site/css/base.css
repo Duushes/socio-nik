@@ -151,8 +151,6 @@ main:has(> .sec-white:last-child) + .footer { position: relative; margin-top: ca
   .nav-links { display: flex; }
   .menu-btn { display: none; }
 }
-/* на главной шапка спрятана, пока виден герой; с клавиатуры выезжает */
-.hero-on .nav:not(:focus-within) { transform: translateY(-101%); }
 
 /* меню на телефоне — отдельный слой поверх страницы */
 .menu { position: fixed; inset: 0; z-index: 45; display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: calc(var(--nav-h) + 20px) var(--gutter) 40px; background: var(--ink); opacity: 0; visibility: hidden; transition: opacity 0.3s var(--ease), visibility 0.3s; }

@@ -178,6 +178,8 @@ if (full) {
   }));
   // превью ссылок для мессенджеров: og.jpg главной и у каждого типа — картинка og/<id>.jpg и страница r/<id>/ (tools/og.js)
   const SITE_DIR = path.join(__dirname, '..', 'site');
+  // тайный тип в герое главной до теста — силуэт 520 и 1040 px
+  ['hero-520', 'hero-1040'].forEach(f => { if (!fs.existsSync(path.join(SITE_DIR, 'img', 'mystery', f + '.webp'))) err('герой', `нет картинки img/mystery/${f}.webp`); });
   if (!fs.existsSync(path.join(SITE_DIR, 'og.jpg'))) err('превью', 'нет site/og.jpg — запусти tools/og.js');
   TYPES.forEach(id => {
     if (!fs.existsSync(path.join(SITE_DIR, 'og', id + '.jpg'))) err('превью', `нет og/${id}.jpg — запусти tools/og.js`);

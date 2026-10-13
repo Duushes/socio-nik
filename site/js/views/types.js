@@ -97,7 +97,6 @@
             <h2 class="h2 h2-md reveal"><span class="sv">Отношения со${NB}всеми типами</span></h2>
             <p class="lead sec-sub reveal">${esc(c.inRelations || '')}</p>
             ${ui.relMap(t)}
-            <details class="rel-all reveal"><summary>Все 15 типов списком</summary>${ui.relList(t)}</details>
           </div>
         </section>
 

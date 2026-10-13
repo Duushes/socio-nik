@@ -50,8 +50,8 @@
         <section class="sec sec-line rm-sec" id="map">
           <div class="wrap">
             <div class="rm-head">
-              <h2 class="h2 reveal"><span class="sv">Карта отношений</span></h2>
-              <p class="rm-sub reveal">Чем ближе орбита к${NB}типу, тем легче с${NB}ним. Нажми на${NB}аватар${NB}— увидишь разбор пары.</p>
+              <h2 class="h2 reveal"><span class="sv">С${NB}кем легко</span></h2>
+              <p class="rm-sub reveal">Выбери тип${NB}— увидишь, с${NB}кем ему легко, ровно и${NB}непросто. Нажми на${NB}любой${NB}— откроется разбор пары.</p>
             </div>
             <div class="rm-holder">${ui.relMap(M().type(a), { uid: 'rmr', pick: true })}</div>
           </div>

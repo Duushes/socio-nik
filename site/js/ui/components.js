@@ -61,6 +61,9 @@
     const a = alt == null ? `Персонаж типа ${t.code} «${t.alias}»` : alt;
     return `<img class="char ${cls}" src="${s.src}" srcset="${s.srcset}" sizes="${sizes}" width="520" height="650" alt="${esc(a)}"${eager ? ' fetchpriority="high"' : ' loading="lazy"'} decoding="async" draggable="false">`;
   };
+  // Тайный тип — твой, пока тест не пройден: «средний» силуэт 16 персонажей с контровым светом
+  ui.mysteryChar = ({ sizes = ui.CHAR.card, eager = false, cls = '' } = {}) =>
+    `<img class="char ${cls}" src="img/mystery/hero-520.webp" srcset="img/mystery/hero-520.webp 520w, img/mystery/hero-1040.webp 1040w" sizes="${sizes}" width="520" height="650" alt="Силуэт без лица: твой тип пока скрыт"${eager ? ' fetchpriority="high"' : ' loading="lazy"'} decoding="async" draggable="false">`;
 
   // Эмблема: live — с живой орбитой (для крупных), иначе парит на CSS; theme: 'light' — для белых секций
   ui.emblem = (t, { live = false, cls = '', label, theme } = {}) =>

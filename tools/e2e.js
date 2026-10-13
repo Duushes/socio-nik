@@ -317,21 +317,30 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     await b.goto(BASE + '#/');
     await b.sleep(1500);
     const home = await b.eval(() => {
-      const hero = document.querySelector('[data-hero]');
+      const hero = document.querySelector('section[data-hero]');   // [data-hero] есть и у <html> — там тип героя для <head>
       const cta = hero.querySelector('.hero-actions .btn');
       const img = hero.querySelector('.hero-fig img');
+      const sp = t => t.replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim();
       const tiles = Array.from(document.querySelectorAll('.mq-copy:not([inert]) .mq-tile')).map(a => a.getAttribute('href'));
+      const nav = document.querySelector('.nav'), nr = nav.getBoundingClientRect();
       return {
-        cta: cta.getAttribute('href'), ctaText: cta.textContent.trim(), name: hero.querySelector('[data-hero-name]').textContent,
-        ask: (hero.querySelector('[data-hero-q]') || {}).textContent.replace(/\u00A0/g, ' '), micro: (hero.querySelector('.hero-micro') || {}).textContent || '',
-        hero: document.documentElement.dataset.hero, imgOk: img.complete && img.naturalWidth > 0 && img.getAttribute('src').includes(document.documentElement.dataset.hero),
+        cta: cta.getAttribute('href'), ctaText: cta.textContent.trim(), title: sp(hero.querySelector('.hero-title').textContent),
+        ask: sp((hero.querySelector('[data-hero-q]') || {}).textContent || ''), micro: (hero.querySelector('.hero-micro') || {}).textContent || '',
+        hero: document.documentElement.dataset.hero, mystery: hero.classList.contains('hero-mystery'), mark: (hero.querySelector('.hero-mark') || {}).textContent || '',
+        imgOk: img.complete && img.naturalWidth > 0 && img.getAttribute('src').includes('img/mystery/'), next: Boolean(hero.querySelector('.hero-next')),
+        chips: Array.from(hero.querySelectorAll('.hero-traits li')).map(li => sp(li.textContent)).join(' · '),
+        navShown: nr.top >= 0 && nr.bottom > 0 && getComputedStyle(nav).visibility !== 'hidden', heroMenu: Boolean(document.querySelector('.hero-menu')),
+        navLinks: Array.from(document.querySelectorAll('.nav-links a')).map(a => a.getAttribute('href')).join(),
         tiles: tiles.length, uniq: new Set(tiles).size, inert: document.querySelectorAll('.mq-copy[inert]').length,
         cards: Array.from(document.querySelectorAll('.stack-card .qc-go')).map(a => a.getAttribute('href')).join(),
         types: new Set(Array.from(document.querySelectorAll('.stack-card .qc-type')).map(a => a.getAttribute('href'))).size
       };
     });
-    check('герой: «Узнать свой тип» ведёт в тест, рядом вопрос и «20 вопросов · 4 минуты»', home.cta === '#/test' && home.ctaText === 'Узнать свой тип' && home.ask === 'А какой тип у тебя?' && /20.вопросов/.test(home.micro), JSON.stringify(home));
-    check('герой: имя и портрет выбранного типа, картинка загружена', home.imgOk && home.name.length > 1, JSON.stringify(home));
+    check('герой до теста — тайный тип: «Привет, кто ты?», силуэт с «?», без перебора типов', home.mystery && home.hero === 'mystery' && home.title === 'Привет, кто ты?' && home.mark === '?' && home.imgOk && !home.next, JSON.stringify(home));
+    check('тайный тип зовёт в тест: «16 типов. Один — твой», что откроется после теста, «Узнать свой тип» и «20 вопросов · 4 минуты»',
+      home.cta === '#/test' && home.ctaText === 'Узнать свой тип' && home.ask === '16 типов. Один — твой' && home.chips === 'Твоя суперсила · С кем тебе легко · Звёзды похожего типа' && /20.вопросов/.test(home.micro), JSON.stringify(home));
+    check('шапка на главной та же, что везде: видна сразу, логотип и 6 разделов, своего меню у героя нет',
+      home.navShown && !home.heroMenu && home.navLinks === '#/test,#/types,#/quadras,#/relations,#/box,#/about', JSON.stringify(home));
     check('лента: 16 типов, у каждого одна живая копия, остальные inert', home.tiles === 16 && home.uniq === 16 && home.inert === 4, JSON.stringify(home));
     check('стопка: 4 карточки ведут на квадры, 16 персонажей — на типы', home.cards === '#/quadras#alpha,#/quadras#beta,#/quadras#gamma,#/quadras#delta' && home.types === 16, JSON.stringify(home));
     const orbit = await b.eval(() => {
@@ -355,17 +364,12 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       return { zone: true, fine: Socio.fx.fineMouse(), near, far: el.style.transform };
     });
     check('магнит: персонаж тянется к мыши рядом и возвращается на место', mag.zone && mag.fine && /^translate3d\((?!0px, 0px)/.test(mag.near) && /^translate3d\(0px, 0px/.test(mag.far), JSON.stringify(mag));
-    const sw = await b.eval(async () => {
-      const before = document.documentElement.dataset.hero;
-      document.querySelector('.hero-next').click();
-      await new Promise(r => setTimeout(r, 900));
-      const after = document.documentElement.dataset.hero;
-      return { before, after, name: document.querySelector('[data-hero-name]').textContent, alias: Socio.core.modelA.type(after).short || Socio.core.modelA.type(after).alias, src: document.querySelector('.hero-fig img').getAttribute('src') };
-    });
-    check('«Другой тип» меняет персонажа, имя и портрет', sw.before !== sw.after && sw.src.includes(sw.after) && sw.name === sw.alias, JSON.stringify(sw));
     const heroes = [];
-    for (let k = 0; k < 4; k++) { await b.reload(); await b.sleep(700); heroes.push(await b.eval('document.documentElement.dataset.hero')); }
-    check('после каждой перезагрузки на главной другой персонаж', heroes.every((h, k) => !k || h !== heroes[k - 1]), heroes.join(' → '));
+    for (let k = 0; k < 2; k++) {
+      await b.reload(); await b.sleep(700);
+      heroes.push(await b.eval(`document.documentElement.dataset.hero + ':' + Boolean(document.querySelector('link[rel=preload][imagesrcset*="img/mystery/"]'))`));
+    }
+    check('до теста после перезагрузки — снова тайный тип, его картинка грузится заранее', heroes.every(h => h === 'mystery:true'), heroes.join(' → '));
     const tileNav = await b.eval(async () => {
       const a = document.querySelector('.mq-copy:not([inert]) .mq-tile');
       const href = a.getAttribute('href');
@@ -395,18 +399,19 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     await b.sleep(1200);
     await shot('d-type-top');
     await shot('d-type-modelA', '.ma', 120);
-    await shot('d-type-relations', '.rel-groups', 120);
+    await shot('d-type-relations', '#relations', 90);
 
-    // ---------- карта отношений типа: орбиты ----------
+    // ---------- отношения типа: три строки «Легко / Ровно / Непросто» ----------
     const rmap = await b.eval(async () => {
       const sleep = ms => new Promise(r => setTimeout(r, ms));
       const box = document.querySelector('[data-relmap]');
       box.scrollIntoView({ block: 'center' });
       await sleep(1600);
-      const beam = () => { const on = box.querySelector('.rm-beam.is-on .rm-ray'); return on ? on.getAttribute('d').length > 10 : false; };
-      const emote = () => (box.querySelector('.rm-emote').getAttribute('src').match(/emotes\/([a-z-]+)/) || [])[1];
-      const nodes = box.querySelectorAll('.rm-node').length, rings = box.querySelectorAll('.rm-svg-front .rm-ring').length;
-      const first = box.querySelector('.rd-title').textContent, firstBeam = beam(), firstEmote = emote();
+      const nodes = box.querySelectorAll('.rm-node').length;
+      const rows = Array.from(box.querySelectorAll('.rm-row')).map(r => r.querySelector('.rm-lab b').textContent + ':' + r.querySelectorAll('.rm-node').length).join();
+      const first = box.querySelector('.rd-title').textContent, rd0 = box.querySelector('.rd');
+      const quiet = { emoji: box.querySelectorAll('img[src*="emotes/"]').length, duo: Boolean(box.querySelector('.rd-duo, .duo')), orbits: box.querySelectorAll('.rm-stage svg, .rm-ring, .rm-beam').length,
+        panel: getComputedStyle(rd0).borderTopColor, kicker: Boolean(box.querySelector('.rd-kicker')), who: (box.querySelector('.rd-who') || {}).textContent || '' };
       const firstOn = box.querySelector('.rm-node.is-on');
       const dualRing = firstOn && firstOn.classList.contains('t-support');
       box.querySelector('[data-tab="2"]').click();
@@ -416,16 +421,20 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       await sleep(300);
       const after = box.querySelector('.rd-title').textContent, link = box.querySelector('.rd .link').getAttribute('href');
       const tabKept = box.querySelector('[data-tab="2"]').getAttribute('aria-selected') === 'true' && !box.querySelectorAll('.rd-pane')[2].hidden;
-      const duo = box.querySelector('.rd-duo .duo');
-      box.querySelector('.rm-chip[data-tone="tense"]').click();
-      await sleep(100);
-      return { nodes, rings, first, firstBeam, firstEmote, dualRing, after, link, tabKept, afterBeam: beam(), afterEmote: emote(),
-        duo: duo ? duo.className : '', filtered: box.classList.contains('filtered') && box.classList.contains('f-tense') };
+      const keyed = await (async () => {
+        const on = box.querySelector('.rm-node.is-on');
+        on.focus();
+        on.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+        await sleep(80);
+        return box.querySelector('.rm-node.is-on').dataset.i;
+      })();
+      return { nodes, rows, first, dualRing, after, link, tabKept, quiet, keyed, conflictI: conflict.dataset.i };
     });
-    check('карта-орбиты: 15 аватаров на 3 орбитах, сначала выбран дуал — луч и сердечко', rmap.nodes === 15 && rmap.rings === 3 && rmap.first === 'Дуальные отношения' && rmap.dualRing && rmap.firstBeam && rmap.firstEmote === 'heart', JSON.stringify(rmap));
-    check('карта: нажатие открывает разбор пары с молнией, вкладка «Как ладить» сохраняется, фильтр по тону работает',
-      rmap.after === 'Конфликтные отношения' && rmap.link === '#/relations/esi/ile' && rmap.afterBeam && rmap.afterEmote === 'lightning' && rmap.tabKept && rmap.filtered, JSON.stringify(rmap));
-    check('пара в панели разыгрывает отношение (сцена конфликта)', /act-conflict/.test(rmap.duo), rmap.duo);
+    check('отношения типа: три строки «Легко / Ровно / Непросто» по 5 типов, сначала выбран дуал', rmap.nodes === 15 && rmap.rows === 'Легко:5,Ровно:5,Непросто:5' && rmap.first === 'Дуальные отношения' && rmap.dualRing, JSON.stringify(rmap));
+    check('нажатие на тип открывает разбор пары, вкладка «Как ладить» сохраняется, стрелка вверх — в строку выше',
+      rmap.after === 'Конфликтные отношения' && rmap.link === '#/relations/esi/ile' && rmap.tabKept && Number(rmap.keyed) === Number(rmap.conflictI) - 5, JSON.stringify(rmap));
+    check('просто и тихо: без орбит, лучей, 3D-символов и сцены пары; рамка панели нейтральная, без надзаголовка',
+      rmap.quiet.emoji === 0 && !rmap.quiet.duo && rmap.quiet.orbits === 0 && rmap.quiet.panel === 'rgba(215, 226, 234, 0.15)' && !rmap.quiet.kicker && /«/.test(rmap.quiet.who), JSON.stringify(rmap.quiet));
 
     // ---------- «Отношения»: тип в центре меняется выбором и кнопкой «Карта …»; пары в калькуляторе играют сцены ----------
     await go('#/relations', 1400);
@@ -451,7 +460,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       }
       return { viaSelect, partner, center: box.dataset.relmap, selValue: sel.value, acts: acts.join(' ') };
     });
-    check('карта: выбор типа ставит его в центр, «Карта …» — партнёра', refocus.viaSelect === 'lsi:15' && refocus.center === refocus.partner && refocus.selValue === refocus.partner, JSON.stringify(refocus));
+    check('«Отношения»: выбор типа перестраивает строки, кнопка «Отношения …» — показывает партнёра', refocus.viaSelect === 'lsi:15' && refocus.center === refocus.partner && refocus.selValue === refocus.partner, JSON.stringify(refocus));
     check('калькулятор: пары разыгрывают отношение — дуал, конфликт, ревизия, заказ', refocus.acts === 'act-dual:3 act-conflict:1 act-supervision:2 act-request:2', refocus.acts);
     const fitDesk = await b.eval(async () => {
       const box = document.querySelector('.relmap'), nav = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h'));
@@ -460,7 +469,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       const r = box.getBoundingClientRect();
       return { top: Math.round(r.top), bottom: Math.round(r.bottom), vh: innerHeight };
     });
-    check('карта с панелью влезает в один экран (1280×900)', fitDesk.bottom <= fitDesk.vh, JSON.stringify(fitDesk));
+    check('строки с панелью влезают в один экран (1280×900)', fitDesk.bottom <= fitDesk.vh, JSON.stringify(fitDesk));
 
     // ---------- шторка функции модели А ----------
     await go('#/types/esi', 1200);
@@ -637,10 +646,23 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     await b.sleep(900);
     const scaleBottom = await b.eval(`Math.round(document.querySelector('.q-scale').getBoundingClientRect().bottom)`);
     check('375×667: шкала теста видна без прокрутки', scaleBottom <= 667, `низ шкалы ${scaleBottom}`);
+    // до теста — тайный тип: тёмный силуэт не поднимается на заголовок, а уходит низом под подвал героя
+    const saved375 = await b.eval(`localStorage.getItem('socio.result')`);
+    await b.eval(`localStorage.removeItem('socio.result')`);
+    await b.goto(BASE + '#/');
+    await b.sleep(1500);
+    const foldX = await b.eval(`(() => {
+      const c = document.querySelector('.hero-actions .btn').getBoundingClientRect(), n = document.querySelector('.hero-title .fit-line:last-child').getBoundingClientRect(), f = document.querySelector('.hero-fig img').getBoundingClientRect();
+      const hit = document.elementFromPoint(c.left + c.width / 2, c.top + c.height / 2);
+      return { mystery: Boolean(document.querySelector('.hero-mystery')), ctaFree: Boolean(hit && hit.closest('.hero-actions')), ctaBottom: Math.round(c.bottom), overlap: Math.round((n.bottom - f.top) / n.height * 100) };
+    })()`);
+    check('375×667: тайный тип не закрывает кнопку и заходит на «кто ты?» не больше чем на половину строки, кнопка на первом экране',
+      foldX.mystery && foldX.ctaFree && foldX.ctaBottom <= 667 && foldX.overlap <= 50, JSON.stringify(foldX));
+    await b.eval(`localStorage.setItem('socio.result', ${JSON.stringify(saved375)})`);
     await b.goto(BASE + '#/');
     await b.sleep(1500);
     const fold = await b.eval(`(() => { const c = document.querySelector('.hero-actions').getBoundingClientRect(), f = document.querySelector('.hero-fig img').getBoundingClientRect(); return { cta: Math.round(c.top), fig: Math.round(f.bottom), ctaBottom: Math.round(c.bottom) }; })()`);
-    check('375×667: персонаж не закрывает кнопку героя, кнопка на первом экране', fold.fig <= fold.cta && fold.ctaBottom <= 667, JSON.stringify(fold));
+    check('375×667: после теста персонаж не закрывает кнопку героя, кнопка на первом экране', fold.fig <= fold.cta && fold.ctaBottom <= 667, JSON.stringify(fold));
     for (const [w, h] of [[375, 667], [390, 844]]) {
       await b.viewport(w, h, { mobile: true, scale: 2 });
       await b.goto(BASE + '#/relations');
@@ -649,10 +671,12 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
         const box = document.querySelector('.relmap'), nav = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h'));
         scrollTo(0, box.getBoundingClientRect().top + scrollY - nav - 8);
         await new Promise(r => setTimeout(r, 1200));
-        const r = box.getBoundingClientRect(), ns = Array.from(box.querySelectorAll('.rm-node')).map(n => n.getBoundingClientRect().width);
-        return { bottom: Math.round(r.bottom), vh: innerHeight, minNode: Math.round(Math.min(...ns)) };
+        const st = box.querySelector('.rm-stage').getBoundingClientRect(), orbs = Array.from(box.querySelectorAll('.rm-orb')).map(n => n.getBoundingClientRect().width);
+        const hits = Array.from(box.querySelectorAll('.rm-node')).map(n => Math.min(n.getBoundingClientRect().width, n.getBoundingClientRect().height));
+        const over = document.documentElement.scrollWidth - innerWidth;
+        return { stageBottom: Math.round(st.bottom), vh: innerHeight, minOrb: Math.round(Math.min(...orbs)), minHit: Math.round(Math.min(...hits)), over };
       });
-      check(`${w}×${h}: карта с панелью влезает в экран, аватары не мельче 30 px`, fit.bottom <= fit.vh && fit.minNode >= 30, JSON.stringify(fit));
+      check(`${w}×${h}: все три строки на одном экране, аватары не мельче 48 px, по типу легко попасть пальцем`, fit.stageBottom <= fit.vh && fit.minOrb >= 48 && fit.minHit >= 44 && fit.over <= 0, JSON.stringify(fit));
     }
 
     // ---------- телефон: разгрузка экранов и паузы (по аудиту мобильной версии) ----------
@@ -687,7 +711,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       out.offScreen = map.classList.contains('is-off');
       return out;
     });
-    check('390 px: карта отношений на паузе вне экрана, аватары не парят, в панели нет окошка с прокруткой',
+    check('390 px: строки отношений на паузе вне экрана, аватары не парят, в панели нет окошка с прокруткой',
       relM.anim && relM.onScreen === false && relM.offScreen === true && relM.float === 'none' && relM.panes === 'none' && relM.inner <= 1, JSON.stringify(relM));
     await b.goto(BASE + '#/result');
     await b.sleep(1300);

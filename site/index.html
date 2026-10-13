@@ -23,17 +23,14 @@
 <link rel="icon" type="image/png" href="img/logo/mark-64.png">
 <link rel="apple-touch-icon" href="img/logo/mark-180.png">
 <script>
-  /* До первой отрисовки: тип для героя главной. После теста — свой тип; иначе случайный и не тот, что в прошлый раз.
-     Для главной сразу ставим предзагрузку его портрета, чтобы он был на первом кадре. */
+  /* До первой отрисовки: кто в герое главной. После теста — твой тип; до теста — тайный тип (силуэт с «?»).
+     Для главной сразу ставим предзагрузку картинки героя, чтобы она была на первом кадре. */
   (function () {
     var d = document.documentElement, ids = 'ile sei ese lii eie lsi sle iei see ili lie esi lse eii iee sli'.split(' ');
     d.classList.add('js');
-    var last = null, mine = null, pick;
-    try { last = JSON.parse(localStorage.getItem('socio.hero')); mine = JSON.parse(localStorage.getItem('socio.mine')); } catch (e) {}
-    if (ids.indexOf(mine) >= 0) pick = mine;
-    else do { pick = ids[Math.floor(Math.random() * ids.length)]; } while (pick === last);
-    // запоминаем любого показанного героя — и свой тип тоже, иначе после сброса результата он мог выпасть ещё раз подряд
-    try { localStorage.setItem('socio.hero', JSON.stringify(pick)); } catch (e) {}
+    var mine = null, done = false;
+    try { mine = JSON.parse(localStorage.getItem('socio.mine')); done = Boolean(localStorage.getItem('socio.result')); } catch (e) {}
+    var pick = done && ids.indexOf(mine) >= 0 ? mine : 'mystery';
     d.setAttribute('data-hero', pick);
     // шрифт: предзагрузка только по http(s) — с file:// браузер её блокирует, а сам @font-face грузит
     if (/^https?:$/.test(location.protocol)) {
@@ -43,21 +40,20 @@
     }
     var h = location.hash;
     if (!h || h === '#' || h === '#/') {
-      d.classList.add('hero-on');   // шапка спрятана, пока виден герой главной (дальше решает views/home.js)
-      var l = document.createElement('link');
+      var l = document.createElement('link'), dir = pick === 'mystery' ? 'img/mystery/hero' : 'img/types/' + pick;
       l.rel = 'preload';
       l.as = 'image';
-      l.setAttribute('imagesrcset', 'img/types/' + pick + '-520.webp 520w, img/types/' + pick + '-1040.webp 1040w');
+      l.setAttribute('imagesrcset', dir + '-520.webp 520w, ' + dir + '-1040.webp 1040w');
       l.setAttribute('imagesizes', '(min-width: 1024px) 520px, (min-width: 768px) 440px, (min-width: 640px) 360px, 280px');
       document.head.appendChild(l);
     }
   })();
 </script>
 <!-- ?v= — версия сборки: после выкладки браузер не смешает старые и новые файлы. Менять при каждом релизе. -->
-<link rel="stylesheet" href="css/tokens.css?v=20261009-2">
-<link rel="stylesheet" href="css/base.css?v=20261009-2">
-<link rel="stylesheet" href="css/components.css?v=20261009-2">
-<link rel="stylesheet" href="css/motion.css?v=20261009-2">
+<link rel="stylesheet" href="css/tokens.css?v=20261013-1">
+<link rel="stylesheet" href="css/base.css?v=20261013-1">
+<link rel="stylesheet" href="css/components.css?v=20261013-1">
+<link rel="stylesheet" href="css/motion.css?v=20261013-1">
 </head>
 <body>
 <a class="skip" href="#app">К содержимому</a>
@@ -103,50 +99,50 @@
   </div>
 </footer>
 
-<script src="config.js?v=20261009-2"></script>
-<script src="js/lib/base.js?v=20261009-2"></script>
-<script src="js/data/aspects.js?v=20261009-2"></script>
-<script src="js/data/types.js?v=20261009-2"></script>
-<script src="js/data/quadras.js?v=20261009-2"></script>
-<script src="js/data/relations.js?v=20261009-2"></script>
-<script src="js/data/questions.js?v=20261009-2"></script>
-<script src="js/core/modelA.js?v=20261009-2"></script>
-<script src="js/core/scoring.js?v=20261009-2"></script>
-<script src="js/core/payload.js?v=20261009-2"></script>
-<script src="js/core/pair.js?v=20261009-2"></script>
-<script src="js/content/types-alpha.js?v=20261009-2"></script>
-<script src="js/content/types-beta.js?v=20261009-2"></script>
-<script src="js/content/types-gamma.js?v=20261009-2"></script>
-<script src="js/content/types-delta.js?v=20261009-2"></script>
-<script src="js/content/relations.js?v=20261009-2"></script>
-<script src="js/content/functions.js?v=20261009-2"></script>
-<script src="js/content/aspects.js?v=20261009-2"></script>
-<script src="js/content/modelA-alpha.js?v=20261009-2"></script>
-<script src="js/content/modelA-beta.js?v=20261009-2"></script>
-<script src="js/content/modelA-gamma.js?v=20261009-2"></script>
-<script src="js/content/modelA-delta.js?v=20261009-2"></script>
-<script src="js/content/celebs.js?v=20261009-2"></script>
-<script src="js/content/facts.js?v=20261009-2"></script>
-<script src="js/content/traits.js?v=20261009-2"></script>
-<script src="js/art/prims.js?v=20261009-2"></script>
-<script src="js/art/glyphs.js?v=20261009-2"></script>
-<script src="js/art/emblem.js?v=20261009-2"></script>
-<script src="js/art/scenes.js?v=20261009-2"></script>
-<script src="js/fx/fx.js?v=20261009-2"></script>
-<script src="js/share/card.js?v=20261009-2"></script>
-<script src="js/share/social.js?v=20261009-2"></script>
-<script src="js/ui/components.js?v=20261009-2"></script>
-<script src="js/ui/box.js?v=20261009-2"></script>
-<script src="js/ui/sheet.js?v=20261009-2"></script>
-<script src="js/ui/relmap.js?v=20261009-2"></script>
-<script src="js/ui/sharekit.js?v=20261009-2"></script>
-<script src="js/views/home.js?v=20261009-2"></script>
-<script src="js/views/test.js?v=20261009-2"></script>
-<script src="js/views/result.js?v=20261009-2"></script>
-<script src="js/views/types.js?v=20261009-2"></script>
-<script src="js/views/quadras.js?v=20261009-2"></script>
-<script src="js/views/relations.js?v=20261009-2"></script>
-<script src="js/views/misc.js?v=20261009-2"></script>
-<script src="js/app.js?v=20261009-2"></script>
+<script src="config.js?v=20261013-1"></script>
+<script src="js/lib/base.js?v=20261013-1"></script>
+<script src="js/data/aspects.js?v=20261013-1"></script>
+<script src="js/data/types.js?v=20261013-1"></script>
+<script src="js/data/quadras.js?v=20261013-1"></script>
+<script src="js/data/relations.js?v=20261013-1"></script>
+<script src="js/data/questions.js?v=20261013-1"></script>
+<script src="js/core/modelA.js?v=20261013-1"></script>
+<script src="js/core/scoring.js?v=20261013-1"></script>
+<script src="js/core/payload.js?v=20261013-1"></script>
+<script src="js/core/pair.js?v=20261013-1"></script>
+<script src="js/content/types-alpha.js?v=20261013-1"></script>
+<script src="js/content/types-beta.js?v=20261013-1"></script>
+<script src="js/content/types-gamma.js?v=20261013-1"></script>
+<script src="js/content/types-delta.js?v=20261013-1"></script>
+<script src="js/content/relations.js?v=20261013-1"></script>
+<script src="js/content/functions.js?v=20261013-1"></script>
+<script src="js/content/aspects.js?v=20261013-1"></script>
+<script src="js/content/modelA-alpha.js?v=20261013-1"></script>
+<script src="js/content/modelA-beta.js?v=20261013-1"></script>
+<script src="js/content/modelA-gamma.js?v=20261013-1"></script>
+<script src="js/content/modelA-delta.js?v=20261013-1"></script>
+<script src="js/content/celebs.js?v=20261013-1"></script>
+<script src="js/content/facts.js?v=20261013-1"></script>
+<script src="js/content/traits.js?v=20261013-1"></script>
+<script src="js/art/prims.js?v=20261013-1"></script>
+<script src="js/art/glyphs.js?v=20261013-1"></script>
+<script src="js/art/emblem.js?v=20261013-1"></script>
+<script src="js/art/scenes.js?v=20261013-1"></script>
+<script src="js/fx/fx.js?v=20261013-1"></script>
+<script src="js/share/card.js?v=20261013-1"></script>
+<script src="js/share/social.js?v=20261013-1"></script>
+<script src="js/ui/components.js?v=20261013-1"></script>
+<script src="js/ui/box.js?v=20261013-1"></script>
+<script src="js/ui/sheet.js?v=20261013-1"></script>
+<script src="js/ui/relmap.js?v=20261013-1"></script>
+<script src="js/ui/sharekit.js?v=20261013-1"></script>
+<script src="js/views/home.js?v=20261013-1"></script>
+<script src="js/views/test.js?v=20261013-1"></script>
+<script src="js/views/result.js?v=20261013-1"></script>
+<script src="js/views/types.js?v=20261013-1"></script>
+<script src="js/views/quadras.js?v=20261013-1"></script>
+<script src="js/views/relations.js?v=20261013-1"></script>
+<script src="js/views/misc.js?v=20261013-1"></script>
+<script src="js/app.js?v=20261013-1"></script>
 </body>
 </html>

@@ -1,7 +1,8 @@
-/* Socio-Nik · главная. Новому человеку: герой «Привет, я …» со случайным персонажем, лента 16 типов, «Соционика»,
-   белая «Что внутри», стопка квадр. После теста страница подстраивается под тип: «Привет, Драйзер», твой персонаж
-   и три шага — про тип, твои отношения (карта-орбиты прямо тут), поделиться картинкой; дальше факты про твой тип,
-   лента с отметкой «ты» и квадры, начиная с твоей. */
+/* Socio-Nik · главная. Новому человеку: герой «Привет, кто ты?» с тайным типом — силуэтом с «?» вместо лица
+   (твой тип пока скрыт, тест его откроет), лента 16 типов, «Соционика», белая «Что внутри», стопка квадр.
+   После теста страница подстраивается под тип: «Привет, Драйзер», твой персонаж и три шага — про тип, твои
+   отношения (три строки «легко / ровно / непросто» прямо тут), поделиться картинкой; дальше факты про твой тип, лента с отметкой «ты»
+   и квадры, начиная с твоей. Шапка — общая для всех страниц (index.html). */
 (function (root) {
   const S = root.Socio;
   const V = S.views = S.views || {};
@@ -12,77 +13,57 @@
 
   let introDone = false;
   const mineType = () => (S.state.myType() ? M().type(S.state.myType()) : null);
-  // После теста герой — твой тип; иначе случайный, выбранный скриптом в <head>
+  // После теста герой — твой тип; до теста — тайный тип (data-hero="mystery", так же решает скрипт в <head>)
   const heroType = () => {
     const mine = mineType();
-    if (mine) {
-      document.documentElement.dataset.hero = mine.id;
-      // для скрипта в <head>: в следующий раз сразу предзагрузит твой портрет
-      if (!S.state.demo && S.store.get('mine', null) !== mine.id) S.store.set('mine', mine.id);
-      return mine;
-    }
-    return M().type(document.documentElement.dataset.hero) || M().type('iee');
+    document.documentElement.dataset.hero = mine ? mine.id : 'mystery';
+    // для скрипта в <head>: в следующий раз сразу предзагрузит твой портрет
+    if (mine && !S.state.demo && S.store.get('mine', null) !== mine.id) S.store.set('mine', mine.id);
+    return mine;
   };
-  // Вопрос-крючок под приветствием: личный вопрос рядом с кнопкой — главный рычаг перехода в тест
-  function ask(t) {
-    const mine = mineType();
-    if (mine && mine.id === t.id) return 'Это твой тип!';
-    if (mine) return `Твой тип — ${ui.short(mine)}. А${NB}у${NB}друзей?`;
-    return `А${NB}какой тип у${NB}тебя?`;
-  }
-  function caption(t) {
-    const mine = mineType();
-    if (mine && mine.id === t.id) return `Посмотри, с${NB}кем тебе легко, и${NB}позови друзей пройти тест`;
-    if (mine) return `${t.alias} — так в${NB}соционике называют тип${NB}${t.code}. Сравни свой тип с${NB}типами друзей`;
-    return `${t.alias} — так в${NB}соционике называют тип${NB}${t.code}. Узнай свой и${NB}с${NB}кем тебе легко`;
-  }
-  const cheer = t => (S.content.cheers && S.content.cheers[t.id]) || 'Давай узнаем твой тип!';
 
   const traits = t => (S.content.traits && S.content.traits[t.id]) || [];
-  const traitItems = t => traits(t).map((x, i) => `<li style="--k:${i}">${esc(x)}</li>`).join('');
+  const chips = list => list.map((x, i) => `<li style="--k:${i}">${esc(x)}</li>`).join('');
+  // Тайный тип: вокруг силуэта — то, что откроется после теста
+  const TEASE = ['Твоя суперсила', `С${NB}кем тебе легко`, 'Звёзды похожего типа'];
 
   // ---------- герой ----------
+  // t — твой тип после теста; без него — тайный тип
   function hero(t) {
-    const mine = mineType(), me = Boolean(mine && mine.id === t.id);
     const intro = !introDone && !S.dom.reducedMotion();
-    const pct = me ? S.core.scoring.result(S.state.result()).top.pct : 0;
-    const tagline = me ? (ui.content(t.id).tagline || '') : '';
+    const pct = t ? S.core.scoring.result(S.state.result()).top.pct : 0;
+    const items = t ? traits(t) : TEASE;
+    const about = t ? 'Коротко о типе' : 'Что узнаешь после теста';
     return `
-      <section class="hero${intro ? ' intro' : ''}${me ? ' hero-me' : ''}" data-hero style="${ui.qStyle(t.quadra)}">
-        <nav class="hero-menu h-in" style="--d:0s;--y:-20px" aria-label="Разделы">
-          <a href="#/test">Тест</a><a href="#/types">Типы</a><a href="#/relations">Отношения</a><a href="#/about">О${NB}соционике</a>
-        </nav>
+      <section class="hero${intro ? ' intro' : ''}${t ? ' hero-me' : ' hero-mystery'}" data-hero${t ? ` style="${ui.qStyle(t.quadra)}"` : ''}>
         <h1 class="hero-title display h-in" style="--d:.15s;--y:40px" data-fit data-min="12" data-max="17.5" data-maxh="21">
-          <span class="fit-in"><span class="fit-line"><span class="sv">${me ? 'Привет,' : 'Привет, я'}</span></span> <span class="fit-line"><span class="sv hero-name" data-hero-name>${esc(ui.short(t))}</span></span></span>
+          <span class="fit-in"><span class="fit-line"><span class="sv">Привет,</span></span> <span class="fit-line"><span class="sv hero-name" data-hero-name>${t ? esc(ui.short(t)) : `кто${NB}ты?`}</span></span></span>
         </h1>
         <div class="hero-char h-in" style="--d:.6s;--y:30px">
           <div class="hero-magnet" data-magnet><div class="hero-mag"><div class="hero-look">
-            <div class="hero-fig"${me ? '' : ' data-hero-next'}>${ui.character(t, { sizes: ui.CHAR.hero, eager: true })}</div>
+            <div class="hero-fig">${t ? ui.character(t, { sizes: ui.CHAR.hero, eager: true }) : `${ui.mysteryChar({ sizes: ui.CHAR.hero, eager: true })}<span class="hero-mark" aria-hidden="true">?</span>`}</div>
           </div></div></div>
-          <p class="hero-bubble" aria-hidden="true" data-hero-bubble>${esc(me ? 'Покажи друзьям, кто ты!' : cheer(t))}</p>
+          <p class="hero-bubble" aria-hidden="true" data-hero-bubble>${t ? 'Покажи друзьям, кто ты!' : `Найди меня за${NB}4${NB}минуты!`}</p>
           <span class="hero-sparks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
-          <ul class="hero-traits" aria-label="Коротко о типе" data-hero-traits data-anim>${traitItems(t)}</ul>
+          <ul class="hero-traits" aria-label="${about}" data-hero-traits data-anim>${chips(items)}</ul>
         </div>
         <div class="hero-foot">
-          <ul class="hero-traits-m h-in" style="--d:.35s;--y:20px" aria-label="Коротко о типе" data-hero-traits>${traitItems(t)}</ul>
+          <ul class="hero-traits-m h-in" style="--d:.35s;--y:20px" aria-label="${about}" data-hero-traits>${chips(items)}</ul>
           <div class="hero-ask h-in" style="--d:.3s;--y:20px">
-            ${me ? `<p class="hero-q">Ты${NB}— ${esc(t.role.toLowerCase())}</p>
-            <p class="hero-cap">${esc(tagline)}</p>
+            ${t ? `<p class="hero-q">Ты${NB}— ${esc(t.role.toLowerCase())}</p>
+            <p class="hero-cap">${esc(ui.content(t.id).tagline || '')}</p>
             <a class="hero-meta" href="#/result">${t.code} «${esc(t.alias)}» · совпадение ${pct}${NB}%</a>`
-            : `<p class="hero-q${mine ? ' long' : ''}" data-hero-q>${esc(ask(t))}</p>
-            <p class="hero-cap" data-hero-cap>${esc(caption(t))}</p>`}
+            : `<p class="hero-q" data-hero-q>16${NB}типов. Один${NB}—${NB}твой</p>
+            <p class="hero-cap" data-hero-cap>Ответь на${NB}вопросы, и${NB}силуэт оживёт: увидишь свой тип, в${NB}чём твоя сила и${NB}с${NB}кем тебе легко</p>`}
           </div>
           <div class="hero-right">
-          ${me ? `<nav class="hero-steps h-in" style="--d:.45s;--y:20px" aria-label="Что дальше">
-            <a href="#/types/${t.id}">Про мой тип</a><a href="#/#rel">Мои отношения</a><a href="#/test" data-restart-test>Пройти заново</a>
-          </nav>` : mine ? `<nav class="hero-steps h-in" style="--d:.45s;--y:20px" aria-label="Что дальше">
-            <a href="#/types/${mine.id}">Про мой тип</a><a href="#/#rel">Мои отношения</a><a href="#/#share">Поделиться</a>
-          </nav>` : ''}
-          <div class="hero-actions h-in" style="--d:.5s;--y:20px">
-            ${me ? '' : `<button class="btn-ghost hero-next" type="button" data-hero-next title="Другой тип"><span class="hero-next-l">Другой тип</span>${ui.ICON.cycle}</button>`}
-            ${me ? '<a class="btn hero-cta" href="#/#share" data-cheer>Поделиться результатом</a>' : mine ? '<a class="btn hero-cta" href="#/result" data-cheer>Мой результат</a>' : '<a class="btn hero-cta" href="#/test" data-cheer>Узнать свой тип</a>'}
-          </div>
-          ${mine ? '' : `<p class="hero-micro h-in" style="--d:.55s;--y:12px">20${NB}вопросов · 4${NB}минуты · без регистрации</p>`}
+            ${t ? `<nav class="hero-steps h-in" style="--d:.45s;--y:20px" aria-label="Что дальше">
+              <a href="#/types/${t.id}">Про мой тип</a><a href="#/#rel">Мои отношения</a><a href="#/test" data-restart-test>Пройти заново</a>
+            </nav>` : ''}
+            <div class="hero-actions h-in" style="--d:.5s;--y:20px">
+              ${t ? '<a class="btn hero-cta" href="#/#share" data-cheer>Поделиться результатом</a>' : '<a class="btn hero-cta" href="#/test" data-cheer>Узнать свой тип</a>'}
+            </div>
+            ${t ? '' : `<p class="hero-micro h-in" style="--d:.55s;--y:12px">20${NB}вопросов · 4${NB}минуты · без регистрации</p>`}
           </div>
         </div>
       </section>`;
@@ -90,6 +71,8 @@
 
   // Персонаж стоит под заголовком и закрывает нижнюю часть букв имени; ширина 280 / 360 / 440 / 520.
   // Если места больше, чем нужно персонажу, заголовок опускается к нему — наложение остаётся одинаковым.
+  // Тайный тип тёмный и прятал бы буквы, поэтому при нехватке места он не поднимается на заголовок, а уходит
+  // низом под подвал героя: над подвалом остаются голова и плечи, ниже силуэт и так растворяется в фоне.
   function layoutHero(el) {
     const title = el.querySelector('.hero-title'), name = title.querySelector('.fit-line:last-child');
     const fig = el.querySelector('.hero-char'), foot = el.querySelector('.hero-foot');
@@ -103,11 +86,13 @@
     const base = title.offsetTop + name.offsetTop + fs * (lh / 2 + 0.3585);   // базовая линия имени (метрики Montserrat)
     const top0 = base - 0.7 * fs * 0.36;                                      // макушка закрывает ~треть высоты букв
     const limit = wide ? el.offsetHeight : foot.offsetTop - (phone ? 10 : 0);
-    const w = Math.max(minW, Math.min(maxW, (limit - top0) * 0.8)), h = w * 1.25;
+    const mystery = !wide && el.classList.contains('hero-mystery');   // на широком подвал героя и так внизу, поверх
+    const room = (limit - top0) * (mystery ? 1 / (0.55 * 1.25) : 0.8);   // тайному типу хватает места на голову и плечи
+    const w = Math.max(minW, Math.min(maxW, room)), h = w * 1.25;
     let shift = Math.max(0, limit - top0 - h);
     if (phone) shift /= 2;
     let top = top0 + shift;
-    if (top + h > limit) top = limit - h;
+    if (top + h > limit && !mystery) top = limit - h;
     title.style.marginTop = shift ? `calc(var(--title-mt) + ${shift.toFixed(1)}px)` : '';
     fig.style.top = top.toFixed(1) + 'px';
     fig.style.width = w.toFixed(1) + 'px';
@@ -123,78 +108,21 @@
     });
   }
 
-  // Колода без повторов: следующий персонаж — случайный, пока не покажем всех
-  let deck = [];
-  function nextType(cur) {
-    if (!deck.length) deck = S.data.types.map(t => t.id).filter(id => id !== cur).sort(() => Math.random() - 0.5);
-    return M().type(deck.shift());
-  }
-  function prefetch(t) {
-    const img = new Image();
-    img.dataset.id = t.id;
-    img.sizes = ui.CHAR.hero;
-    img.srcset = ui.charSrc(t).srcset;
-    img.src = ui.charSrc(t).src;
-    return img;
-  }
-
   function mountHero(root) {
     const el = root.querySelector('[data-hero]');
     if (!el) return () => {};
-    const de = document.documentElement, timers = [];
+    const timers = [];
     const later = (fn, ms) => timers.push(setTimeout(fn, S.dom.reducedMotion() ? 0 : ms));
-    const title = el.querySelector('.hero-title'), figEl = el.querySelector('.hero-fig');
-    const nameEl = el.querySelector('[data-hero-name]'), capEl = el.querySelector('[data-hero-cap]'), qEl = el.querySelector('[data-hero-q]');
-    const traitEls = Array.from(el.querySelectorAll('[data-hero-traits]'));
-    const bubble = el.querySelector('[data-hero-bubble]');
     const layout = () => layoutHero(el);
     el.addEventListener('fitted', layout);
     addEventListener('resize', layout);
     if (el.classList.contains('intro')) later(() => { introDone = true; el.classList.remove('intro'); }, 1400);
     else introDone = true;
 
-    // шапка спрятана, пока на экране меню героя
-    const menu = el.querySelector('.hero-menu');
-    const io = new IntersectionObserver(([e]) => de.classList.toggle('hero-on', e.isIntersecting));
-    io.observe(menu);
-
-    // после теста герой — ты: персонажей не перебираем
-    const me = el.classList.contains('hero-me');
-    let queued = me ? null : prefetch(nextType(de.dataset.hero)), busy = false;
-    const swap = () => {
-      if (busy || me) return;
-      busy = true;
-      const img = queued, next = M().type(img.dataset.id);
-      const ready = img.decode ? img.decode().catch(() => {}) : Promise.resolve();
-      figEl.classList.add('is-out');
-      [title, capEl, qEl, ...traitEls].forEach(x => x.classList.add('is-fading'));
-      Promise.all([ready, new Promise(r => later(r, 160))]).then(() => {
-        de.dataset.hero = next.id;
-        S.store.set('hero', next.id);
-        const pic = figEl.querySelector('img'), src = ui.charSrc(next);
-        pic.srcset = src.srcset;
-        pic.src = src.src;
-        pic.alt = `Персонаж типа ${next.code} «${next.alias}»`;
-        nameEl.textContent = ui.short(next);
-        capEl.textContent = caption(next);
-        qEl.textContent = ask(next);
-        traitEls.forEach(ul => { ul.innerHTML = traitItems(next); });
-        bubble.textContent = cheer(next);
-        el.style.setProperty('--q', `var(--q-${next.quadra})`);
-        S.fx.fit(title);
-        figEl.classList.remove('is-out');
-        [title, capEl, qEl, ...traitEls].forEach(x => x.classList.remove('is-fading'));
-        queued = prefetch(nextType(next.id));
-        later(() => { busy = false; }, 160);
-      });
-    };
-    const onClick = e => {
-      if (e.target.closest('[data-hero-next]')) swap();
-      if (e.target.closest('[data-restart-test]')) S.store.del('test');
-    };
+    const onClick = e => { if (e.target.closest('[data-restart-test]')) S.store.del('test'); };
     el.addEventListener('click', onClick);
 
-    // Наведение на главную кнопку: персонаж радуется и подбадривает
+    // Наведение на главную кнопку: персонаж радуется (тайный тип — подпрыгивает и качает «?»)
     let cheerT = 0;
     const cheerOn = () => { clearTimeout(cheerT); el.classList.add('cheer'); };
     const cheerOff = () => { clearTimeout(cheerT); cheerT = setTimeout(() => el.classList.remove('cheer'), 350); };
@@ -209,8 +137,6 @@
 
     return () => {
       clearTimeout(cheerT);
-      io.disconnect();
-      de.classList.remove('hero-on');
       removeEventListener('resize', layout);
       timers.forEach(clearTimeout);
     };
@@ -329,7 +255,7 @@
         <div class="wrap">
           <div class="rm-head">
             <h2 class="h2 reveal"><span class="sv">С${NB}кем тебе легко</span></h2>
-            <p class="rm-sub reveal">Ты${NB}— в${NB}центре. Чем ближе орбита, тем легче с${NB}этим типом. Нажми на${NB}аватар${NB}— увидишь, как вы ладите.</p>
+            <p class="rm-sub reveal">Все 15 типов по${NB}трём строкам. Нажми на${NB}тип${NB}— увидишь, как вы ладите.</p>
           </div>
           ${ui.relMap(t, { uid: 'rmh' })}
         </div>

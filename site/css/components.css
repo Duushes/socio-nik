@@ -5,7 +5,7 @@
 .hero {
   --title-mt: clamp(10px, 3.2vh, 44px);
   position: relative; isolation: isolate; display: flex; flex-direction: column;
-  min-height: max(100svh, 560px); padding: 16px var(--gutter) 20px; overflow: hidden;
+  min-height: max(100svh, 560px); padding: calc(var(--nav-h) + 4px) var(--gutter) 20px; overflow: hidden;
   transition: --q 0.5s var(--ease);
 }
 .hero::before {
@@ -13,23 +13,27 @@
   border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--q) 30%, transparent), color-mix(in srgb, var(--q) 8%, transparent) 55%, transparent 75%);
 }
 .hero::after { content: ""; position: absolute; z-index: 11; left: 0; right: 0; bottom: 0; height: 22%; background: linear-gradient(transparent, var(--ink)); pointer-events: none; }
-.hero-menu { position: relative; z-index: 12; display: flex; justify-content: space-between; gap: 10px; }
-.hero-menu a { color: var(--text); font-size: clamp(11px, 3.3vw, 14px); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none; white-space: nowrap; transition: opacity 0.2s; }
-.hero-menu a:hover { opacity: 0.7; }
 .hero-title { position: relative; z-index: 1; margin: var(--title-mt) 0 0; line-height: 1; text-align: center; white-space: nowrap; transition: opacity 0.1s linear; }
 .fit-in { display: inline-block; white-space: nowrap; }
 [data-fit].is-two .fit-in { display: block; }
 [data-fit].is-two .fit-line { display: block; width: max-content; margin-inline: auto; }
 .hero-char { position: absolute; z-index: 10; left: 50%; top: 42%; width: 280px; transform: translateX(-50%); }
 .hero:not(.laid) .hero-char { opacity: 0; }
-.hero-fig { cursor: pointer; transition: opacity 0.15s var(--ease), transform 0.15s var(--ease); -webkit-tap-highlight-color: transparent; }
-.hero-fig.is-out { opacity: 0; transform: translateY(18px) scale(0.97); }
+.hero-fig { position: relative; container-type: inline-size; }
 .hero-fig img { width: 100%; user-select: none; -webkit-user-select: none; }
-.is-fading { opacity: 0 !important; }
+/* тайный тип: силуэт с контровым светом, вместо лица — «?», который тихо дышит; на главной кнопке — качается */
+.hero-mystery { --q: #8e5ae8; }
+.hero-mystery .hero-q { font-size: clamp(22px, 3.1vw, 40px); }
+/* свет позади головы — мягкий диск без границ (в картинке он упирался бы в её края) */
+.hero-mystery .hero-fig::before { content: ""; position: absolute; z-index: -1; left: 47%; top: 27%; width: 118%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; background: radial-gradient(closest-side, rgba(142, 90, 232, 0.3), rgba(142, 90, 232, 0.1) 52%, transparent); pointer-events: none; }
+.hero-mark { position: absolute; left: 47.2%; top: 25%; translate: -50% -50%; color: #ece6ff; font-size: 30cqw; font-weight: 900; line-height: 1; text-shadow: 0 0 0.06em rgba(214, 150, 255, 0.7), 0 0 0.36em rgba(142, 90, 232, 0.45); pointer-events: none; user-select: none; -webkit-user-select: none; animation: mark-breathe 4.8s ease-in-out infinite; }
+@keyframes mark-breathe { 0%, 100% { opacity: 0.74; scale: 1; } 50% { opacity: 0.92; scale: 1.03; } }
+.hero.cheer .hero-mark { opacity: 0.95; animation: mark-tilt 0.9s var(--spring) infinite; }
+@keyframes mark-tilt { 0%, 100% { rotate: 0deg; } 35% { rotate: -9deg; } 70% { rotate: 5deg; } }
 .hero-foot { position: relative; z-index: 12; margin-top: auto; display: flex; flex-direction: column; gap: 14px; padding-top: 16px; }
 /* вопрос-крючок и подпись — над кнопкой, единым блоком */
 .hero-ask { display: grid; gap: 6px; }
-.hero-q { margin: 0; color: var(--paper); font-size: clamp(22px, 5.6vw, 40px); font-weight: 800; line-height: 1.08; letter-spacing: -0.01em; transition: opacity 0.1s linear; }
+.hero-q { margin: 0; color: var(--paper); font-size: clamp(22px, 5.6vw, 40px); font-weight: 800; line-height: 1.08; letter-spacing: -0.01em; text-wrap: balance; transition: opacity 0.1s linear; }
 .hero-q.long { font-size: clamp(20px, 4.6vw, 30px); }
 .hero-cap { max-width: 34em; margin: 0; color: rgba(215, 226, 234, 0.72); font-size: clamp(13px, 1.1vw, 15px); line-height: 1.45; transition: opacity 0.1s linear; }
 .hero-micro { margin: 0; color: rgba(215, 226, 234, 0.6); font-size: 12px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
@@ -38,9 +42,8 @@
 .hero-next { flex: none; width: 52px; min-height: 52px; padding: 0; }
 .hero-actions { flex-wrap: nowrap; }
 .hero-next-l { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-@media (max-width: 1023px) {
-  .hero-fig img { -webkit-mask-image: linear-gradient(#000 80%, transparent); mask-image: linear-gradient(#000 80%, transparent); }
-}
+/* низ бюста растворяется — без прямого среза у нижнего края героя */
+.hero-fig img { -webkit-mask-image: linear-gradient(#000 80%, transparent); mask-image: linear-gradient(#000 80%, transparent); }
 @media (min-width: 640px) {
   .hero-foot { flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 24px; }
   .hero-ask { max-width: min(48%, 30em); }
@@ -48,10 +51,8 @@
   .hero-actions .btn { flex: none; }
 
 }
-@media (min-width: 768px) { .hero-menu a { font-size: 18px; } }
 @media (min-width: 1024px) {
-  .hero { padding-top: 22px; }
-  .hero-menu a { font-size: 22.4px; }
+  .hero { padding-top: calc(var(--nav-h) + 8px); }
   .hero-foot { position: absolute; left: var(--gutter); right: var(--gutter); bottom: 26px; }
   .hero-ask { max-width: min(var(--side, 300px), 26em); }
 }
@@ -843,146 +844,113 @@
 .type-nav .btn-ghost { min-height: clamp(56px, 7vw, 92px); padding-inline: clamp(20px, 3.4vw, 48px); font-size: clamp(13px, 2.2vw, 28px); font-weight: 800; letter-spacing: 0.04em; }
 .sec-line:has(+ .type-nav) { padding-bottom: clamp(40px, 5vw, 64px); }
 
-/* ================= КАРТА ОТНОШЕНИЙ: ОРБИТЫ ================= */
-.relmap { --rt-support: #3ddc97; --rt-work: #f5c542; --rt-tense: #ff6b6b; position: relative; display: grid; gap: 8px; }
-/* компьютер: слева управление и сцена, справа панель во всю высоту — всё в одном экране */
+/* ================= ОТНОШЕНИЯ ТИПА: ТРИ СТРОКИ ================= */
+/* «Легко / Ровно / Непросто» — по пять типов в строке. Тон отношения — сама строка (и точка той же светлости, что
+   в панели: чем светлее, тем легче), остальное в нейтральных тонах сайта. Ярко одно — выбранная пара. */
+.relmap { position: relative; display: grid; gap: 14px; }
+/* компьютер: слева строки, справа панель разбора */
 @media (min-width: 1024px) {
-  .relmap { grid-template-columns: minmax(0, 1.32fr) minmax(360px, 1fr); grid-template-rows: auto 1fr; grid-template-areas: "ctl panel" "stage panel"; column-gap: clamp(20px, 2.6vw, 44px); row-gap: 4px; align-items: center; }
-  .rm-ctl { grid-area: ctl; align-self: end; }
+  .relmap { grid-template-columns: minmax(0, 1.3fr) minmax(360px, 1fr); grid-template-areas: "stage panel"; column-gap: clamp(24px, 3vw, 56px); align-items: start; }
+  .relmap[data-pick] { grid-template-rows: auto 1fr; grid-template-areas: "ctl panel" "stage panel"; row-gap: 10px; }
+  .rm-ctl { grid-area: ctl; }
   .rm-stage { grid-area: stage; }
   .rm-panel { grid-area: panel; }
 }
-.t-support { --c: var(--rt-support); }
-.t-work { --c: var(--rt-work); }
-.t-tense { --c: var(--rt-tense); }
-/* выбор типа и фильтры — одной строкой над сценой */
-.rm-ctl { position: relative; z-index: 2; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; }
+.t-support { --o: 0.46; }
+.t-work { --o: 0.28; }
+.t-tense { --o: 0.16; }
+.rd-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: rgba(215, 226, 234, calc(var(--o) * 2)); }
+/* выбор типа (страница «Отношения») */
+.rm-ctl { position: relative; z-index: 2; display: flex; }
 .rm-pick { flex: 1 1 250px; max-width: 340px; }
 @media (max-width: 767px) {
-  .rm-ctl { flex-wrap: nowrap; gap: 8px; }
-  .rm-pick { flex: 1 1 auto; min-width: 0; }
+  .rm-pick { max-width: none; }
   .rm-pick .pick-lab { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .rm-pick select { min-height: 48px; padding: 10px 32px 10px 14px; }
   .rm-pick .pick-box::after { right: 16px; }
 }
-.rm-filters { display: flex; flex-wrap: wrap; gap: 6px; }
-.rm-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 5px 15px 5px 7px; border: 1.5px solid var(--hair); border-radius: var(--r-pill); background: rgba(12, 12, 12, 0.45); color: var(--text); font: 600 12px/1 var(--font); letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: border-color 0.2s, background 0.2s; -webkit-tap-highlight-color: transparent; }
-.rm-chip img { width: 30px; height: 30px; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.4)); }
-.rm-chip:hover { border-color: color-mix(in srgb, var(--c) 60%, transparent); }
-.rm-chip[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); }
-@media (max-width: 767px) {
-  .rm-filters { flex-wrap: nowrap; gap: 5px; }
-  .rm-chip { min-width: 42px; min-height: 42px; padding: 4px; justify-content: center; }
-  .rm-chip img { width: 28px; height: 28px; }
-  .rm-chip span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-}
 
-.rm-stage { position: relative; min-width: 0; container-type: inline-size; }
-@media (max-width: 767px) { .rm-stage { margin-inline: calc(-1 * var(--gutter)); } }
-/* сцена держит пропорции viewBox и не выше экрана за вычетом шапки и панели управления */
-.rm-scene { position: relative; width: min(100%, calc((100svh - var(--nav-h) - 150px) * 1.54)); margin-inline: auto; }
-@media (max-width: 767px) { .rm-scene { width: min(100%, calc((100svh - var(--nav-h) - 300px) * 1.18)); } }
-.rm-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.rm-svg-back { z-index: 1; }
-.rm-svg-front { z-index: 21; }
-.rm-floor { opacity: 1; }
-.rm-ring { fill: none; stroke: var(--c); stroke-width: 3; stroke-linecap: round; stroke-opacity: 0.3; stroke-dasharray: 1; stroke-dashoffset: 0; transition: opacity 0.3s; }
-.rm-svg-front .rm-ring { stroke-opacity: 0.75; filter: drop-shadow(0 0 5px var(--c)); }
-/* персонаж в центре — стоит на светящемся пятне */
-.rm-bust { position: absolute; z-index: 20; translate: -50% -100%; pointer-events: none; }
-.rm-bust .char { position: relative; display: block; width: 100%; -webkit-mask-image: linear-gradient(#000 72%, transparent 97%); mask-image: linear-gradient(#000 72%, transparent 97%); filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.5)); }
-.rm-pedestal { position: absolute; left: -38%; right: -38%; bottom: -14%; height: 40%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--q) 60%, transparent), color-mix(in srgb, var(--q) 16%, transparent) 55%, transparent); }
-/* аватары-шары */
-.rm-node { position: absolute; z-index: var(--z); width: var(--d); aspect-ratio: 1; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--paper); cursor: pointer; translate: -50% -50%; filter: brightness(var(--dim)); transition: scale 0.35s var(--spring), opacity 0.3s, filter 0.3s; -webkit-tap-highlight-color: transparent; }
-.rm-node::after { content: ""; position: absolute; inset: -18%; border-radius: 50%; }   /* попасть пальцем проще */
-.rm-shadow { position: absolute; z-index: -1; left: -24%; right: -24%; top: 52%; height: 64%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 42%, transparent), transparent); pointer-events: none; }
-.rm-orb { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; border-radius: 50%; background: radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--q) 52%, #1b1c20), #0f1013 78%); box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 85%, transparent), 0 0 18px -4px var(--c), 0 12px 22px rgba(0, 0, 0, 0.55); animation: rm-float 6s ease-in-out infinite; animation-delay: calc(var(--k) * -0.45s); }
-@media (hover: none) { .rm-orb { animation: none; } }
+/* строки: подпись слева, пять типов справа; на телефоне подпись — над типами */
+.rm-stage { display: grid; min-width: 0; }
+.rm-row { display: grid; grid-template-columns: minmax(118px, 0.32fr) minmax(0, 1fr); align-items: center; gap: 10px 18px; padding-block: 14px; border-top: 1px solid var(--hair); }
+.rm-row:first-child { padding-top: 2px; border-top: 0; }
+.rm-lab { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 9px; margin: 0; }
+.rm-lab b { font-size: clamp(1.05rem, 1.45vw, 1.3rem); font-weight: 800; line-height: 1.1; }
+.rm-hint { grid-column: 2; color: var(--muted); font-size: 12.5px; line-height: 1.35; }
+.rm-list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; }
+.rm-node { display: grid; justify-items: center; align-content: start; gap: 8px; width: 100%; padding: 10px 2px 12px; border: 0; border-radius: 22px; background: transparent; color: var(--paper); font: inherit; cursor: pointer; transition: background 0.2s; -webkit-tap-highlight-color: transparent; }
+@media (hover: hover) and (pointer: fine) { .rm-node:hover { background: rgba(215, 226, 234, 0.04); } .rm-node:hover .rm-orb { scale: 1.05; } }
+.rm-orb { position: relative; display: block; width: min(100%, clamp(52px, 5.4vw, 80px)); aspect-ratio: 1; overflow: hidden; border-radius: 50%; background: radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--q) 40%, #1b1c20), #0f1013 78%); box-shadow: 0 0 0 1.5px rgba(215, 226, 234, 0.14); transition: box-shadow 0.2s, scale 0.25s var(--out); }
 .rm-orb .char { width: 100%; height: 100%; object-fit: cover; object-position: 50% 4%; transform: scale(1.34); transform-origin: 50% 0; }
-.rm-orb::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 32% 22%, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 40%), radial-gradient(circle at 50% 125%, rgba(0, 0, 0, 0.4), transparent 62%); pointer-events: none; }
-.rm-tag { position: absolute; left: 50%; top: 86%; z-index: 2; display: grid; justify-items: center; padding: 3px 9px 4px; border: 1px solid color-mix(in srgb, var(--c) 55%, transparent); border-radius: var(--r-pill); background: rgba(12, 12, 12, 0.8); translate: -50% 0; white-space: nowrap; pointer-events: none; }
-.rm-tag b { font-size: clamp(10px, 1.5cqw, 14px); font-weight: 800; line-height: 1.15; letter-spacing: 0.04em; }
-.rm-tag small { display: none; color: var(--c); font-size: clamp(10px, 1.15cqw, 12px); font-weight: 600; line-height: 1.2; }
-.rm-node.is-on { z-index: 45; scale: 1.16; filter: none; }
-.rm-node.is-on .rm-orb { box-shadow: 0 0 0 3px var(--c), 0 0 34px -2px var(--c), 0 14px 26px rgba(0, 0, 0, 0.6); }
-.rm-node.is-on .rm-tag { z-index: 3; border-color: var(--c); }
-.rm-node.is-on .rm-tag small { display: block; }
-.rm-node:focus-visible { outline: none; }
-.rm-node:focus-visible .rm-orb { box-shadow: 0 0 0 3px var(--paper), 0 0 0 6px var(--c), 0 14px 26px rgba(0, 0, 0, 0.6); }
-@media (hover: hover) and (pointer: fine) { .rm-node:hover { scale: 1.1; filter: none; } .rm-node.is-on:hover { scale: 1.16; } }
-/* луч от персонажа к выбранной паре: свет в цвете тона и бегущие точки — откуда куда идёт влияние */
-.rm-beam { opacity: 0; transition: opacity 0.25s; }
-.rm-beam.is-on { opacity: 1; }
-.rm-ray { fill: none; stroke: var(--c); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 0; filter: drop-shadow(0 0 7px var(--c)); opacity: 0.85; }
-.rm-beam.draw .rm-ray { animation: rm-draw 0.55s var(--out); }
-.rm-flow { fill: none; stroke: #fff; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 1 26; opacity: 0.95; animation: rm-flow 1s linear infinite; }
-.rm-flow.rm-back { opacity: 0; }
-.rm-beam.f-in .rm-flow { animation-direction: reverse; }
-.rm-beam.f-both .rm-flow.rm-back { opacity: 0.6; animation-direction: reverse; }
-/* символ отношения над лучом и «луны» — символы орбит */
-.rm-emote { position: absolute; z-index: 40; width: 7.6%; translate: -50% -50%; pointer-events: none; filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.5)); animation: rm-bob 3s ease-in-out infinite; }
-.rm-emote.pop { animation: rm-emote-in 0.5s var(--spring), rm-bob 3s ease-in-out 0.5s infinite; }
-@media (max-width: 767px) { .rm-emote { width: 9.5%; } }
-.rm-moon { position: absolute; z-index: 12; width: 5%; translate: -50% -50%; pointer-events: none; filter: drop-shadow(0 6px 9px rgba(0, 0, 0, 0.45)); animation: rm-bob 5s ease-in-out infinite; animation-delay: calc(var(--k) * -1.6s); transition: opacity 0.3s; }
-/* фильтр по тону гасит чужие орбиты */
-.relmap.filtered .rm-node, .relmap.filtered .rm-ring, .relmap.filtered .rm-moon { opacity: 0.16; }
-.relmap.filtered.f-support .t-support, .relmap.filtered.f-work .t-work, .relmap.filtered.f-tense .t-tense { opacity: 1; }
-.relmap.filtered .rm-node.is-on { opacity: 1; }
-
-/* панель разбора */
-.rm-panel { position: relative; min-width: 0; }
-.rm-panel.pop .rd { animation: pop-in 0.45s var(--out); }
-.rd { display: flex; flex-direction: column; max-height: calc(100svh - var(--nav-h) - 78px - 100vw / 1.18); overflow: auto; padding: 18px 18px 14px; border: 2px solid var(--c); border-radius: 28px; background: radial-gradient(90% 60% at 100% 0%, color-mix(in srgb, var(--c) 12%, transparent), transparent 70%), #111215; color: var(--paper); scrollbar-width: thin; }
-@media (min-width: 768px) { .rd { max-height: none; overflow: visible; } }
-@media (min-width: 1024px) { .rd { max-height: calc(100svh - var(--nav-h) - 130px); overflow: hidden; padding: clamp(18px, 2vw, 28px); border-radius: var(--r-card); } }
-.rd-duo { display: none; }
-@media (min-width: 1024px) and (min-height: 700px) {
-  .rd-duo { display: block; flex: none; width: min(100%, 300px); margin: -4px auto 6px; }
-  .rd-duo .duo figcaption { margin-top: -10px; }
-  .rd-duo .duo figcaption b { font-size: 14px; }
-  .rd-duo .duo figcaption span { display: none; }
-  .rd:has(.rd-duo) .rd-ava { display: none; }
-  .rd:has(.rd-duo) .rd-head { grid-template-columns: 1fr; }
+.rm-tag { display: grid; justify-items: center; gap: 2px; min-width: 0; text-align: center; }
+.rm-tag b { font-size: 13px; font-weight: 700; line-height: 1.15; letter-spacing: 0.04em; }
+.rm-tag small { color: var(--muted); font-size: 11.5px; font-weight: 500; line-height: 1.2; white-space: nowrap; }
+/* выбранная пара: плашка, светлое кольцо, вид отношения цветом текста */
+.rm-node.is-on { background: var(--chip); }
+.rm-node.is-on .rm-orb { box-shadow: 0 0 0 2px var(--paper); }
+.rm-node.is-on .rm-tag small { color: var(--paper); }
+.rm-node:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
+@media (max-width: 767px) {
+  .rm-row { grid-template-columns: minmax(0, 1fr); gap: 6px; padding-block: 12px; }
+  .rm-lab { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+  .rm-lab .rd-dot { align-self: center; }
+  .rm-lab b { font-size: 16px; }
+  .rm-hint { font-size: 12px; }
+  .rm-list { margin-inline: -6px; gap: 2px; }
+  .rm-node { gap: 6px; padding: 8px 0 9px; border-radius: 18px; }
+  .rm-orb { width: min(100%, 54px); }
+  .rm-tag b { font-size: 12px; }
+  /* вид отношения на телефоне — только у выбранного: пять подписей в ряд не помещаются */
+  .rm-tag small { display: none; }
+  .rm-node.is-on .rm-tag small { display: block; }
 }
-.rd-head { flex: none; display: grid; grid-template-columns: 52px 1fr; gap: 12px; align-items: center; margin-bottom: 10px; }
-.rd-ava { width: 52px; height: 52px; overflow: hidden; border-radius: 50%; background: color-mix(in srgb, var(--q) 34%, #141518); box-shadow: 0 0 0 2.5px var(--c); }
+
+/* панель разбора: нейтральная плашка, сначала вид отношения, под ним — с кем */
+.rm-panel { position: relative; min-width: 0; }
+.rm-panel.pop .rd { animation: rd-in 0.25s var(--out); }
+@keyframes rd-in { from { opacity: 0.35; } }
+.rd { display: flex; flex-direction: column; padding: 18px 18px 14px; border: 1px solid var(--hair); border-radius: 28px; background: var(--card); color: var(--paper); scrollbar-width: thin; }
+@media (min-width: 1024px) { .rd { max-height: calc(100svh - var(--nav-h) - 130px); overflow: hidden; padding: clamp(20px, 2.2vw, 32px); border-radius: var(--r-card); } }
+.rd-head { flex: none; display: grid; grid-template-columns: 48px 1fr; gap: 14px; align-items: center; margin-bottom: 12px; }
+.rd-ava { width: 48px; height: 48px; overflow: hidden; border-radius: 50%; background: color-mix(in srgb, var(--q) 30%, #141518); box-shadow: 0 0 0 1.5px rgba(215, 226, 234, 0.18); }
 .rd-ava img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 6%; transform: scale(1.3); transform-origin: 50% 0; }
-.rd-kicker { margin: 0 0 3px; color: rgba(215, 226, 234, 0.6); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
-.rd-title { margin: 0 0 5px; font-size: clamp(1.1rem, 1.8vw, 1.6rem); font-weight: 900; line-height: 1.08; text-transform: uppercase; }
-.rd-tone { display: inline-flex; align-items: center; gap: 6px; color: rgba(215, 226, 234, 0.75); font-size: 12.5px; line-height: 1.35; }
-.rd-tone img { flex: none; width: 22px; height: 22px; }
+.rd-title { margin: 0 0 3px; font-size: clamp(1.15rem, 1.5vw, 1.45rem); font-weight: 800; line-height: 1.15; letter-spacing: -0.01em; text-wrap: balance; }
+.rd-who { margin: 0; color: var(--muted); font-size: 13px; font-weight: 500; line-height: 1.35; }
+.rd-tone { flex: none; display: flex; align-items: flex-start; gap: 9px; margin: 0 0 12px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.rd-tone .rd-dot { margin-top: 0.42em; }
 @media (max-width: 767px) { .rd-tone-x { display: none; } }
-.rd-line { flex: none; margin: 0 0 10px; font-size: clamp(1rem, 1.3vw, 1.15rem); font-weight: 600; line-height: 1.4; }
-.rd-tabs { flex: none; display: flex; gap: 4px; margin: 0 0 10px; padding: 4px; border-radius: var(--r-pill); background: rgba(215, 226, 234, 0.06); }
-.rd-tabs button { flex: 1; min-height: 36px; padding: 6px 8px; border: 0; border-radius: var(--r-pill); background: transparent; color: rgba(215, 226, 234, 0.65); font: 600 11.5px/1.1 var(--font); letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; transition: background 0.2s, color 0.2s; }
+.rd-line { flex: none; margin: 0 0 14px; font-size: clamp(1rem, 1.25vw, 1.12rem); font-weight: 600; line-height: 1.42; }
+.rd-tabs { flex: none; display: flex; gap: 4px; margin: 0 0 12px; padding: 4px; border-radius: var(--r-pill); background: rgba(215, 226, 234, 0.05); }
+.rd-tabs button { flex: 1; min-height: 36px; padding: 6px 8px; border: 0; border-radius: var(--r-pill); background: transparent; color: var(--muted); font: 600 11.5px/1.1 var(--font); letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; transition: background 0.2s, color 0.2s; }
 .rd-tabs button:hover { color: var(--paper); }
 @media (max-width: 767px) { .rd-tabs button { padding: 6px 4px; font-size: 12.5px; letter-spacing: 0; text-transform: none; } }
-.rd-tabs [aria-selected="true"] { background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--paper); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 60%, transparent); }
+.rd-tabs [aria-selected="true"] { background: rgba(215, 226, 234, 0.12); color: var(--paper); }
 .rd-panes { flex: 1 1 auto; min-height: 60px; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
-/* телефон: в панели — кто это, вид, одна фраза и кнопки; аватар уже подсвечен на карте прямо над панелью */
+/* телефон: в панели — вид отношения, с кем, тон, одна фраза и кнопки; аватар уже подсвечен на карте прямо над панелью */
 @media (max-width: 767px) {
-  .rd { max-height: calc(100svh - var(--nav-h) - 40px - 100vw / 1.18); padding: 14px 16px 12px; }
+  .rd { max-height: none; overflow: visible; padding: 16px 18px 12px; }
   .rd-tabs, .rd-panes, .rd-ava { display: none; }
-  .rd-head { grid-template-columns: 1fr; margin-bottom: 6px; }
-  .rd-line { margin-bottom: 2px; font-size: 15px; line-height: 1.38; }
-  .rd-foot { margin-top: 8px; padding-top: 8px; }
+  .rd-head { grid-template-columns: 1fr; margin-bottom: 8px; }
+  .rd-tone { margin-bottom: 8px; }
+  .rd-line { margin-bottom: 2px; font-size: 15px; line-height: 1.4; }
+  .rd-foot { margin-top: 10px; padding-top: 10px; }
   .rd-foot .link { white-space: nowrap; }
 }
 /* самые узкие телефоны: роль уже видна на карте и в шторке — убираем строку; кнопка поуже */
-@media (max-width: 360px) { .rd-k-role, .rd-ref-w { display: none; } .rd-refocus { gap: 6px; padding-inline: 12px; } .rd-title { font-size: 1rem; } .rd-line { font-size: 14px; } }
+@media (max-width: 360px) { .rd-k-role, .rd-ref-w { display: none; } .rd-refocus { gap: 6px; padding-inline: 12px; } .rd-title { font-size: 1.05rem; } .rd-line { font-size: 14px; } }
 .rd-panes.more { -webkit-mask-image: linear-gradient(#000 calc(100% - 34px), transparent); mask-image: linear-gradient(#000 calc(100% - 34px), transparent); }
 .rd-pane p { margin: 0 0 8px; color: rgba(215, 226, 234, 0.85); font-size: 15px; line-height: 1.55; }
 .rd-role b { color: var(--paper); }
-.rd-foot { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(215, 226, 234, 0.12); }
+.rd-foot { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--hair); }
 .rd .link { color: var(--paper); }
-@media (max-width: 767px) { .rd-foot { flex-wrap: nowrap; } .rd .link { font-size: 14px; } .rd-refocus { flex: none; padding-inline: 12px; } }
-.rd-refocus { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 14px; border: 1.5px solid var(--hair); border-radius: var(--r-pill); background: transparent; color: var(--paper); font: 600 11.5px/1 var(--font); letter-spacing: 0.05em; text-transform: uppercase; text-decoration: none; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
-.rd-refocus:hover { border-color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); }
+@media (max-width: 767px) { .rd .link { font-size: 14px; } .rd-refocus { flex: none; padding-inline: 12px; } }
+.rd-refocus { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 14px; border: 1px solid var(--hair); border-radius: var(--r-pill); background: transparent; color: var(--paper); font: 600 11.5px/1 var(--font); letter-spacing: 0.05em; text-transform: uppercase; text-decoration: none; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+.rd-refocus:hover { border-color: rgba(215, 226, 234, 0.5); background: var(--chip); }
 .rd-refocus .ico { width: 16px; height: 16px; }
 .rel-all { margin-top: 32px; }
 .rel-all > summary { color: var(--text); font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
 .rel-all[open] > summary { margin-bottom: 18px; }
-/* секция карты на странице «Отношения» — компактная шапка, чтобы карта и панель влезали в экран */
+/* секция «С кем легко» — компактная шапка, чтобы строки и панель влезали в экран */
 .rm-sec { padding-block: clamp(28px, 3.4vw, 48px) clamp(48px, 6vw, 80px); }
 .rm-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 24px; margin-bottom: 14px; }
 .rm-head .h2 { font-size: clamp(1.6rem, 3.6vw, 52px); }
