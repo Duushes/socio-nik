@@ -100,10 +100,12 @@
   }
 
   // ---------- лента: ряды едут в разные стороны по прокрутке ----------
-  // offset = (scrollY − верх секции + высота окна) × 0,3; первый ряд — offset − 200, второй — зеркально
+  // offset = (scrollY − верх секции + высота окна) × 0,3; первый ряд — offset − 200, второй — зеркально.
+  // Телефон и сенсорные экраны — без этого: там прокрутка идёт мимо скрипта (iOS, встроенный браузер Telegram),
+  // привязанные ряды отставали и прыгали; ряды листаются пальцем (components.css).
   function marquee(scope) {
     const sec = scope.querySelector('[data-marquee]');
-    if (!sec || reducedMotion()) return () => {};
+    if (!sec || reducedMotion() || compactScreen()) return () => {};
     const rows = Array.from(sec.querySelectorAll('.mq-track'));
     return onScrollFrame(sec, () => {
       const offset = (scrollY - (sec.getBoundingClientRect().top + scrollY) + innerHeight) * 0.3;

@@ -659,10 +659,10 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     check('375×667: тайный тип не закрывает кнопку и заходит на «кто ты?» не больше чем на половину строки, кнопка на первом экране',
       foldX.mystery && foldX.ctaFree && foldX.ctaBottom <= 667 && foldX.overlap <= 50, JSON.stringify(foldX));
     await b.eval(`localStorage.setItem('socio.result', ${JSON.stringify(saved375)})`);
-    await b.goto(BASE + '#/');
+    await b.reload();   // тот же адрес #/ — без перезагрузки страница осталась бы с тайным типом
     await b.sleep(1500);
-    const fold = await b.eval(`(() => { const c = document.querySelector('.hero-actions').getBoundingClientRect(), f = document.querySelector('.hero-fig img').getBoundingClientRect(); return { cta: Math.round(c.top), fig: Math.round(f.bottom), ctaBottom: Math.round(c.bottom) }; })()`);
-    check('375×667: после теста персонаж не закрывает кнопку героя, кнопка на первом экране', fold.fig <= fold.cta && fold.ctaBottom <= 667, JSON.stringify(fold));
+    const fold = await b.eval(`(() => { const c = document.querySelector('.hero-actions').getBoundingClientRect(), f = document.querySelector('.hero-fig img').getBoundingClientRect(); return { me: Boolean(document.querySelector('.hero-me')), cta: Math.round(c.top), fig: Math.round(f.bottom), ctaBottom: Math.round(c.bottom) }; })()`);
+    check('375×667: после теста персонаж не закрывает кнопку героя, кнопка на первом экране', fold.me && fold.fig <= fold.cta && fold.ctaBottom <= 667, JSON.stringify(fold));
     for (const [w, h] of [[375, 667], [390, 844]]) {
       await b.viewport(w, h, { mobile: true, scale: 2 });
       await b.goto(BASE + '#/relations');
@@ -696,6 +696,24 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     })()`);
     check('390 px: в герое не больше двух черт и двух шагов, без прокрутки вбок; реплика не закрывает имя',
       heroM.traits <= 2 && heroM.overflow <= 1 && heroM.steps <= 2 && heroM.bubble === 'none', JSON.stringify(heroM));
+    const simple = await b.eval(async () => {
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      const vis = el => Boolean(el && el.offsetParent !== null);
+      const hero = document.querySelector('section[data-hero]'), meta = hero.querySelector('.hero-meta'), cta = hero.querySelector('.hero-cta');
+      const out = { chips: vis(hero.querySelector('.hero-traits-m')), steps: vis(hero.querySelector('.hero-steps')), metaBorder: meta ? getComputedStyle(meta).borderTopStyle : '',
+        cta: vis(cta), ctaLines: Math.round(cta.getBoundingClientRect().height / parseFloat(getComputedStyle(cta).lineHeight || 20)) };
+      const map = document.querySelector('#rel .relmap');
+      Object.assign(out, { hint: vis(map.querySelector('.rm-hint')), tone: vis(map.querySelector('.rd-tone')), refocus: vis(map.querySelector('.rd-refocus')), link: vis(map.querySelector('.rd .link')),
+        rowLine: getComputedStyle(map.querySelectorAll('.rm-row')[1]).borderTopStyle });
+      const sec = document.querySelector('[data-marquee]'), track = sec.querySelector('.mq-track'), row = sec.querySelector('.mq-row');
+      sec.scrollIntoView({ block: 'center' }); await sleep(300); scrollBy(0, 300); await sleep(300);
+      Object.assign(out, { mqTransform: track.style.transform || 'none', mqScroll: getComputedStyle(row).overflowX, inertShown: Array.from(sec.querySelectorAll('.mq-copy[inert]')).some(vis) });
+      return out;
+    });
+    check('390 px, после теста — только главное: в герое без черт и шагов, результат — тихой ссылкой; в «С кем легко» без пояснений, линий, тона и второй кнопки',
+      !simple.chips && !simple.steps && simple.metaBorder === 'none' && simple.cta && !simple.hint && simple.rowLine === 'none' && !simple.tone && !simple.refocus && simple.link, JSON.stringify(simple));
+    check('390 px: лента типов листается пальцем и не едет за прокруткой страницы (на iOS отставала и прыгала)',
+      simple.mqTransform === 'none' && simple.mqScroll === 'auto' && !simple.inertShown, JSON.stringify(simple));
     const relM = await b.eval(async () => {
       const sleep = ms => new Promise(r => setTimeout(r, ms));
       const map = document.querySelector('.relmap');

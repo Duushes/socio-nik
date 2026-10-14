@@ -63,13 +63,13 @@
             <div class="hero-actions h-in" style="--d:.5s;--y:20px">
               ${t ? '<a class="btn hero-cta" href="#/#share" data-cheer>Поделиться результатом</a>' : '<a class="btn hero-cta" href="#/test" data-cheer>Узнать свой тип</a>'}
             </div>
-            ${t ? '' : `<p class="hero-micro h-in" style="--d:.55s;--y:12px">20${NB}вопросов · 4${NB}минуты · без регистрации</p>`}
+            ${t ? '' : `<p class="hero-micro h-in" style="--d:.55s;--y:12px">20${NB}вопросов · 4${NB}минуты · без${NB}регистрации</p>`}
           </div>
         </div>
       </section>`;
   }
 
-  // Персонаж стоит под заголовком и закрывает нижнюю часть букв имени; ширина 280 / 360 / 440 / 520.
+  // Персонаж стоит под заголовком и закрывает нижнюю часть букв имени; ширина до 340 (телефон, в пределах полей) / 360 / 440 / 520.
   // Если места больше, чем нужно персонажу, заголовок опускается к нему — наложение остаётся одинаковым.
   // Тайный тип тёмный и прятал бы буквы, поэтому при нехватке места он не поднимается на заголовок, а уходит
   // низом под подвал героя: над подвалом остаются голова и плечи, ниже силуэт и так растворяется в фоне.
@@ -78,7 +78,9 @@
     const fig = el.querySelector('.hero-char'), foot = el.querySelector('.hero-foot');
     title.style.marginTop = '';
     const W = innerWidth, phone = W < 640, wide = W >= 1024;
-    const maxW = wide ? 520 : W >= 768 ? 440 : phone ? 280 : 360;
+    const gut = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gutter')) || 20;
+    // на телефоне персонаж растёт, если внизу героя мало элементов (после теста) и есть место по высоте
+    const maxW = wide ? 520 : W >= 768 ? 440 : phone ? Math.min(340, W - 2 * gut) : 360;
     const minW = Math.round(maxW * 0.62);
     // offsetTop, а не getBoundingClientRect: на него не влияет анимация появления
     const cs = getComputedStyle(title), fs = parseFloat(cs.fontSize);
@@ -99,7 +101,6 @@
     el.style.setProperty('--side', Math.max(180, (W - w) / 2 - 24 - parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gutter'))).toFixed(0) + 'px');
     el.classList.add('laid');
     // плавающие черты: держим в пределах экрана
-    const gut = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gutter')) || 20;
     el.querySelectorAll('.hero-traits li').forEach(li => {
       li.style.setProperty('--dx', '0px');
       const r = li.getBoundingClientRect();
@@ -255,7 +256,7 @@
         <div class="wrap">
           <div class="rm-head">
             <h2 class="h2 reveal"><span class="sv">С${NB}кем тебе легко</span></h2>
-            <p class="rm-sub reveal">Все 15 типов по${NB}трём строкам. Нажми на${NB}тип${NB}— увидишь, как вы ладите.</p>
+            <p class="rm-sub reveal">Нажми на${NB}тип${NB}— увидишь, как вы ладите.</p>
           </div>
           ${ui.relMap(t, { uid: 'rmh' })}
         </div>
