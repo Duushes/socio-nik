@@ -7,9 +7,10 @@
   const M = () => S.core.modelA;
   const NB = '\u00A0';
 
-  // Заголовок «Привет, {имя}» с подгонкой по ширине и персонаж с магнитом под ним
+  // Заголовок «Привет, {имя}» с подгонкой по ширине и персонаж с магнитом под ним.
+  // Высота заголовка ограничена (data-maxh): на компьютере под персонажем в первом экране — строка с типом и кнопками
   const greet = (word, t) => `
-    <h1 class="res-title display" data-fit data-min="12" data-max="17.5" data-maxh="19">
+    <h1 class="res-title display" data-fit data-min="12" data-max="17.5" data-maxh="15">
       <span class="fit-in"><span class="fit-line"><span class="sv">${word}</span></span> <span class="fit-line"><span class="sv">${esc(ui.short(t))}</span></span></span>
     </h1>
     <div class="res-char" data-magnet><div><div class="res-fig">${ui.character(t, { sizes: ui.CHAR.hero, eager: true })}</div></div></div>`;
@@ -54,12 +55,17 @@
         <p class="eyebrow res-eyebrow">Твой тип</p>
         ${greet('Привет,', t)}
         <div class="res-meta">
-          <p class="res-code">${t.code}</p>
-          <p class="res-name">${esc(t.name)}</p>
-          <p class="res-alias">«${esc(t.alias)}» · ${esc(t.role)} · квадра ${q.name}</p>
-          <div class="res-pct"><span class="big num" data-count="${res.top.pct}">${res.top.pct}</span><span class="pc">%</span></div>
-          <p class="res-pct-lab">вероятность этого типа по${NB}твоим ответам</p>
-          ${res.close ? `<p class="res-between">Результат между ${t.code} и${NB}${n1.code} — загляни в${NB}оба описания.</p>` : ''}
+          <div class="res-id">
+            <p class="res-code">${t.code}</p>
+            <p class="res-name">${esc(t.name)}</p>
+            <p class="res-alias">«${esc(t.alias)}» · ${esc(t.role)} · квадра ${q.name}</p>
+            ${ui.clarityLine(res, { href: '#/result#scales' })}
+            ${res.close ? `<p class="res-between">Результат между ${t.code} и${NB}${n1.code} — загляни в${NB}оба описания.</p>` : ''}
+          </div>
+          <div class="res-acts">
+            <button class="btn res-share" type="button" data-share-now>Поделиться результатом</button>
+            <a class="btn-ghost" href="#/#rel">С${NB}кем мне легко</a>
+          </div>
         </div>
       </section>
       ${friend ? friendPair(t, M().type(friend)) : ''}
@@ -96,7 +102,7 @@
         <div class="wrap">
           <h2 class="h2 h2-md sec-head reveal"><span class="sv">Ещё похоже на</span></h2>
           ${nextCards(res)}
-          <h2 class="h2 h2-md gap-top reveal"><span class="sv">Четыре шкалы</span></h2>
+          <h2 class="h2 h2-md gap-top reveal" id="scales"><span class="sv">Четыре шкалы</span></h2>
           <p class="lead sec-sub reveal">Какой полюс каждой пары тебе ближе.</p>
           ${ui.axisBars(res.axes)}
           <h2 class="h2 h2-md gap-top reveal"><span class="sv">Все 16 типов</span></h2>
@@ -164,6 +170,9 @@
       const axes = S.state.result();
       if (!axes) return overlap(root);
       const offs = [overlap(root), ui.mountCalc(root), ui.mountBox(root), ui.mountTips(root), ui.mountResultShare(root, axes)];
+      // «Поделиться результатом» в первом экране — тот же шер, что и в блоке ниже
+      const now = root.querySelector('[data-share-now]');
+      if (now) now.addEventListener('click', () => { const box = root.querySelector('[data-share]'); if (box && box.shareNow) box.shareNow(); });
       if (S.state.justFinished) {
         S.state.justFinished = false;
         const t = M().type(S.core.scoring.result(axes).top.id);
@@ -188,17 +197,22 @@
         <p class="sh-badge"><i aria-hidden="true"></i>Тебе прислали результат теста</p>
         ${greet('Это', t)}
         <div class="res-meta">
-          <p class="res-code">${t.code}</p>
-          <p class="res-name">${esc(t.name)}</p>
-          <p class="res-alias">«${esc(t.alias)}» · ${esc(t.role)} · квадра ${q.name} · ${res.top.pct}${NB}%</p>
-          <div class="cta">
-            ${mine ? `<a class="btn" href="#/relations/${mine.id}/${t.id}">Ваши отношения</a><a class="link" href="#/test" data-friend>Пройти тест заново</a>`
-                   : `${test('Узнать свой тип')}<a class="link" href="#/types/${t.id}">Подробнее о${NB}${t.code}</a>`}
+          <div class="res-id">
+            <p class="res-code">${t.code}</p>
+            <p class="res-name">${esc(t.name)}</p>
+            <p class="res-alias">«${esc(t.alias)}» · ${esc(t.role)} · квадра ${q.name}</p>
           </div>
-          <p class="sh-note">20 вопросов · около 4 минут · без регистрации</p>
+          <div class="res-acts">
+            <div class="cta">
+              ${mine ? `<a class="btn" href="#/relations/${mine.id}/${t.id}">Ваши отношения</a><a class="link" href="#/test" data-friend>Пройти тест заново</a>`
+                     : `${test('Узнать свой тип')}<a class="link" href="#/types/${t.id}">Подробнее об${NB}${t.code}</a>`}
+            </div>
+            <p class="sh-note">20 вопросов · около 4 минут · без регистрации</p>
+          </div>
           <p class="sh-motto"><span>Коротко о типе</span>«${esc(c.tagline || '')}»</p>
         </div>
       </section>
+      ${mine ? '' : `<div class="sh-sticky" data-sticky aria-hidden="true"><a class="btn" href="#/test" data-friend tabindex="-1">Узнать свой тип</a></div>`}
 
       <section class="sec sec-white">
         <div class="wrap center">
@@ -255,7 +269,22 @@
       };
       root.addEventListener('click', onClick);
       const off = overlap(root);
-      return () => { root.removeEventListener('click', onClick); off(); };
+      // телефон: пока кнопок «Узнать свой тип» в герое и в конце не видно — она прикреплена внизу экрана
+      const bar = root.querySelector('[data-sticky]');
+      let io = null;
+      if (bar && 'IntersectionObserver' in window) {
+        const seen = new Set();
+        const btns = [root.querySelector('.sh-hero .cta .btn'), root.querySelector('.final .btn')].filter(Boolean);
+        io = new IntersectionObserver(entries => {
+          entries.forEach(e => (e.isIntersecting ? seen.add(e.target) : seen.delete(e.target)));
+          const on = seen.size === 0;
+          bar.classList.toggle('on', on);
+          bar.setAttribute('aria-hidden', String(!on));
+          bar.querySelector('.btn').tabIndex = on ? 0 : -1;
+        });
+        btns.forEach(x => io.observe(x));
+      }
+      return () => { root.removeEventListener('click', onClick); off(); if (io) io.disconnect(); };
     }
   };
 })(window);

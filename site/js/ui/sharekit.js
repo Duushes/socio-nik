@@ -1,7 +1,9 @@
 /* Socio-Nik · блок «Поделиться» — один на результат, главную и mystery box.
    По лучшим практикам шера: картинка — главное, её видно до отправки; одна главная кнопка (на телефоне —
    системное меню сразу с картинкой, на компьютере — скачать); короткий ряд мессенджеров, которыми пользуются
-   в России, с подписями; ссылка с «Копировать» и подтверждением прямо на кнопке, без всплывашек. */
+   в России, с подписями; ссылка с «Копировать» и подтверждением прямо на кнопке, без всплывашек.
+   Встроенные браузеры (Telegram, Instagram на iPhone) часто не умеют ни отправить файл, ни скачать его, —
+   там главная кнопка показывает картинку крупно: её сохраняют долгим нажатием, ссылку — копируют. */
 (function (root) {
   const S = root.Socio;
   const ui = S.ui = S.ui || {};
@@ -14,6 +16,34 @@
     save: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.8 12 15.3l4.5-4.5M5 19.5h14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     check: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   };
+
+  const coarse = () => Boolean(root.matchMedia && root.matchMedia('(pointer: coarse)').matches);
+
+  // Картинка крупно в шторке: «нажми и удерживай» сохраняет её и там, где скачивание молча не работает
+  const saveSheet = (blob, { url = '', from } = {}) => new Promise(done => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const sheet = ui.openSheet({
+        label: 'Сохранить картинку',
+        from,
+        render: () => `
+          <div class="save-sheet">
+            <h2 class="save-title">Сохрани картинку</h2>
+            <p class="save-hint">Нажми на${NB}неё и${NB}удерживай${NB}— появится «Сохранить». Потом добавь в${NB}сторис или пост.</p>
+            <img class="save-img" src="${reader.result}" alt="Картинка с${NB}твоим типом">
+            ${url ? `<button class="btn-ghost save-copy" type="button" data-save-copy>Скопировать ссылку</button><p class="save-status" aria-live="polite"></p>` : ''}
+          </div>`
+      });
+      const btn = sheet.body.querySelector('[data-save-copy]');
+      if (btn) btn.addEventListener('click', async () => {
+        const ok = await S.share.copy(url);
+        sheet.body.querySelector('.save-status').textContent = ok ? `Ссылка скопирована — вставь её в${NB}чат` : 'Не получилось скопировать';
+      });
+      done(sheet);
+    };
+    reader.onerror = () => done(null);
+    reader.readAsDataURL(blob);
+  });
 
   // Кнопки: главная, мессенджеры, ссылка. text — подпись к шеру, url — ссылка (может быть пустой).
   // link — главная кнопка отправляет ссылку (системное меню на телефоне, на компьютере — копирует), а не картинку
@@ -32,7 +62,7 @@
       <div class="sk${compact ? ' sk-compact' : ''}">
         ${extra ? '<div class="sk-row">' : ''}${link
           ? `<button class="btn sk-go" type="button" data-sk="send"><span class="sk-flip"><span>${I.share}${esc(primary)}</span><span>${I.check}Ссылка скопирована</span></span></button>`
-          : `<button class="btn sk-go" type="button" data-sk="go">${files ? I.share + esc(primary) : I.save + 'Скачать картинку'}</button>`}${extra ? extra + '</div>' : ''}
+          : `<button class="btn sk-go" type="button" data-sk="go">${files ? I.share + esc(primary) : I.save + (coarse() ? 'Сохранить картинку' : 'Скачать картинку')}</button>`}${extra ? extra + '</div>' : ''}
         <div class="sk-nets" role="group" aria-label="Отправить в мессенджер">${nets}${compact ? linkTile : more}</div>
         ${compact ? '' : url ? `<button class="sk-link" type="button" data-sk="copy" aria-label="Скопировать ссылку ${esc(shown)}">
           <span class="sk-url">${esc(shown)}</span><span class="sk-copy"><span class="sk-c1">Копировать</span><span class="sk-c2">${I.check}Скопировано</span></span>
@@ -41,7 +71,9 @@
       </div>`;
   };
 
-  // get: { text(), url(), image() → Promise<Blob>, name() }
+  // get: { text(), url(), image() → Promise<Blob>, cached() → Blob | null, name() }.
+  // cached — готовая картинка: с ней системное меню открывается прямо в обработчике нажатия, без ожидания
+  // (на iOS разрешение на шер живёт недолго и может истечь, пока картинка собирается)
   ui.mountShareActions = (scope, get) => {
     let flashT = 0;
     const onClick = async e => {
@@ -74,14 +106,19 @@
         if (act === 'go') {
           b.classList.add('busy');
           say('Готовим картинку…');
-          const blob = await get.image();
+          const ready = get.cached && get.cached();
+          const blob = ready || await get.image();
           const file = new File([blob], get.name(), { type: 'image/png' });
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({ files: [file], text: get.text() + (get.url() ? ' ' + get.url() : '') });
             say('');
+          } else if (coarse()) {
+            // встроенный браузер: скачивание тут часто молча не срабатывает — показываем картинку крупно
+            say('');
+            await saveSheet(blob, { url: get.url(), from: b });
           } else {
             S.share.download(blob, file.name);
-            say('Картинка сохранена — добавь её в сторис или пост');
+            say('Картинка скачана — добавь её в сторис или пост');
           }
         }
       } catch (err) {
@@ -104,7 +141,7 @@
           <div class="share" data-share>
             <div class="share-stage reveal" data-anim>
               <span class="share-glow" aria-hidden="true"></span>
-              <div class="share-phone"><canvas class="share-canvas" width="1080" height="1920" role="img" aria-label="Картинка для сторис: ${esc(`${t.code} «${t.alias}», ${t.role.toLowerCase()}, совпадение ${res.top.pct} %`)}"></canvas></div>
+              <div class="share-phone"><canvas class="share-canvas" width="1080" height="1920" role="img" aria-label="Картинка для сторис: ${esc(`${t.code} «${t.alias}», ${t.role.toLowerCase()}`)}"></canvas></div>
               ${fx.map((k, i) => `<img class="share-fx share-fx-${i + 1}" src="${ui.emoteSrc(k)}" alt="" aria-hidden="true" width="100" height="100">`).join('')}
             </div>
             <div class="share-side reveal" style="--i:1">
@@ -127,9 +164,14 @@
     if (!box) return () => {};
     const canvas = box.querySelector('canvas'), status = box.querySelector('.sk-status');
     const id = S.core.scoring.result(axes).top.id;
-    let fmt = 'story';
+    let fmt = 'story', cache = null, cacheT = 0;
+    const name = () => `socio-nik-${id}-${fmt}.png`;
     const draw = () => {
       try { S.share.render(canvas, axes, fmt); } catch (e) { if (status) status.textContent = 'Не получилось нарисовать картинку'; }
+      // готовая картинка — заранее, чтобы системное меню открывалось сразу по нажатию
+      cache = null;
+      clearTimeout(cacheT);
+      cacheT = setTimeout(() => S.share.toBlob(canvas).then(b => { cache = b; }).catch(() => {}), 300);
     };
     draw();
     // шрифт сайта, портрет и 3D-символы догружаются — перерисовываем
@@ -148,8 +190,23 @@
       text: () => S.share.text(axes, { withUrl: false }),
       url: () => S.share.url(axes),
       image: () => S.share.toBlob(canvas),
-      name: () => `socio-nik-${id}-${fmt}.png`
+      cached: () => cache,
+      name
     });
-    return () => { box.removeEventListener('click', onFmt); off(); };
+    // кнопка «Поделиться результатом» в первом экране: где можно — сразу системное меню с картинкой,
+    // иначе — к блоку шера, на его главную кнопку
+    box.shareNow = () => {
+      if (cache) {
+        const file = new File([cache], name(), { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          navigator.share({ files: [file], text: S.share.text(axes, { withUrl: false }) + (S.share.url(axes) ? ' ' + S.share.url(axes) : '') }).catch(() => {});
+          return;
+        }
+      }
+      const go = box.querySelector('[data-sk="go"]');
+      (go || box).scrollIntoView({ behavior: S.dom.reducedMotion() ? 'auto' : 'smooth', block: 'center' });
+      if (go) go.focus({ preventScroll: true });
+    };
+    return () => { box.removeEventListener('click', onFmt); off(); clearTimeout(cacheT); delete box.shareNow; };
   };
 })(window);

@@ -217,7 +217,7 @@
     ctx.fillStyle = 'rgba(255,255,255,0.72)';
     fit(ctx, sub, W - 160, 600, 40);
     ctx.fillText(sub, W / 2, L.sub);
-    pill(ctx, `совпадение ${res.top.pct} %`, W / 2, L.pct, { px: 28, fill: rgba(c, 0.22), stroke: rgba(c, 0.8) });
+    pill(ctx, 'один из 16 типов', W / 2, L.pct, { px: 28, fill: rgba(c, 0.22), stroke: rgba(c, 0.8) });
 
     ctx.fillStyle = '#fff';
     ctx.font = font(800, story ? 64 : 56);
@@ -240,7 +240,7 @@
   function text(axes, { withUrl = true } = {}) {
     const res = S.core.scoring.result(axes), t = S.core.modelA.type(res.top.id);
     const link = withUrl && url(axes) ? ' ' + url(axes) : '';
-    return `Я — ${t.code} «${t.alias}», ${t.role.toLowerCase()} (совпадение ${res.top.pct} %). А ты кто из 16 типов? Тест за 4 минуты на Socio-Nik${link}`;
+    return `Я — ${t.code} «${t.alias}», ${t.role.toLowerCase()}. А ты кто из 16 типов? Тест за 4 минуты на Socio-Nik${link}`;
   }
 
   const toBlob = canvas => new Promise((ok, fail) => canvas.toBlob(b => (b ? ok(b) : fail(new Error('PNG не собрался'))), 'image/png'));

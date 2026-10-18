@@ -157,6 +157,9 @@
     document.documentElement.classList.add('js');
 
     document.querySelector('[data-menu]').addEventListener('click', () => setMenu(!document.documentElement.classList.contains('menu-open')));
+    // «К содержимому» — переход к main, а не маршрут: иначе роутер принял бы #app за адрес и показал «Тут пусто»
+    const skip = document.querySelector('.skip');
+    if (skip) skip.addEventListener('click', e => { e.preventDefault(); app().focus(); app().scrollIntoView({ block: 'start' }); });
     addEventListener('keydown', e => { if (e.key === 'Escape' && document.documentElement.classList.contains('menu-open')) { closeMenu(); document.querySelector('[data-menu]').focus(); } });
     addEventListener('resize', () => { if (innerWidth >= 960) closeMenu(); });
     S.fx.fitAll(document.querySelector('.footer'));

@@ -90,7 +90,7 @@
 }
 .mq-you { position: absolute; z-index: 2; top: 10px; right: 10px; padding: 4px 10px; border-radius: var(--r-pill); background: var(--grad); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; box-shadow: 0 6px 14px rgba(181, 1, 167, 0.4); }
 .mq-tile.is-you { box-shadow: 0 0 0 2px var(--q), 0 0 34px -8px var(--q); }
-.qc-you { display: inline-block; margin-left: 10px; padding: 3px 10px; border-radius: var(--r-pill); background: var(--q); color: #fff; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; vertical-align: 1px; }
+.qc-you { display: inline-block; margin-left: 10px; padding: 3px 10px; border-radius: var(--r-pill); background: var(--q); color: var(--ink); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; vertical-align: 1px; }
 
 /* главная кнопка — крупнее и с мягкой пульсацией; с результатом — ряд «что дальше» */
 .hero-right { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
@@ -295,7 +295,7 @@
 .only-narrow { display: none; }
 @media (max-width: 834px) { .only-wide { display: none; } .only-narrow { display: block; } }
 /* плитки и карточки на тёмной подложке остаются тёмными и в белых секциях */
-.tcard, .mq-tile, .stack-card, .next-card { --text: var(--paper); --muted: rgba(215, 226, 234, 0.6); --line: var(--paper); color: var(--text); }
+.tcard, .mq-tile, .stack-card, .next-card { --text: var(--paper); --muted: rgba(215, 226, 234, 0.8); --line: var(--paper); color: var(--text); }
 
 /* ================= ТЕСТ ================= */
 /* два мира: слева вариант А (синий), справа Б (оранжевый) — цвет повторяется в картинках, метках и концах шкалы */
@@ -425,11 +425,47 @@
 .res-code { margin: 0; color: var(--q); font-size: clamp(54px, 8vw, 110px); font-weight: 900; line-height: 0.9; letter-spacing: -0.02em; }
 .res-name { margin: 14px 0 4px; font-size: clamp(1.05rem, 1.8vw, 1.4rem); font-weight: 600; }
 .res-alias { margin: 0 0 22px; color: var(--muted); }
-.res-pct { display: inline-flex; align-items: flex-start; gap: 4px; line-height: 1; }
-.res-pct .big { font-size: clamp(60px, 9vw, 110px); font-weight: 900; letter-spacing: -0.03em; }
-.res-pct .pc { margin-top: 0.2em; color: var(--muted); font-size: clamp(26px, 3.6vw, 44px); font-weight: 700; }
-.res-pct-lab { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
-.res-between { display: inline-block; margin: 22px 0 0; padding: 10px 20px; border: 1.5px solid var(--hair); border-radius: var(--r-pill); font-size: 15px; }
+.res-between { display: inline-block; margin: 14px 0 0; padding: 10px 20px; border: 1.5px solid var(--hair); border-radius: var(--r-pill); font-size: 15px; }
+/* насколько чётко вышел тип: четыре точки-шкалы и подпись — вместо процента */
+.res-clear { display: inline-flex; align-items: center; gap: 10px; margin: 0; color: var(--muted); font-size: 14px; line-height: 1.35; }
+.res-clear a { color: inherit; text-decoration: underline; text-decoration-color: var(--hair); text-underline-offset: 4px; }
+.res-clear a:hover { color: var(--paper); }
+.res-dots { display: inline-flex; gap: 5px; }
+.res-dots i { width: 9px; height: 9px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgba(215, 226, 234, 0.45); }
+.res-dots i.on { background: var(--q); box-shadow: none; }
+/* первый экран: тип, кнопки «Поделиться» / «С кем мне легко» (на странице по ссылке — «Узнать свой тип») */
+.res-acts { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 14px; margin-top: 20px; }
+.sh-hero .res-acts { flex-direction: column; gap: 0; }
+/* телефон и планшет: персонаж поменьше, чтобы кнопка помещалась в первый экран (в т. ч. в окне браузера Telegram) */
+@media (max-width: 1023px) {
+  .res-hero { padding-top: calc(var(--nav-h) + 14px); }
+  .res-hero .res-char { width: min(360px, 56vw); }
+  .res-hero .res-code { font-size: clamp(44px, 8vw, 72px); }
+  .res-hero .res-name { margin: 8px 0 2px; }
+  .res-hero .res-alias { margin-bottom: 12px; }
+  .sh-badge { margin-bottom: 8px; }
+}
+@media (max-width: 639px) {
+  .res-acts .btn { width: 100%; }
+  .res-hero:not(.sh-hero) .res-acts .btn-ghost { width: 100%; }
+}
+/* компьютер: как у героя главной — персонаж в центре во весь экран, тип внизу слева, кнопки внизу справа */
+@media (min-width: 1024px) {
+  .res-hero { min-height: 100svh; padding-bottom: 0; }
+  .res-hero .res-char { width: min(440px, calc((100svh - var(--nav-h) - 110px - 1.6 * var(--fs, 120px)) * 0.8)); }
+  .res-hero .res-meta { position: absolute; left: var(--gutter); right: var(--gutter); bottom: 30px; margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "id acts" "motto acts"; align-items: end; gap: 8px 32px; text-align: left; }
+  .res-hero .res-id { grid-area: id; max-width: calc(100% - 210px); }
+  .res-hero .res-code { font-size: clamp(56px, 5vw, 84px); }
+  .res-hero .res-acts { grid-area: acts; flex-direction: column; align-items: flex-end; justify-self: end; max-width: calc(100% - 210px); margin: 0; }
+  .res-hero .res-acts .cta { justify-content: flex-end; }
+  .res-hero .sh-note { text-align: right; }
+  .res-hero .sh-motto { grid-area: motto; max-width: calc(100% - 210px); margin: 6px 0 0; text-align: left; font-size: 1.05rem; }
+}
+/* страница по ссылке, телефон: пока кнопки «Узнать свой тип» не видно — она прикреплена внизу */
+.sh-sticky { position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; padding: 18px var(--gutter) calc(12px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, rgba(12, 12, 12, 0.94) 40%); transform: translateY(110%); transition: transform 0.35s var(--out); pointer-events: none; }
+.sh-sticky.on { transform: none; pointer-events: auto; }
+.sh-sticky .btn { width: 100%; }
+@media (min-width: 768px) { .sh-sticky { display: none; } }
 .type-eyebrow { margin-bottom: 14px; }
 .type-name { margin: 0 0 10px; font-size: clamp(1.05rem, 1.8vw, 1.4rem); font-weight: 600; }
 .type-meta .lead { max-width: 30em; margin: 0 auto; }
@@ -1239,6 +1275,15 @@ button.aspect:focus-visible { outline: 3px solid var(--text); outline-offset: 3p
 .aspect-name { font-weight: 700; line-height: 1.3; }
 .aspect-hint { color: var(--muted); font-size: 14px; line-height: 1.4; }
 .honest { border-style: dashed; }
+
+/* ================= СОХРАНИТЬ КАРТИНКУ (встроенные браузеры) ================= */
+/* там, где нельзя отправить файл и скачивание молча не работает, картинку сохраняют долгим нажатием */
+.save-sheet { display: grid; justify-items: center; gap: 12px; padding-bottom: 6px; text-align: center; }
+.save-title { margin: 0; font-size: clamp(1.3rem, 4vw, 1.6rem); font-weight: 800; }
+.save-hint { max-width: 26em; margin: 0; color: var(--muted); font-size: 15px; line-height: 1.45; }
+.save-img { width: auto; max-width: 100%; max-height: 58vh; max-height: 58svh; border-radius: 18px; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5); -webkit-touch-callout: default; user-select: auto; -webkit-user-select: auto; }
+.save-copy { min-height: 48px; }
+.save-status { min-height: 1.4em; margin: 0; color: var(--muted); font-size: 14px; }
 
 /* ================= ШТОРКА (функции модели А) ================= */
 dialog.sheet { position: fixed; inset: 0; width: 100%; height: 100%; max-width: 100%; max-height: 100%; margin: 0; padding: 0; border: 0; background: transparent; color: var(--text); overflow: hidden; }

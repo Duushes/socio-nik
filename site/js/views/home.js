@@ -31,7 +31,6 @@
   // t — твой тип после теста; без него — тайный тип
   function hero(t) {
     const intro = !introDone && !S.dom.reducedMotion();
-    const pct = t ? S.core.scoring.result(S.state.result()).top.pct : 0;
     const items = t ? traits(t) : TEASE;
     const about = t ? 'Коротко о типе' : 'Что узнаешь после теста';
     return `
@@ -52,7 +51,7 @@
           <div class="hero-ask h-in" style="--d:.3s;--y:20px">
             ${t ? `<p class="hero-q">Ты${NB}— ${esc(t.role.toLowerCase())}</p>
             <p class="hero-cap">${esc(ui.content(t.id).tagline || '')}</p>
-            <a class="hero-meta" href="#/result">${t.code} «${esc(t.alias)}» · совпадение ${pct}${NB}%</a>`
+            <a class="hero-meta" href="#/result">${t.code} «${esc(t.alias)}» · весь результат</a>`
             : `<p class="hero-q" data-hero-q>16${NB}типов. Один${NB}—${NB}твой</p>
             <p class="hero-cap" data-hero-cap>Ответь на${NB}вопросы, и${NB}силуэт оживёт: увидишь свой тип, в${NB}чём твоя сила и${NB}с${NB}кем тебе легко</p>`}
           </div>
@@ -284,6 +283,13 @@
         offs.push(ui.mountRelMap(root.querySelector('#rel')));
         offs.push(ui.mountResultShare(root, S.state.result()));
         offs.push(ui.mountBox(root.querySelector('.home-box')));
+        // «Поделиться результатом» в герое: где можно — сразу системное меню с картинкой, иначе — к кнопке шера
+        const now = e => {
+          const a = e.target.closest('a.hero-cta[href="#/#share"]'), box = root.querySelector('[data-share]');
+          if (a && box && box.shareNow) { e.preventDefault(); box.shareNow(); }
+        };
+        root.addEventListener('click', now);
+        offs.push(() => root.removeEventListener('click', now));
       }
       return () => offs.forEach(f => f && f());
     }

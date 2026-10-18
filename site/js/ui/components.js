@@ -216,6 +216,21 @@
     return () => {};
   };
 
+  // ---------- насколько чётко вышел тип ----------
+  // Вместо «22 % — вероятность типа» (произведение четырёх полюсов почти всегда выходит небольшим и читается
+  // как «тест не уверен»): сколько из четырёх шкал выражены чётко. Порог тот же, что у шкал: от 60 % — «Ближе».
+  const CLEAR = ['Ни одна шкала не${NB}выражена чётко', 'Одна шкала из${NB}четырёх выражена чётко', 'Две шкалы из${NB}четырёх выражены чётко', 'Три шкалы из${NB}четырёх выражены чётко', 'Все четыре шкалы выражены чётко'];
+  ui.clarity = res => {
+    const on = S.core.scoring.AXES.map(ax => Math.max(res.axes[ax], 100 - res.axes[ax]) >= 60);
+    const n = on.filter(Boolean).length;
+    return { on, n, text: CLEAR[n] };
+  };
+  ui.clarityLine = (res, { href = '' } = {}) => {
+    const c = ui.clarity(res);
+    const dots = `<span class="res-dots" aria-hidden="true">${c.on.map(x => `<i${x ? ' class="on"' : ''}></i>`).join('')}</span>`;
+    return `<p class="res-clear">${dots}${href ? `<a href="${href}">${c.text}</a>` : `<span>${c.text}</span>`}</p>`;
+  };
+
   // ---------- отношения типа со всеми 16 ----------
   ui.relList = t => {
     const rows = S.data.types.map(b => ({ b, r: M().relation(t, b) }));

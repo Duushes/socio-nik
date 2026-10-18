@@ -129,6 +129,25 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       return { w: c.width, h: c.height, colored, size, postH: c.height, text: Socio.share.text(Socio.state.result()), portrait: Boolean(Socio.sharePortraits && Socio.sharePortraits[Socio.state.myType()]) };
     });
     check('картинка для шера рисуется и выгружается в PNG (canvas не «испачкан»)', share.colored > 200 && share.size > 50000, JSON.stringify(share));
+    check('шер без процента: в тексте нет «совпадение N %»', !/совпадени|%/.test(share.text), share.text);
+    const resHero = await b.eval(async () => {
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      scrollTo(0, 0);
+      await sleep(300);
+      const hero = document.querySelector('.res-hero'), btn = hero.querySelector('[data-share-now]'), rel = hero.querySelector('.res-acts a');
+      const r = btn.getBoundingClientRect(), rr = rel.getBoundingClientRect();
+      const out = { btn: btn.textContent.trim(), rel: rel ? rel.getAttribute('href') + ' ' + rel.textContent.trim() : '', btnBottom: Math.round(r.bottom), relBottom: Math.round(rr.bottom), vh: innerHeight,
+        pct: /%/.test(hero.textContent), clear: (hero.querySelector('.res-clear') || {}).textContent || '', dots: hero.querySelectorAll('.res-dots i').length };
+      btn.click();
+      await sleep(900);
+      const go = document.querySelector('[data-share] [data-sk="go"]').getBoundingClientRect();
+      out.after = { goTop: Math.round(go.top), goBottom: Math.round(go.bottom), focus: document.activeElement === document.querySelector('[data-share] [data-sk="go"]') };
+      return out;
+    });
+    check('результат: в первом экране «Поделиться результатом» и «С кем мне легко», без процента — строка «шкалы выражены чётко» с четырьмя точками',
+      resHero.btn === 'Поделиться результатом' && /^#\/#rel С.кем мне легко$/.test(resHero.rel) && resHero.btnBottom <= resHero.vh && resHero.relBottom <= resHero.vh && !resHero.pct && /шкал/.test(resHero.clear) && resHero.dots === 4, JSON.stringify(resHero));
+    check('«Поделиться результатом» без файлового шера доводит до кнопки отправки и ставит на неё фокус',
+      resHero.after.goTop >= 0 && resHero.after.goBottom <= resHero.vh && resHero.after.focus, JSON.stringify(resHero.after));
     check('формат «Пост» — 1080×1350', share.postH === 1350, String(share.postH));
 
     // ---------- четыре шкалы ----------
@@ -191,7 +210,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       check('результат: превью в «телефоне», главная кнопка, Telegram, WhatsApp, ВКонтакте и ссылка с «Копировать»; упоминаний Instagram нет',
         soc.phone && soc.tg.startsWith('https://t.me/share/url?url=' + enc) && soc.wa.startsWith('https://wa.me/?text=') && soc.wa.includes(enc) &&
         soc.vk.startsWith('https://vk.com/share.php?url=' + enc) && soc.copied && !soc.meta, JSON.stringify(soc));
-      check('результат: главная кнопка отдаёт картинку (на компьютере — скачивает)', /Скачать картинку|Поделиться картинкой/.test(soc.go) && (/сохранена/.test(soc.status) || /Поделиться/.test(soc.go)), JSON.stringify(soc));
+      check('результат: главная кнопка отдаёт картинку (на компьютере — скачивает)', /Скачать картинку|Поделиться картинкой/.test(soc.go) && (/скачана/.test(soc.status) || /Поделиться/.test(soc.go)), JSON.stringify(soc));
     } else {
       check('текст шера без ссылки, пока нет SITE_URL', /^Я — .+ Socio-Nik$/.test(share.text), share.text);
     }
@@ -246,7 +265,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       return { nets, tg, png: png.size, canFiles, status, hook: (card.querySelector('.fc-hook') || {}).textContent, copy: Boolean(card.querySelector('[data-sk="copy"]')), meta: /instagram|инстаграм/i.test(card.innerHTML) };
     });
     check('факт: крючок «Узнаёшь кого-то…», Telegram, WhatsApp, ВКонтакте и ссылка на тип; упоминаний Instagram нет', fsoc.nets.join() === 'telegram,whatsapp,vk' && fsoc.copy && /Узна|Удиви/.test(fsoc.hook) && !fsoc.meta && /%23%2Ftypes%2F[a-z]{3}|%23%2Fbox/.test(fsoc.tg), JSON.stringify(fsoc));
-    check('факт: картинка для сторис собирается и отдаётся главной кнопкой', fsoc.png > 60000 && (fsoc.canFiles || /сохранена/.test(fsoc.status)), JSON.stringify(fsoc));
+    check('факт: картинка для сторис собирается и отдаётся главной кнопкой', fsoc.png > 60000 && (fsoc.canFiles || /скачана/.test(fsoc.status)), JSON.stringify(fsoc));
     await shot('d-box-open', '.box-stage', 140);
 
     // ---------- калькулятор ----------
@@ -289,7 +308,9 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       await sleep(700);
       location.hash = '#/r/' + code;
       await sleep(1000);
-      const fresh = { code: document.querySelector('.res-code').textContent, mystery: Boolean(document.querySelector('.duo-mystery')), cta: document.querySelector('.sh-hero [data-friend]').textContent };
+      const ctaR = document.querySelector('.sh-hero .cta .btn').getBoundingClientRect();
+      const fresh = { code: document.querySelector('.res-code').textContent, mystery: Boolean(document.querySelector('.duo-mystery')), cta: document.querySelector('.sh-hero [data-friend]').textContent,
+        ctaBottom: Math.round(ctaR.bottom), vh: innerHeight, pct: /%/.test(document.querySelector('.sh-hero .res-alias').textContent) };
       document.querySelector('.sh-hero [data-friend]').click();
       await sleep(1000);
       for (let i = 0; i < 20; i++) {
@@ -303,6 +324,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       return { mine, withMine, fresh, you };
     });
     check('ссылка на чужой результат: своя страница с плашкой и кнопкой к вашим отношениям', shared.withMine.badge && shared.withMine.cta === `#/relations/${shared.mine}/iee` && shared.withMine.scene, JSON.stringify(shared.withMine));
+    check('страница по ссылке на компьютере: «Узнать свой тип» в первом экране, у типа нет процента', shared.fresh.ctaBottom <= shared.fresh.vh && !shared.fresh.pct, JSON.stringify(shared.fresh));
     check('без своего результата: пара «? и персонаж» и кнопка «Узнать свой тип»', shared.fresh.code === 'ИЭЭ' && shared.fresh.mystery && shared.fresh.cta === 'Узнать свой тип', JSON.stringify(shared.fresh));
     check('после теста по ссылке — блок «Ты и тот, кто прислал ссылку»', shared.you.view === 'result' && / и ИЭЭ$/.test(shared.you.title) && shared.you.rel.length > 5, JSON.stringify(shared.you));
     await shot('d-shared-you', '.sh-you', 60);
@@ -393,6 +415,27 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       mineHero.steps.join() === `#/types/${mineHero.mine},#/#rel,#/test` && mineHero.bubble.length > 5, JSON.stringify(mineHero));
     check('после теста главная про тебя: карта отношений, картинка для шера, факты про тип, «ты» в ленте и своя квадра первой',
       mineHero.map === mineHero.mine && mineHero.share && mineHero.box && mineHero.you === 3 && mineHero.firstQuadra && mineHero.mineStored === JSON.stringify(mineHero.mine), JSON.stringify(mineHero));
+    const p1 = await b.eval(async () => {
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      // «К содержимому»: фокус на main, адрес и экран не меняются
+      const before = location.hash, a = document.querySelector('.skip');
+      a.focus(); a.click();
+      await sleep(400);
+      const skip = { before, after: location.hash, view: document.body.dataset.view, focus: (document.activeElement || {}).id || '' };
+      // первый кадр: пока main пустой, он держит экран — подвал ниже сгиба (иначе сначала виден подвал, потом прыжок)
+      const app = document.getElementById('app'), keep = document.createDocumentFragment();
+      while (app.firstChild) keep.appendChild(app.firstChild);
+      const empty = { h: Math.round(app.getBoundingClientRect().height), vh: innerHeight, footer: Math.round(document.querySelector('.footer').getBoundingClientRect().top + scrollY) };
+      app.appendChild(keep);
+      // контраст: строка подвала, «Твоя квадра», подписи на плитках ленты
+      const qc = document.querySelector('.qc-you'), cs = qc ? getComputedStyle(qc) : null;
+      const contrast = { fine: getComputedStyle(document.querySelector('.footer-fine')).color, qc: cs ? cs.color : '', qcPx: cs ? parseFloat(cs.fontSize) : 0, role: getComputedStyle(document.querySelector('.mq-role')).color };
+      return { skip, empty, contrast };
+    });
+    check('«К содержимому» ставит фокус на содержимое и не открывает «Тут пусто»', p1.skip.after === p1.skip.before && p1.skip.view === 'home' && p1.skip.focus === 'app', JSON.stringify(p1.skip));
+    check('первый кадр: пока страница не нарисована, main держит экран и подвал не виден', p1.empty.h >= p1.empty.vh && p1.empty.footer >= p1.empty.vh, JSON.stringify(p1.empty));
+    check('контраст: строка подвала и подписи на плитках ярче, «Твоя квадра» — тёмным по цвету квадры от 12 px',
+      p1.contrast.fine === 'rgba(215, 226, 234, 0.6)' && p1.contrast.qc === 'rgb(12, 12, 12)' && p1.contrast.qcPx >= 12 && p1.contrast.role === 'rgba(215, 226, 234, 0.8)', JSON.stringify(p1.contrast));
 
     // ---------- страницы для глаз ----------
     await b.goto(BASE + '#/types/esi');
@@ -714,6 +757,47 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       !simple.chips && !simple.steps && simple.metaBorder === 'none' && simple.cta && !simple.hint && simple.rowLine === 'none' && !simple.tone && !simple.refocus && simple.link, JSON.stringify(simple));
     check('390 px: лента типов листается пальцем и не едет за прокруткой страницы (на iOS отставала и прыгала)',
       simple.mqTransform === 'none' && simple.mqScroll === 'auto' && !simple.inertShown, JSON.stringify(simple));
+    // браузер Telegram (≈390×660): страница по ссылке и сохранение картинки без файлового шера
+    await b.viewport(390, 660, { mobile: true, scale: 2 });
+    const savedTg = await b.eval(`localStorage.getItem('socio.result')`);
+    await b.eval(`localStorage.removeItem('socio.result')`);
+    await go('#/r/1-72-64-58-19', 1500);
+    const tg = await b.eval(async () => {
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      scrollTo(0, 0);
+      await sleep(500);
+      const cta = document.querySelector('.sh-hero .cta .btn'), bar = document.querySelector('[data-sticky]');
+      const first = { ctaBottom: Math.round(cta.getBoundingClientRect().bottom), vh: innerHeight, barOn: bar.classList.contains('on') };
+      scrollTo(0, innerHeight * 1.6);
+      await sleep(800);
+      const mid = { barOn: bar.classList.contains('on'), bottom: Math.round(bar.querySelector('.btn').getBoundingClientRect().bottom) };
+      scrollTo(0, document.documentElement.scrollHeight);
+      await sleep(800);
+      return { first, mid, end: { barOn: bar.classList.contains('on') } };
+    });
+    check('390×660 (окно Telegram): на странице по ссылке «Узнать свой тип» в первом экране; при прокрутке прикреплена внизу, у последней кнопки прячется',
+      tg.first.ctaBottom <= tg.first.vh && !tg.first.barOn && tg.mid.barOn && tg.mid.bottom <= tg.first.vh && !tg.end.barOn, JSON.stringify(tg));
+    await b.eval(`localStorage.setItem('socio.result', ${JSON.stringify(savedTg)})`);
+    await go('#/result', 1400);
+    const save = await b.eval(async () => {
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      navigator.canShare = () => false;   // как во встроенном браузере: файлом не отправить
+      Socio.app.render({ instant: true });
+      await sleep(1200);
+      const box = document.querySelector('[data-share]'), btn = box.querySelector('[data-sk="go"]');
+      const label = btn.textContent.trim();
+      btn.click();
+      await sleep(1500);
+      const dlg = document.querySelector('dialog.sheet[open]'), img = dlg && dlg.querySelector('.save-img');
+      const out = { label, open: Boolean(dlg), src: img ? img.getAttribute('src').slice(0, 22) : '', status: box.querySelector('.sk-status').textContent, copy: Boolean(dlg && dlg.querySelector('[data-save-copy]')) };
+      if (dlg) dlg.querySelector('.sheet-close').click();
+      await sleep(600);
+      return out;
+    });
+    check('телефон без отправки файла (браузер Telegram): «Сохранить картинку» показывает её крупно для долгого нажатия, без ложного «сохранена»',
+      save.label === 'Сохранить картинку' && save.open && save.src.startsWith('data:image/png') && !/сохранена/.test(save.status) && save.copy, JSON.stringify(save));
+    await b.viewport(390, 844, { mobile: true, scale: 2 });
+    await go('#/', 1500);   // дальше проверки главной после теста
     const relM = await b.eval(async () => {
       const sleep = ms => new Promise(r => setTimeout(r, ms));
       const map = document.querySelector('.relmap');
