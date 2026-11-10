@@ -57,10 +57,10 @@
         <section class="sec sec-white">
           <div class="wrap">
             ${part('03', 'Восемь аспектов информации', true)}
-            <p class="lead sec-sub reveal">Каждая стихия бывает «чёрной» (экстравертной) и${NB}«белой» (интровертной). На${NB}сайте чёрные аспекты — плотные знаки, белые — стеклянные. Те${NB}же знаки носят персонажи на${NB}одежде. Нажми на${NB}аспект — расскажем подробнее.</p>
+            <p class="lead sec-sub reveal">Каждая стихия бывает «чёрной» (экстравертной) и${NB}«белой» (интровертной). Чёрные аспекты обозначают закрашенным знаком, белые — контуром. Те${NB}же знаки носят персонажи на${NB}одежде. Нажми на${NB}аспект — расскажем подробнее.</p>
             <div class="aspect-grid">${Object.keys(A).map((id, i) => `
               <button type="button" class="aspect reveal" data-aspect="${id}" style="--i:${i % 4}" aria-haspopup="dialog">
-                <span class="aspect-art">${S.art.aspectImg(id, 'violet', 'aspect-img', { sizes: '88px' })}</span>
+                ${ui.aspectMark(id, { cls: 'aspect-art' })}
                 <span class="aspect-code">${S.art.symbol(id)} ${A[id].short}</span>
                 <span class="aspect-name">${esc(A[id].name)}</span>
                 <span class="aspect-hint">${esc(A[id].hint)}</span>
@@ -91,11 +91,9 @@
   V.notfound = {
     title: () => 'Страница не найдена',
     render() {
-      const t = S.data.types[Math.floor(Math.random() * 16)];
       return `
-        <section class="lost-hero" style="${ui.qStyle(t.quadra)}">
+        <section class="lost-hero">
           <h1 class="display lost-title" data-fit data-min="12" data-max="16" data-maxh="16"><span class="fit-in"><span class="fit-line"><span class="sv">Тут</span></span> <span class="fit-line"><span class="sv">пусто</span></span></span></h1>
-          <div class="lost-char">${ui.character(t, { sizes: ui.CHAR.hero, eager: true, alt: '' })}</div>
           <div class="lost-foot">
             <p class="lead">Такой страницы нет. Зато есть 16${NB}типов — и${NB}один из${NB}них твой.</p>
             <p class="lost-actions"><a class="btn" href="#/">На главную</a><a class="btn-ghost" href="#/test">Пройти тест</a></p>

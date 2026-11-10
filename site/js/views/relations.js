@@ -1,4 +1,4 @@
-/* Socio-Nik · отношения (#/relations): калькулятор, 14 видов со сценами, матрица 16×16; экран пары (#/relations/ile/sei) */
+/* Socio-Nik · отношения (#/relations): калькулятор, 14 видов на примере пар с ИЛЭ, матрица 16×16; экран пары (#/relations/ile/sei) */
 (function (root) {
   const S = root.Socio;
   const V = S.views = S.views || {};
@@ -60,13 +60,13 @@
         <section class="sec sec-white">
           <div class="wrap">
             <h2 class="h2 reveal">14${NB}видов</h2>
-            <p class="lead sec-sub reveal">Сцены показаны на${NB}примере ИЛЭ «Дон Кихот»: знак слева — он, справа — партнёр.</p>
+            <p class="lead sec-sub reveal">На${NB}примере ИЛЭ «Дон Кихот»: слева — он, справа — партнёр. Линия между ними — цвет тона отношений.</p>
             <ol class="numlist kinds">
               ${KINDS.map(([kind, pos], i) => {
                 const r = M().relationById(pos), partner = M().partner(ile, pos), txt = ui.relText(kind);
-                return `<li class="kind reveal" data-anim>
+                return `<li class="kind reveal">
                   <span class="nl-num" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span>
-                  <div class="kind-scene">${ui.pairScene(ile, partner, { theme: 'light' })}</div>
+                  <div class="kind-scene">${ui.pairMarks(ile, partner, { cls: 'pm-sm' })}</div>
                   <div class="kind-copy">
                     <h3 class="nl-title">${ui.kindTitle(kind)}</h3>
                     ${ui.toneChip(r.tone)}
@@ -151,7 +151,7 @@
     const d = P.domains[z.aspect], on = done.has(z.aspect);
     return `<details class="pr-zone pr-${z.group} reveal" data-aspect="${z.aspect}" style="--i:${i % 2}">
       <summary>
-        <span class="pr-zi">${S.art.aspectImg(z.aspect, 'violet', 'pr-asp', { sizes: '(max-width: 600px) 52px, 64px' })}</span>
+        ${ui.aspectMark(z.aspect, { cls: 'pr-zi' })}
         <span class="pr-zt"><b>${esc(d.short)}</b><small>${esc(d.long)}</small></span>
         <span class="pr-badge" title="${esc(P.groups[z.group].title)}"><i aria-hidden="true"></i>${esc(badgeOf(z, b) || P.groups[z.group].short)}</span>
         ${CHEV}
@@ -175,7 +175,7 @@
   // «Как это устроено»: куда у второго попадают две сильные стороны (Эго) каждого. Названия типов вместо «ты» —
   // так блок проще читать, в том числе про чужую пару
   const cap = str => str.charAt(0).toUpperCase() + str.slice(1);
-  const who = t => `<span class="pr-who"><span class="pr-ava" style="${ui.qStyle(t.quadra)}">${ui.character(t, { sizes: '32px', alt: '' })}</span>${t.code} «${esc(t.alias)}»</span>`;
+  const who = t => `<span class="pr-who">${ui.mark(t, { cls: 'pr-ava' })}${t.code} «${esc(t.alias)}»</span>`;
   function howHTML(a, b, P) {
     const col = (from, to) => {
       const mt = M().modelA(to.ego);
@@ -207,6 +207,13 @@
   }
 
   const STAGES = [['start', 'Знакомство'], ['months', 'Через полгода'], ['years', 'Через годы']];
+  // Линейные иконки 24×24 в стиле значков шера: сердце, два облачка реплик, рукопожатие
+  const CTX_ICON = {
+    heart: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20z"/>',
+    bubbles: '<path d="M14.5 4.5h-9a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2H7v3l3.4-3h4.1a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2z"/><path d="M16.5 8.5h2a2 2 0 0 1 2 2v4.5a2 2 0 0 1-2 2H17v2.5l-2.8-2.5h-2.7"/>',
+    handshake: '<path d="M2.5 9.5 6 6l3 1.5L12 6l3 1.5L18 6l3.5 3.5"/><path d="M2.5 9.5 6 13l4 4a1.4 1.4 0 0 0 2-2"/><path d="m9.5 15.5 1.5 1.5a1.4 1.4 0 0 0 2-2l-1-1"/><path d="m12 14 1.5 1.5a1.4 1.4 0 0 0 2-2L12 10l-2 2a1.5 1.5 0 0 1-2-2l3-3"/><path d="M21.5 9.5 18 13l-2.5-2.5"/>'
+  };
+  const ctxIcon = k => `<svg class="pr-ctx-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${CTX_ICON[k]}</svg>`;
   const CONTEXTS = [['love', 'В паре', 'heart'], ['friends', 'В дружбе', 'bubbles'], ['work', 'В работе', 'handshake']];
 
   function pairBody(a, b) {
@@ -236,7 +243,7 @@
 
           <h3 class="pr-h3 reveal">В паре, дружбе и работе</h3>
           <div class="pr-ctx">${CONTEXTS.map(([k, name, em], i) => `<div class="pr-ctx-card reveal" style="--i:${i}">
-              <img src="${ui.emoteSrc(em)}" alt="" width="56" height="56" loading="lazy" decoding="async">
+              ${ctxIcon(em)}
               <p class="pr-k">${name}</p><p>${esc(more.contexts[k])}</p></div>`).join('')}</div>
 
           <div class="pr-pm">
@@ -368,7 +375,7 @@
           <div class="wrap">
             <div class="grid2">
               ${[a, b].map((t, i) => `<a class="link-card reveal" style="${ui.qStyle(t.quadra)};--i:${i}" href="#/types/${t.id}">
-                <span class="lc-art lc-char">${ui.character(t, { sizes: ui.CHAR.ava, alt: '' })}</span>
+                <span class="lc-art">${ui.mark(t, { cls: 'tm-xl' })}</span>
                 <span class="lc-kicker">${ui.quadra(t.quadra).name} · ${esc(t.role)}</span>
                 <span class="lc-title">${t.code} «${esc(t.alias)}»</span>
                 <span class="lc-text">${esc(ui.content(t.id).tagline || '')}</span>

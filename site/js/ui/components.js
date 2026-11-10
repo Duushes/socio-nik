@@ -1,5 +1,5 @@
-/* Socio-Nik · общие куски интерфейса: персонажи, карточки типов, выбор типа, калькулятор совместимости,
-   списки отношений, графики результата, знаменитости, подсказка. */
+/* Socio-Nik · общие куски интерфейса: персонаж (только для героев), плоские марки и знаки, карточки типов, выбор типа,
+   калькулятор совместимости, списки отношений, графики результата, знаменитости, подсказка. */
 (function (root) {
   const S = root.Socio = root.Socio || {};
   const ui = S.ui = S.ui || {};
@@ -65,14 +65,24 @@
   ui.mysteryChar = ({ sizes = ui.CHAR.card, eager = false, cls = '' } = {}) =>
     `<img class="char ${cls}" src="img/mystery/hero-520.webp" srcset="img/mystery/hero-520.webp 520w, img/mystery/hero-1040.webp 1040w" sizes="${sizes}" width="520" height="650" alt="Силуэт без лица: твой тип пока скрыт"${eager ? ' fetchpriority="high"' : ' loading="lazy"'} decoding="async" draggable="false">`;
 
-  // Эмблема: live — с живой орбитой (для крупных), иначе парит на CSS; theme: 'light' — для белых секций
-  ui.emblem = (t, { live = false, cls = '', label, theme } = {}) =>
-    S.art.emblem(t, { cls: (live ? 'em-live ' : 'em-float ') + cls, label, theme });
+  // ---------- плоский язык: 3D-персонаж остаётся только в героях, везде ниже — марки и знаки ----------
+  // Марка типа: кружок в цвете квадры с кодом. Стоит вместо аватара-персонажа; подпись рядом, поэтому скрыта от чтения
+  ui.mark = (t, { cls = '' } = {}) => `<span class="tm ${cls}" style="${ui.qStyle(t.quadra)}" aria-hidden="true"><b>${t.code}</b></span>`;
+  // Тип неизвестен (тест не пройден): та же марка, но с «?»
+  ui.markAsk = (cls = '') => `<span class="tm tm-ask ${cls}" aria-hidden="true"><b>?</b></span>`;
+  // Знак аспекта: плоский соционический символ на мягкой плашке; закрашенный — чёрный аспект, контур — белый
+  ui.aspectMark = (id, { cls = '' } = {}) => `<span class="am ${cls}" aria-hidden="true">${S.art.symbol(id)}</span>`;
+  // Знак квадры: четыре её ценности плоскими символами, 2 × 2
+  ui.quadraMark = (q, { cls = '' } = {}) =>
+    `<span class="qm ${cls}" style="${ui.qStyle(q.id)}" role="img" aria-label="Квадра ${q.name}: ценности — ${q.values.map(v => S.data.aspects[v].short).join(', ')}">${q.values.map(v => S.art.symbol(v)).join('')}</span>`;
 
-  // Карточка типа: бюст, код, псевдоним, роль
+  // Знак сайта: четыре плоских круга в цветах квадр (логотип, рубашка карты факта, общий факт)
+  ui.dots4 = (cls = '') => `<span class="dots4 ${cls}" aria-hidden="true"><i></i><i></i><i></i><i></i></span>`;
+
+  // Карточка типа: крупный код, псевдоним, роль и знак базовой функции — без бюста
   ui.tile = (t, i = 0) => `
     <a class="tcard reveal" href="#/types/${t.id}" style="${ui.qStyle(t.quadra)};--i:${i % 4}">
-      <span class="tcard-art">${ui.character(t, { alt: '' })}</span>
+      <span class="tcard-sym" aria-hidden="true">${S.art.symbol(t.ego[0])}</span>
       <span class="tcard-txt">
         <span class="tcard-code">${t.code}</span>
         <span class="tcard-alias">${esc(t.alias)}</span>
@@ -121,64 +131,41 @@
     return TITLES[r.kind];
   };
 
-  // Сцена пары из знаков: слева всегда тот, от кого идёт действие (ревизор, заказчик)
-  ui.pairScene = (a, b, { cls = '', labels, theme } = {}) => {
+  // Слева всегда тот, от кого идёт действие (ревизор, заказчик)
+  const ordered = (a, b, labels) => {
     const r = M().relation(a, b);
-    let left = a, right = b, lab = labels || [a.code, b.code];
-    if (r.id === 'benefactor' || r.id === 'supervisor') { left = b; right = a; lab = [lab[1], lab[0]]; }
-    return S.art.scene(r.kind, left, right, { cls, labels: lab, theme, label: `${a.code} и ${b.code}: ${ui.relTitle(r, a, b)}` });
+    const lab = labels || [a.code, b.code];
+    return r.id === 'benefactor' || r.id === 'supervisor' ? { r, left: b, right: a, lab: [lab[1], lab[0]] } : { r, left: a, right: b, lab };
   };
 
-  // Эмоции-символы над парой — как в анимации: сердечки, молния, снежинка, капля пота… (img/emotes)
-  ui.emoteSrc = key => `img/emotes/${key}.webp`;
-  ui.EMOTE = {
-    dual: 'heart', activation: 'sparkles', mirror: 'bubbles', semidual: 'heart-split', mirage: 'cloud', identity: 'bulb',
-    kindred: 'bulb', business: 'handshake', quasi: 'question', request: 'gift', extinguish: 'candle', superego: 'snowflake',
-    supervision: 'magnifier', conflict: 'lightning'
+  // Пара плоско: две марки и линия между ними цветом тона отношений (калькулятор, «Ты и тот, кто прислал», 14 видов)
+  // код уже в марке, поэтому подпись — только если она другая («Ты»)
+  const pmFig = (t, l, side) => `<figure class="pm-${side}">${ui.mark(t, { cls: 'tm-lg' })}<figcaption>${l !== t.code ? `<b>${esc(l)}</b>` : ''}<span>${esc(t.alias)}</span></figcaption></figure>`;
+  ui.pairMarks = (a, b, { labels, cls = '' } = {}) => {
+    const { r, left, right, lab } = ordered(a, b, labels);
+    return `<div class="pm t-${r.tone} ${cls}" role="img" aria-label="${esc(`${a.code} и ${b.code}: ${ui.relTitle(r, a, b)}`)}">${pmFig(left, lab[0], 'a')}<span class="pm-link" aria-hidden="true"></span>${pmFig(right, lab[1], 'b')}</div>`;
   };
-  ui.TONE_EMOTE = { support: 'heart', work: 'handshake', tense: 'lightning' };
-  // Сцена пары: что каждый делает и какие символы появляются (позы и движение — в motion.css, .act-<вид>)
-  const ACT = {
-    dual: ['heart', 'heart', 'puzzle'],
-    activation: ['sparkles', 'notes'],
-    mirror: ['bubbles', 'bubbles'],
-    semidual: ['heart-split'],
-    mirage: ['cloud', 'sparkles'],
-    identity: ['bulb', 'bulb'],
-    kindred: ['bulb'],
-    business: ['handshake'],
-    quasi: ['question', 'question'],
-    request: ['gift', 'sparkles'],
-    extinguish: ['candle'],
-    superego: ['snowflake', 'snowflake'],
-    supervision: ['magnifier', 'drop'],
-    conflict: ['lightning']
-  };
+  // Твой тип ещё неизвестен: слева «?», справа тип из ссылки
+  ui.pairMarksAsk = t => `<div class="pm pm-ask" role="img" aria-label="${esc(`${t.code} и ты: отношения пока неизвестны`)}">
+      <figure class="pm-a">${ui.markAsk('tm-lg')}<figcaption><b>Ты</b><span>тип пока неизвестен</span></figcaption></figure>
+      <span class="pm-link" aria-hidden="true"></span>${pmFig(t, t.code, 'b')}</div>`;
 
-  // Два персонажа лицом друг к другу: правый отражён. Слева — тот, от кого идёт действие.
-  // Позами, дистанцией, движением и символами они разыгрывают своё отношение
+  // Два персонажа лицом друг к другу (только в герое страницы пары): правый отражён, слева — тот, от кого идёт действие.
+  // Позами и дистанцией они разыгрывают своё отношение (motion.css, .act-<вид>)
   const duoFig = (t, l, side, { sizes = ui.CHAR.duo, eager = false } = {}) => `<figure class="duo-${side}" style="${ui.qStyle(t.quadra)}">
       <span class="duo-glow" aria-hidden="true"></span><span class="duo-body">${ui.character(t, { sizes, alt: '', eager })}</span>
       <figcaption><b>${esc(l)}</b><span>${esc(t.alias)}</span></figcaption></figure>`;
   ui.duo = (a, b, { labels, cls = '', sizes, eager = false } = {}) => {
-    const r = M().relation(a, b);
-    let left = a, right = b, lab = labels || [a.code, b.code];
-    if (r.id === 'benefactor' || r.id === 'supervisor') { left = b; right = a; lab = [lab[1], lab[0]]; }
-    const fx = (ACT[r.kind] || []).map((key, i) => `<img class="fx fx-${i + 1}" src="${ui.emoteSrc(key)}" alt="" width="100" height="100" decoding="async" draggable="false">`).join('');
-    return `<div class="duo act-${r.kind} ${cls}" data-anim role="img" aria-label="${esc(`${a.code} и ${b.code}: ${ui.relTitle(r, a, b)}`)}">${duoFig(left, lab[0], 'a', { sizes, eager })}${duoFig(right, lab[1], 'b', { sizes, eager })}<span class="duo-fx" aria-hidden="true">${fx}</span></div>`;
+    const { r, left, right, lab } = ordered(a, b, labels);
+    return `<div class="duo act-${r.kind} ${cls}" data-anim role="img" aria-label="${esc(`${a.code} и ${b.code}: ${ui.relTitle(r, a, b)}`)}">${duoFig(left, lab[0], 'a', { sizes, eager })}${duoFig(right, lab[1], 'b', { sizes, eager })}</div>`;
   };
-  // Пара, где твой тип ещё неизвестен: слева «?», справа персонаж из ссылки
-  ui.duoMystery = t => `<div class="duo duo-mystery" role="img" aria-label="${esc(`${t.code} и ты: отношения пока неизвестны`)}">
-      <figure class="duo-a duo-q"><span class="duo-glow" aria-hidden="true"></span><span class="duo-ask" aria-hidden="true">?</span>
-        <figcaption><b>Ты</b><span>тип пока неизвестен</span></figcaption></figure>
-      ${duoFig(t, t.code, 'b')}</div>`;
 
   // ---------- калькулятор совместимости ----------
   ui.calcOut = (aId, bId) => {
     const a = M().type(aId), b = M().type(bId), r = M().relation(a, b), txt = relText(r.kind);
     const role = txt.roles && txt.roles[r.id];
     return `
-      <div class="calc-duo">${ui.duo(a, b)}</div>
+      <div class="calc-duo">${ui.pairMarks(a, b)}</div>
       <div class="calc-text">
         <p class="calc-kicker">${a.code} и ${b.code}</p>
         <h3 class="calc-title">${esc(ui.relTitle(r, a, b))}</h3>
@@ -239,8 +226,8 @@
         <h3>${ui.toneChip(tone)}</h3>
         <ul>${rows.filter(x => x.r.tone === tone).map(({ b, r }) => `
           <li><a href="#/relations/${t.id}/${b.id}" style="${ui.qStyle(b.quadra)}">
-            <span class="rl-ava">${ui.character(b, { sizes: ui.CHAR.ava, alt: '' })}</span>
-            <span class="rl-code">${b.code}</span>
+            ${ui.mark(b, { cls: 'rl-ava' })}
+            <span class="sr">${b.code}: </span>
             <span class="rl-name">${esc(r.role ? `${r.name} · ${r.role}` : r.name)}</span>
           </a></li>`).join('')}</ul>
       </div>`).join('')}</div>`;
@@ -255,8 +242,8 @@
   ];
   ui.AXES = AXES;
 
-  // Четыре шкалы: у каждой — вопрос простыми словами, 3D-картинки полюсов (те же предметы, что в тесте),
-  // шкала растёт от центра к ближнему полюсу, на её конце — глянцевый шар в цвете квадры, и вывод словами.
+  // Четыре шкалы: у каждой — вопрос простыми словами, два полюса с процентами,
+  // шкала растёт от центра к ближнему полюсу, на её конце — точка в цвете квадры, и вывод словами.
   // Тексты без «ты»: блок стоит и на своём результате, и на странице чужого результата по ссылке.
   const SCALE = {
     EI: { title: 'Откуда берутся силы', a: 'E', b: 'I' },
@@ -277,10 +264,9 @@
   const near = d => (d >= 75 ? 'Явно ближе' : d >= 60 ? 'Ближе' : 'Чуть ближе');
   ui.axisBars = axes => {
     const top = M().type(S.core.scoring.result(axes).top.id);
-    return `<div class="scales">${AXES.map(([ax], i) => {
+    return `<div class="scales" style="${ui.qStyle(top.quadra)}">${AXES.map(([ax], i) => {
       const v = axes[ax], sc = SCALE[ax], win = v >= 50 ? sc.a : sc.b;
       const pole = (p, val, on) => `<div class="sc-pole${on ? ' on' : ''}">
-          <img src="img/scale/${p}.webp" alt="" width="240" height="240" loading="lazy" decoding="async" draggable="false">
           <span class="sc-name">${POLE[p][0]}</span><span class="sc-pct"><b data-count="${val}">${val}</b>${NB}%</span>
         </div>`;
       const verdict = v === 50 ? `<b>Поровну</b>: обе стороны одинаково близки` : `<b>${near(Math.max(v, 100 - v))} ${POLE[win][0].toLowerCase()}</b>: ${POLE[win][1]}`;
@@ -290,7 +276,7 @@
         <div class="sc-track" role="img" aria-label="${POLE[sc.a][0]} ${v} %, ${POLE[sc.b][0].toLowerCase()} ${100 - v} %">
           <span class="sc-mid" aria-hidden="true"></span>
           <span class="sc-fill" aria-hidden="true"></span>
-          <span class="sc-knob" aria-hidden="true"><img src="img/logo/${top.quadra}.webp" alt="" width="48" height="48"></span>
+          <span class="sc-knob" aria-hidden="true"></span>
         </div>
         <p class="sc-verdict">${verdict}</p>
       </article>`;
@@ -326,16 +312,14 @@
   };
 
   // ---------- знаменитости с похожим типом ----------
-  // Аватар героя: отрисованная 3D-иконка вещи, с которой он ассоциируется (img/celebs/<ключ>.webp, в цвете квадры);
+  // Аватар героя: линейная иконка вещи, с которой он ассоциируется (art/celeb-icons.js, в цвете квадры);
   // реальные люди — круглая плашка, персонажи — скруглённый «кадр»; иконки нет — инициалы
   const celebsOf = id => (S.content.celebs && S.content.celebs[id]) || [];
   const initials = name => {
     const w = name.split(/[\s-]+/).filter(x => /^[A-ZА-ЯЁ]/.test(x));
     return w.length ? (w[0][0] + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase() : name.slice(0, 1).toUpperCase();
   };
-  const ava = (c, cls = '') => `<span class="celeb-ava${c.kind === 'fiction' ? ' fic' : ''}${cls}" aria-hidden="true">${c.icon
-    ? `<img class="celeb-ic" src="img/celebs/${c.icon}.webp" width="192" height="192" alt="" loading="lazy" decoding="async" draggable="false">`
-    : esc(initials(c.name))}</span>`;
+  const ava = (c, cls = '') => `<span class="celeb-ava${c.kind === 'fiction' ? ' fic' : ''}${cls}" aria-hidden="true">${(c.icon && S.art.celebIcon && S.art.celebIcon(c.icon)) || esc(initials(c.name))}</span>`;
   const INFO = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="6.2" r="1.1" fill="currentColor"/></svg>';
 
   ui.celebs = t => {
