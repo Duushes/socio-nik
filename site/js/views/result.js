@@ -6,6 +6,8 @@
   const { esc } = S.dom;
   const M = () => S.core.modelA;
   const NB = '\u00A0';
+  // Ссылка на свой результат: с адресом сайта, а локально — от текущего адреса страницы
+  const keepUrl = axes => S.share.url(axes) || (location.href.split('#')[0] + '#/r/' + S.core.payload.encode(axes));
 
   // Заголовок «Привет, {имя}» с подгонкой по ширине и персонаж с магнитом под ним.
   // Высота заголовка ограничена (data-maxh): на компьютере под персонажем в первом экране — строка с типом и кнопками
@@ -49,6 +51,14 @@
     const n1 = M().type(res.next[0].id);
     const qc = (S.content.quadras || {})[q.id] || {};
     const friend = S.state.friend ? S.core.scoring.result(S.state.friend).top.id : null;
+    // Шкала ровно на 50 делит первое место: одна — между двумя типами, две — между четырьмя, три — между восемью
+    const even = S.core.scoring.AXES.filter(ax => axes[ax] === 50).length;
+    const tied = even > 1 ? res.dist.slice(1, 1 << even).map(r => M().type(r.id)) : [];
+    const between = even === 2
+      ? `Две шкалы легли ровно посередине, поэтому так${NB}же близко ещё три типа: ${tied.map(x => `<a href="#/types/${x.id}">${x.code}</a>`).join(', ')}.`
+      : even === 3
+        ? `Три шкалы легли ровно посередине, поэтому так${NB}же близко ещё семь типов${NB}— <a href="#/result#scales">они в${NB}списке ниже</a>.`
+        : res.close ? `Результат между ${t.code} и${NB}<a href="#/types/${n1.id}">${n1.code} «${esc(n1.alias)}»</a> — загляни в${NB}оба описания.` : '';
 
     return `
       <section class="res-hero" style="${ui.qStyle(t.quadra)}">
@@ -60,7 +70,7 @@
             <p class="res-name">${esc(t.name)}</p>
             <p class="res-alias">«${esc(t.alias)}» · ${esc(t.role)} · квадра ${q.name}</p>
             ${ui.clarityLine(res, { href: '#/result#scales' })}
-            ${res.close ? `<p class="res-between">Результат между ${t.code} и${NB}${n1.code} — загляни в${NB}оба описания.</p>` : ''}
+            ${between ? `<p class="res-between">${between}</p>` : ''}
           </div>
           <div class="res-acts">
             <button class="btn res-share" type="button" data-share-now>Поделиться результатом</button>
@@ -77,7 +87,7 @@
             <div>
               <p class="lead res-tagline reveal">${esc(c.tagline || '')}</p>
               <p class="body reveal">${esc((c.about || [])[0] || '')}</p>
-              <p class="reveal"><a class="link" href="#/types/${t.id}">Читать полностью</a></p>
+              <p class="res-more reveal"><a class="link" href="#/types/${t.id}">Читать полностью</a><a class="link" href="#/box/${t.id}">Факты про ${t.code}</a></p>
               ${ui.celebLine(t)}
             </div>
             <div class="res-links">
@@ -100,14 +110,11 @@
 
       <section class="sec">
         <div class="wrap">
-          <h2 class="h2 h2-md sec-head reveal"><span class="sv">Ещё похоже на</span></h2>
-          ${nextCards(res)}
-          <h2 class="h2 h2-md gap-top reveal" id="scales"><span class="sv">Четыре шкалы</span></h2>
-          <p class="lead sec-sub reveal">Какой полюс каждой пары тебе ближе.</p>
+          <h2 class="h2 h2-md sec-head reveal" id="scales"><span class="sv">Четыре шкалы</span></h2>
+          <p class="lead sec-sub reveal">Какой полюс каждой пары тебе ближе. Из${NB}них и${NB}складывается тип.</p>
           ${ui.axisBars(res.axes)}
-          <h2 class="h2 h2-md gap-top reveal"><span class="sv">Все 16 типов</span></h2>
-          <p class="lead sec-sub reveal">Вероятности по всем типам складываются в${NB}100${NB}%. ${S.fx.fineMouse() ? 'Наведи на строку — увидишь подробности.' : 'Нажми на тип — откроется его описание.'}</p>
-          ${ui.distribution(res, { fold: Boolean(root.matchMedia && root.matchMedia('(max-width: 767px)').matches) })}
+          <p class="res-all reveal">Близость к${NB}остальным типам${NB}— в${NB}списке ниже: вероятности по${NB}всем 16 в${NB}сумме дают 100${NB}%.</p>
+          ${ui.distribution(res, { fold: true })}
         </div>
       </section>
 
@@ -116,17 +123,21 @@
           <h2 class="h2 h2-md reveal">Сравни с другом</h2>
           <p class="lead sec-sub reveal">${friend ? `Результат по ссылке — ${M().type(friend).code} «${esc(M().type(friend).alias)}». Вот как устроены ваши отношения.` : 'Выбери тип близкого человека — покажем, как устроены ваши отношения.'}</p>
           <div class="reveal">${ui.calc(t.id, friend || dual.id)}</div>
+          ${friend ? '' : `<div class="cmp-ask reveal">
+            <p><b>Не знаешь тип друга?</b> Отправь свой результат. После теста по${NB}твоей ссылке друг сразу увидит ваши отношения${NB}— и${NB}пришлёт тебе свой тип.</p>
+            <button class="btn-ghost" type="button" data-share-now>Отправить результат</button>
+          </div>`}
         </div>
       </section>
 
       ${ui.resultShare(axes)}
 
-      <section class="sec sec-line">
+      <section class="sec sec-line res-end">
         <div class="wrap center">
-          <h2 class="h2 h2-sm reveal"><span class="sv">Mystery box про ${t.code}</span></h2>
-          <p class="lead sec-sub reveal">Случайный факт о${NB}твоём типе.</p>
-          <div class="reveal">${ui.box({ typeId: t.id, compact: true })}</div>
-          <p class="gap-top reveal"><a class="btn-ghost" href="#/test" data-restart-test>Пройти тест заново</a></p>
+          <h2 class="h2 h2-sm reveal"><span class="sv">Не потеряй результат</span></h2>
+          <p class="lead sec-sub reveal">Он хранится только в${NB}этом браузере. Сохрани ссылку${NB}— по${NB}ней результат откроется на${NB}любом устройстве.</p>
+          <div class="reveal" data-keep>${ui.linkRow(keepUrl(axes))}</div>
+          <p class="res-again reveal"><a class="btn-ghost" href="#/test" data-restart-test>Пройти тест заново</a></p>
           <details class="how reveal">
             <summary>Как это считается</summary>
             <p>Каждый ответ сдвигает одну из четырёх шкал. Из суммы по шкале получается вероятность каждого полюса, а вероятность типа — произведение вероятностей его четырёх полюсов, поэтому по 16 типам всегда выходит 100 %.</p>
@@ -169,10 +180,11 @@
     mount(root) {
       const axes = S.state.result();
       if (!axes) return overlap(root);
-      const offs = [overlap(root), ui.mountCalc(root), ui.mountBox(root), ui.mountTips(root), ui.mountResultShare(root, axes)];
-      // «Поделиться результатом» в первом экране — тот же шер, что и в блоке ниже
-      const now = root.querySelector('[data-share-now]');
-      if (now) now.addEventListener('click', () => { const box = root.querySelector('[data-share]'); if (box && box.shareNow) box.shareNow(); });
+      const offs = [overlap(root), ui.mountCalc(root), ui.mountTips(root), ui.mountResultShare(root, axes)];
+      const keep = root.querySelector('[data-keep]');
+      if (keep) offs.push(ui.mountShareActions(keep, { url: () => keepUrl(axes), text: () => keepUrl(axes) }));
+      // «Поделиться результатом» в первом экране и «Отправить результат» у калькулятора — тот же шер, что и в блоке ниже
+      root.querySelectorAll('[data-share-now]').forEach(now => now.addEventListener('click', () => { const box = root.querySelector('[data-share]'); if (box && box.shareNow) box.shareNow(); }));
       if (S.state.justFinished) {
         S.state.justFinished = false;
         const t = M().type(S.core.scoring.result(axes).top.id);
@@ -180,7 +192,7 @@
         setTimeout(() => S.fx.confetti([c, S.color.tone(c, 0.35), '#b600a8', '#d7e2ea'], { y: 0.3 }), 450);
       }
       const again = root.querySelector('[data-restart-test]');
-      if (again) again.addEventListener('click', () => S.store.del('test'));
+      if (again) again.addEventListener('click', () => S.state.restartTest());
       return () => offs.forEach(f => f && f());
     }
   };
@@ -205,9 +217,10 @@
           <div class="res-acts">
             <div class="cta">
               ${mine ? `<a class="btn" href="#/relations/${mine.id}/${t.id}">Ваши отношения</a><a class="link" href="#/test" data-friend>Пройти тест заново</a>`
-                     : `${test('Узнать свой тип')}<a class="link" href="#/types/${t.id}">Подробнее об${NB}${t.code}</a>`}
+                     : `${test('Узнать свой тип')}<a class="link" href="#/types/${t.id}">Подробнее ${ui.about(t.code)}</a>`}
             </div>
             <p class="sh-note">20 вопросов · около 4 минут · без регистрации</p>
+            ${mine ? '' : `<p class="sh-own">Это твоя ссылка? <button type="button" data-own>Открыть как свой результат</button></p>`}
           </div>
           <p class="sh-motto"><span>Коротко о типе</span>«${esc(c.tagline || '')}»</p>
         </div>
@@ -242,7 +255,7 @@
           <p class="body reveal">${esc((c.about || [])[0] || '')}</p>
           <ol class="steps reveal" style="${ui.qStyle(t.quadra)}">${(c.strengths || []).map(x => `<li>${esc(x)}</li>`).join('')}</ol>
           ${ui.celebLine(t)}
-          <p class="reveal gap-top"><a class="link" href="#/types/${t.id}">Всё о${NB}${t.code}: описание, модель${NB}А, отношения</a></p>
+          <p class="reveal gap-top"><a class="link" href="#/types/${t.id}">Всё ${ui.about(t.code)}: описание, сильные и${NB}уязвимые стороны, отношения</a></p>
         </div>
       </section>
 
@@ -260,12 +273,15 @@
       const axes = S.core.payload.decode(code);
       return 'Результат друга — ' + M().type(S.core.scoring.result(axes).top.id).code;
     },
-    valid: code => Boolean(S.core.payload.decode(code)),
+    // «ровный» результат (все шкалы посередине) типом не считаем — такая ссылка ведёт на «Ссылка не открылась»
+    valid: code => { const axes = S.core.payload.decode(code); return Boolean(axes) && !S.core.scoring.flat(axes); },
     render(code) { return sharedPage(S.core.payload.decode(code)); },
     mount(root, code) {
       const axes = S.core.payload.decode(code);
       const onClick = e => {
-        if (e.target.closest('[data-friend]')) { S.state.friend = axes; S.store.del('test'); }
+        if (e.target.closest('[data-friend]')) { S.state.friend = axes; S.state.restartTest(); }
+        // свою ссылку открыли в другом браузере — результат можно забрать, тест заново проходить не нужно
+        if (e.target.closest('[data-own]')) { S.state.saveResult(axes); location.hash = '#/result'; }
       };
       root.addEventListener('click', onClick);
       const off = overlap(root);

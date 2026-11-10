@@ -22,21 +22,29 @@
   --font: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 
   --ink: #0c0c0c;
+  --ink-1: #0e0f11;                         /* плитки с персонажами, карточка факта, рубашка коробки */
+  --ink-2: #141518;                         /* вложенные плашки, подложка аватарок */
   --paper: #d7e2ea;
+  --ink-rgb: 12, 12, 12;                    /* те же два цвета каналами — для прозрачности: rgba(var(--paper-rgb), 0.3) */
+  --paper-rgb: 215, 226, 234;
+  --accent: #b600a8;                        /* маджента градиента: выделение текста, обводка, прогресс */
+  --accent-2: #7621b0;
+  --accent-rgb: 182, 0, 168;
+  --ok: #3ddc97;                            /* «скопировано», «совпадает» */
   --bg: var(--ink);
   --text: var(--paper);
-  --muted: rgba(215, 226, 234, 0.6);       /* ≈5,6:1 */
-  --faint: rgba(215, 226, 234, 0.4);       /* только для декора */
+  --muted: rgba(var(--paper-rgb), 0.6);       /* ≈5,6:1 */
+  --faint: rgba(var(--paper-rgb), 0.4);       /* только для декора */
   --line: var(--paper);                     /* рамки карточек 2 px */
-  --hair: rgba(215, 226, 234, 0.15);
-  --chip: rgba(215, 226, 234, 0.08);
-  --chip-hover: rgba(215, 226, 234, 0.14);
-  --card: #141518;                          /* вложенные плашки */
+  --hair: rgba(var(--paper-rgb), 0.15);
+  --chip: rgba(var(--paper-rgb), 0.08);
+  --chip-hover: rgba(var(--paper-rgb), 0.14);
+  --card: var(--ink-2);                          /* вложенные плашки */
   --elev: #121316;                          /* шторки, карточка факта */
-  --track: rgba(215, 226, 234, 0.1);
+  --track: rgba(var(--paper-rgb), 0.1);
 
-  --grad: linear-gradient(123deg, #18011f 7%, #b600a8 37%, #7621b0 72%, #be4c00 100%);
-  --grad-line: linear-gradient(90deg, #b600a8, #7621b0 55%, #be4c00);
+  --grad: linear-gradient(123deg, #18011f 7%, var(--accent) 37%, var(--accent-2) 72%, #be4c00 100%);
+  --grad-line: linear-gradient(90deg, var(--accent), var(--accent-2) 55%, #be4c00);
   --silver: linear-gradient(180deg, #646973, #bbccd7);
 
   --q-alpha: #3987e5;
@@ -45,13 +53,22 @@
   --q-delta: #17a774;
 
   /* тон отношений: чем светлее, тем легче */
-  --tone-support: #d7e2ea;
-  --tone-work: rgba(215, 226, 234, 0.42);
-  --tone-tense: rgba(215, 226, 234, 0.1);
+  --tone-support: var(--paper);
+  --tone-work: rgba(var(--paper-rgb), 0.42);
+  --tone-tense: rgba(var(--paper-rgb), 0.1);
 
-  --tip-bg: #d7e2ea;
-  --tip-fg: #0c0c0c;
+  --tip-bg: var(--paper);
+  --tip-fg: var(--ink);
   --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
+
+  /* кегли интерфейса: подписи, кнопки, плашки. Полушагов нет; текста мельче 12 px на сайте нет.
+     Крупные и «резиновые» кегли (clamp) заданы у своих компонентов */
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 15px;
+  --fs-xl: 16px;
+  --fs-2xl: 17px;
 
   --gutter: 20px;
   --r-card: 40px;
@@ -72,19 +89,19 @@
 .on-white, .sec-white {
   color-scheme: light;
   --bg: #ffffff;
-  --text: #0c0c0c;
-  --muted: rgba(12, 12, 12, 0.6);          /* ≈5,2:1 */
-  --faint: rgba(12, 12, 12, 0.38);
-  --line: #0c0c0c;
-  --hair: rgba(12, 12, 12, 0.12);
-  --chip: rgba(12, 12, 12, 0.06);
-  --chip-hover: rgba(12, 12, 12, 0.1);
+  --text: var(--ink);
+  --muted: rgba(var(--ink-rgb), 0.6);          /* ≈5,2:1 */
+  --faint: rgba(var(--ink-rgb), 0.38);
+  --line: var(--ink);
+  --hair: rgba(var(--ink-rgb), 0.12);
+  --chip: rgba(var(--ink-rgb), 0.06);
+  --chip-hover: rgba(var(--ink-rgb), 0.1);
   --card: #f1f3f5;
   --elev: #ffffff;
-  --track: rgba(12, 12, 12, 0.08);
-  --tone-support: #0c0c0c;
-  --tone-work: rgba(12, 12, 12, 0.36);
-  --tone-tense: rgba(12, 12, 12, 0.07);
+  --track: rgba(var(--ink-rgb), 0.08);
+  --tone-support: var(--ink);
+  --tone-work: rgba(var(--ink-rgb), 0.36);
+  --tone-tense: rgba(var(--ink-rgb), 0.07);
   background: var(--bg);
   color: var(--text);
 }

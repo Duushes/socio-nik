@@ -38,6 +38,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      - name: Страница юнит-тестов остаётся в репозитории, на сайт не идёт
+        run: rm -rf site/tests.html site/js/tests
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

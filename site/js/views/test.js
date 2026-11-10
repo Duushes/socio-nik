@@ -25,6 +25,23 @@
     const st = S.store.get('test', null);
     return st && st.answers && Number.isInteger(st.index) ? st : { answers: {}, index: 0 };
   };
+  // Тест уже пройден и новый не начат: вместо пустого первого вопроса — выбор «открыть результат» или «пройти заново».
+  // Иначе «Тест» в подвале или «Назад» выглядят так, будто результат пропал.
+  const passed = () => Boolean(S.state.result()) && !S.store.get('test', null);
+
+  function passedScreen() {
+    const t = S.core.modelA.type(S.state.myType());
+    return `
+      <section class="test test-passed" style="${ui.qStyle(t.quadra)}">
+        <div class="wrap test-wrap">
+          <div class="tp-char">${ui.character(t, { sizes: '240px', eager: true, alt: '' })}</div>
+          <p class="eyebrow">Тест уже пройден</p>
+          <h1 class="h2 h2-sm tp-title">Твой тип${NB}— ${t.code} «${esc(t.alias)}»</h1>
+          <p class="lead tp-lead">Результат сохранён на${NB}этом устройстве. Если пройдёшь тест заново, новый результат заменит старый.</p>
+          <p class="lost-actions"><a class="btn" href="#/result">Открыть результат</a><button class="btn-ghost" type="button" data-again>Пройти заново</button></p>
+        </div>
+      </section>`;
+  }
 
   function card(q, side, value) {
     const a = side === 'a', v = a ? -2 : 2, head = a ? q.as : q.bs;
@@ -62,6 +79,7 @@
   V.test = {
     title: () => 'Тест',
     render() {
+      if (passed()) return passedScreen();
       const qs = S.data.questions, st = load();
       const i = Math.min(st.index, qs.length - 1);
       return `
@@ -80,6 +98,7 @@
             </div>
             <div class="t-steps" role="progressbar" aria-label="Прогресс теста" aria-valuemin="0" aria-valuemax="${qs.length}" aria-valuenow="${i}">${qs.map((q, k) => `<i class="${k < i ? 'done' : k === i ? 'now' : ''}"></i>`).join('')}</div>
             <p class="t-toast" aria-live="polite" hidden></p>
+            <p class="t-undo" role="status" hidden><span>Ответы сброшены.</span> <button type="button" data-undo>Вернуть</button></p>
             <div class="q-stage" aria-live="polite">${question(qs[i], i, qs.length, st.answers[qs[i].id])}</div>
             <p class="test-hint">Нажми на${NB}карточку${NB}— это «точно». Если не${NB}так однозначно, выбери оттенок на${NB}шкале.<span class="kbd-hint"> Клавиши 1–5 тоже работают.</span></p>
           </div>
@@ -90,14 +109,23 @@
         </section>`;
     },
     mount(root) {
+      const again = root.querySelector('[data-again]');
+      if (again) {
+        const start = () => { S.state.restartTest(); S.app.render(); };
+        again.addEventListener('click', start);
+        return () => again.removeEventListener('click', start);
+      }
       const qs = S.data.questions;
       let st = load();
       st.index = Math.min(st.index, qs.length - 1);
       const stage = root.querySelector('.q-stage'), steps = root.querySelector('.t-steps'), back = root.querySelector('[data-back]');
       const ring = root.querySelector('.t-ring'), ringFg = root.querySelector('.t-ring-fg');
       const nEl = root.querySelector('[data-n]'), etaEl = root.querySelector('[data-eta]'), toast = root.querySelector('.t-toast');
+      const undo = root.querySelector('.t-undo');
       const timers = [], times = [], shown = new Set();
-      let locked = false, warmed = false, shownAt = performance.now(), toastT = 0;
+      let locked = false, warmed = false, shownAt = performance.now(), toastT = 0, undoT = 0, dropped = null, halted = false;
+      // «Заново» — одно касание рядом со шкалой: ответы не пропадают сразу, их можно вернуть
+      const hideUndo = () => { clearTimeout(undoT); dropped = null; undo.hidden = true; };
 
       const save = () => S.store.set('test', st);
       // Портреты для сцены раскрытия подгружаем заранее, ближе к концу теста
@@ -146,7 +174,8 @@
         const enter = () => {
           stage.replaceChildren(next);
           shownAt = performance.now();
-          if (!S.dom.reducedMotion()) next.classList.add(dir > 0 ? 'q-in-r' : 'q-in-l');
+          // щадящий режим: без сдвига, но новый вопрос проявляется — иначе смену на том же месте легко не заметить
+          next.classList.add(S.dom.reducedMotion() ? 'q-fade' : dir > 0 ? 'q-in-r' : 'q-in-l');
           const focus = next.querySelector('.dot[tabindex="0"]');
           if (focus && document.documentElement.classList.contains('kbd')) focus.focus({ preventScroll: true });
           locked = false;
@@ -160,9 +189,10 @@
       }
 
       function choose(v) {
-        if (locked) return;
+        if (locked || halted) return;
         const q = qs[st.index];
         const fresh = st.answers[q.id] == null;
+        if (dropped) hideUndo();
         st.answers[q.id] = v;
         save();
         if (fresh) times.push(performance.now() - shownAt);
@@ -182,11 +212,11 @@
         const done = st.index + 1;
         if (fresh && MILESTONES[done] && !shown.has(done)) { shown.add(done); say(...MILESTONES[done]); }
         locked = true;
-        timers.push(setTimeout(() => { locked = false; st.index < qs.length - 1 ? go(1) : finish(); }, S.dom.reducedMotion() ? 60 : 430));
+        timers.push(setTimeout(() => { locked = false; st.index < qs.length - 1 ? go(1) : finish(); }, S.dom.reducedMotion() ? 350 : 430));
       }
 
       function go(dir) {
-        if (locked) return;
+        if (locked || halted) return;
         const n = st.index + dir;
         if (n < 0 || n >= qs.length) return;
         st.index = n;
@@ -194,15 +224,33 @@
         paint(dir);
       }
 
+      // Все шкалы ровно посередине (везде «поровну» или ответы погасили друг друга): 16 типов равновероятны.
+      // Тип не называем и ничего не сохраняем — ответы на месте, к ним можно вернуться.
+      function stuck() {
+        halted = true;
+        back.disabled = true;
+        stage.innerHTML = `<div class="t-flat">
+            <h1 class="q-prompt">Тест не${NB}смог выбрать тип</h1>
+            <p class="lead">Ответы легли ровно посередине по${NB}всем четырём шкалам${NB}— так все 16${NB}типов подходят одинаково. Вернись к${NB}вопросам и${NB}там, где получится, выбери то, что хоть немного ближе.</p>
+            <p class="lost-actions"><button class="btn" type="button" data-review>Вернуться к${NB}вопросам</button><button class="btn-ghost" type="button" data-restart>Начать заново</button></p>
+          </div>`;
+        if (document.documentElement.classList.contains('kbd')) stage.querySelector('[data-review]').focus({ preventScroll: true });
+      }
+
       function finish() {
         const res = S.core.scoring.score(st.answers, qs);
+        if (S.core.scoring.flat(res.axes)) { stuck(); return; }
         S.state.saveResult(res.axes);
         S.store.del('test');
         S.state.justFinished = true;
         ringFg.style.setProperty('--p', '100');
         Array.from(steps.children).forEach(s => { s.className = 'done'; });
         const me = S.core.modelA.type(S.core.scoring.result(res.axes).top.id);
-        reveal(me, () => { location.hash = '#/result'; });
+        // результат встаёт в истории на место теста: «Назад» с результата не приводит к пустому первому вопросу
+        reveal(me, () => {
+          try { history.replaceState(null, ''); } catch (e) { /* без history */ }
+          location.replace('#/result');
+        });
       }
 
       // Слот: портреты мелькают всё медленнее и останавливаются на твоём типе (~2 с)
@@ -232,12 +280,31 @@
         const pick = e.target.closest('.dot, .q-card');
         if (pick && stage.contains(pick) && !pick.closest('.q-out-l, .q-out-r')) choose(Number(pick.dataset.v));
         if (e.target.closest('[data-back]')) go(-1);
+        if (e.target.closest('[data-review]')) { halted = false; st.index = 0; save(); paint(-1); return; }
         if (e.target.closest('[data-restart]')) {
+          if (locked) return;
+          halted = false;
+          const had = Object.keys(st.answers).length > 0;
+          const prev = had ? { st: JSON.parse(JSON.stringify(st)), shown: Array.from(shown) } : null;
           st = { answers: {}, index: 0 };
           times.length = 0;
           shown.clear();
           save();
           paint(-1);
+          hideUndo();
+          if (prev) {
+            dropped = prev;
+            undo.hidden = false;
+            undoT = setTimeout(hideUndo, 9000);
+          }
+        }
+        if (e.target.closest('[data-undo]') && dropped && !locked) {
+          st = dropped.st;
+          halted = false;
+          dropped.shown.forEach(n => shown.add(n));
+          hideUndo();
+          save();
+          paint(1);
         }
       };
       const onKey = e => {
@@ -266,6 +333,7 @@
         document.removeEventListener('keydown', onKey);
         timers.forEach(clearTimeout);
         clearTimeout(toastT);
+        clearTimeout(undoT);
       };
     }
   };

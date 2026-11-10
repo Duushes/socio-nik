@@ -19,6 +19,28 @@
 
   const coarse = () => Boolean(root.matchMedia && root.matchMedia('(pointer: coarse)').matches);
 
+  // Буфер обмена недоступен (встроенный браузер, старый телефон) — не тупик: показываем ссылку в поле,
+  // уже выделенную, её остаётся скопировать руками. after — элемент, под которым поле появится
+  ui.manualCopy = (after, value) => {
+    if (!after || !value) return null;
+    let f = after.parentNode.querySelector('.sk-manual');
+    if (!f) {
+      f = document.createElement('input');
+      f.className = 'sk-manual';
+      f.type = 'text';
+      f.readOnly = true;
+      f.setAttribute('aria-label', 'Ссылка: выдели и скопируй');
+      f.addEventListener('focus', () => { try { f.setSelectionRange(0, f.value.length); } catch (e) { /* поле без выделения */ } });
+      after.insertAdjacentElement('afterend', f);
+    }
+    f.value = value;
+    f.hidden = false;
+    try { f.focus({ preventScroll: true }); f.select(); } catch (e) { /* без фокуса — поле всё равно видно */ }
+    return f;
+  };
+  const dropManual = box => { const f = box && box.querySelector('.sk-manual'); if (f) f.hidden = true; };
+  const FAIL = 'Не удалось скопировать — ссылка ниже, выдели её и скопируй';
+
   // Картинка крупно в шторке: «нажми и удерживай» сохраняет её и там, где скачивание молча не работает
   const saveSheet = (blob, { url = '', from } = {}) => new Promise(done => {
     const reader = new FileReader();
@@ -37,7 +59,9 @@
       const btn = sheet.body.querySelector('[data-save-copy]');
       if (btn) btn.addEventListener('click', async () => {
         const ok = await S.share.copy(url);
-        sheet.body.querySelector('.save-status').textContent = ok ? `Ссылка скопирована — вставь её в${NB}чат` : 'Не получилось скопировать';
+        const st = sheet.body.querySelector('.save-status');
+        st.textContent = ok ? `Ссылка скопирована — вставь её в${NB}чат` : 'Не удалось скопировать — ссылка ниже, выдели её и скопируй';
+        if (!ok) ui.manualCopy(st, url);
       });
       done(sheet);
     };
@@ -84,24 +108,28 @@
       const act = b.dataset.sk;
       try {
         if (act === 'copy' || act === 'copy-text') {
-          const ok = await S.share.copy(act === 'copy' ? get.url() : get.text());
+          const what = act === 'copy' ? get.url() : get.text();
+          const ok = await S.share.copy(what);
           if (ok) {
             b.classList.add('done');
             clearTimeout(flashT);
             flashT = setTimeout(() => b.classList.remove('done'), 2400);
             say('Ссылка скопирована');
-          } else say('Не удалось скопировать — выдели ссылку вручную');
+            dropManual(box);
+          } else { say(FAIL); ui.manualCopy(status, what); }
         }
         if (act === 'more') await navigator.share({ text: get.text(), url: get.url() || undefined });
         if (act === 'send') {
           // ссылка: на телефоне — системное меню, иначе — в буфер с подтверждением на самой кнопке
+          const what = get.text() + (get.url() ? ' ' + get.url() : '');
           if (navigator.share && matchMedia('(pointer: coarse)').matches) await navigator.share({ text: get.text(), url: get.url() || undefined });
-          else if (await S.share.copy(get.text() + (get.url() ? ' ' + get.url() : ''))) {
+          else if (await S.share.copy(what)) {
             b.classList.add('done');
             clearTimeout(flashT);
             flashT = setTimeout(() => b.classList.remove('done'), 2400);
             say('Ссылка скопирована — вставь её в чат');
-          } else say('Не удалось скопировать — выдели ссылку вручную');
+            dropManual(box);
+          } else { say(FAIL); ui.manualCopy(status, get.url() || what); }
         }
         if (act === 'go') {
           b.classList.add('busy');
@@ -129,6 +157,23 @@
     };
     scope.addEventListener('click', onClick);
     return () => { scope.removeEventListener('click', onClick); clearTimeout(flashT); };
+  };
+
+  // Одна кнопка «отправить ссылку» — для первого экрана страницы пары: на телефоне системное меню, иначе копирует
+  ui.sendButton = primary => `<div class="sk sk-one">
+        <button class="btn-ghost sk-go" type="button" data-sk="send"><span class="sk-flip"><span>${I.share}${esc(primary)}</span><span>${I.check}Ссылка скопирована</span></span></button>
+        <p class="sk-status" aria-live="polite"></p>
+      </div>`;
+
+  // Одна строка со ссылкой и «Копировать» — там, где нужна только ссылка («Не потеряй результат»)
+  ui.linkRow = url => {
+    const shown = url.replace(/^https?:\/\//, '');
+    return `<div class="sk sk-solo">
+        <button class="sk-link" type="button" data-sk="copy" aria-label="Скопировать ссылку ${esc(shown)}">
+          <span class="sk-url">${esc(shown)}</span><span class="sk-copy"><span class="sk-c1">Копировать</span><span class="sk-c2">${I.check}Скопировано</span></span>
+        </button>
+        <p class="sk-status" aria-live="polite"></p>
+      </div>`;
   };
 
   // ---------- результат: превью в «телефоне» + кнопки ----------

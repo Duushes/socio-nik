@@ -17,8 +17,9 @@
   ui.relText = relText;
 
   ui.qStyle = qid => `--q:var(--q-${qid})`;
-  // Тексты страницы пары (≈ 245 КБ: сцены по сферам, фразы, вопросы) грузятся только там, где нужны:
-  // на странице пары и заранее, в простое, рядом с картой отношений. Версия файлов — как у этого скрипта
+  // Тяжёлые тексты грузятся только там, где нужны. Версия файлов — как у этого скрипта.
+  // · страница пары (≈ 360 КБ: сцены по сферам, фразы, вопросы) — на самой странице и заранее, в простое, рядом с картой отношений;
+  // · как функции проявляются у типа (≈ 135 КБ) — для шторки функции на странице типа и для страницы пары
   const VER = ((document.querySelector('script[src*="ui/components.js"]') || {}).src || '').split('?')[1] || '';
   const loadScript = src => new Promise((ok, fail) => {
     const el = document.createElement('script');
@@ -27,16 +28,22 @@
     el.onerror = () => fail(new Error('не загрузилось: ' + src));
     document.head.appendChild(el);
   });
-  let pairWait = null;
-  ui.pairReady = () => { const P = S.content.pair; return Boolean(P && P.zones && P.partnerView && P.relations && P.domains && P.about); };
-  ui.pairTexts = () => {
-    if (ui.pairReady()) return Promise.resolve(S.content.pair);
-    if (!pairWait) pairWait = Promise.all(['pair', 'pair-zones', 'pair-partner', 'pair-about'].map(f => loadScript(`js/content/${f}.js`)))
-      .then(() => S.content.pair)
-      .catch(e => { pairWait = null; throw e; });
-    return pairWait;
+  const LAZY = {
+    pair: ['pair', 'pair-zones', 'pair-partner', 'pair-about'],
+    modelA: ['modelA-alpha', 'modelA-beta', 'modelA-gamma', 'modelA-delta']
   };
-  ui.prefetchPair = () => { const idle = root.requestIdleCallback || (f => setTimeout(f, 1500)); idle(() => ui.pairTexts().catch(() => {})); };
+  const waits = {};
+  // один запрос на набор; не вышло — следующая попытка начнёт заново
+  const fetchSet = key => waits[key] || (waits[key] = Promise.all(LAZY[key].map(f => loadScript(`js/content/${f}.js`)))
+    .catch(e => { waits[key] = null; throw e; }));
+  const idle = fn => (root.requestIdleCallback || (f => setTimeout(f, 1500)))(fn);
+  ui.modelAReady = () => Object.keys(S.content.modelA || {}).length >= S.data.types.length;
+  ui.modelATexts = () => (ui.modelAReady() ? Promise.resolve() : fetchSet('modelA')).then(() => S.content.modelA);
+  ui.prefetchModelA = () => idle(() => ui.modelATexts().catch(() => {}));
+  const pairLoaded = () => { const P = S.content.pair; return Boolean(P && P.zones && P.partnerView && P.relations && P.domains && P.about); };
+  ui.pairReady = () => pairLoaded() && ui.modelAReady();
+  ui.pairTexts = () => (ui.pairReady() ? Promise.resolve() : Promise.all([pairLoaded() || fetchSet('pair'), ui.modelATexts()])).then(() => S.content.pair);
+  ui.prefetchPair = () => idle(() => ui.pairTexts().catch(() => {}));
   // Короткое имя для крупного заголовка: «Максим», «Джек»; в подписях — полный псевдоним
   ui.short = t => t.short || t.alias;
 
@@ -70,15 +77,20 @@
     S.art.emblem(t, { cls: (live ? 'em-live ' : 'em-float ') + cls, label, theme });
 
   // Карточка типа: бюст, код, псевдоним, роль
-  ui.tile = (t, i = 0) => `
-    <a class="tcard reveal" href="#/types/${t.id}" style="${ui.qStyle(t.quadra)};--i:${i % 4}">
+  // Свой тип помечен «Ты» — так же, как на ленте главной
+  ui.tile = (t, i = 0) => {
+    const me = t.id === S.state.myType();
+    return `
+    <a class="tcard reveal${me ? ' tcard-me' : ''}" href="#/types/${t.id}" style="${ui.qStyle(t.quadra)};--i:${i % 4}">
       <span class="tcard-art">${ui.character(t, { alt: '' })}</span>
+      ${me ? '<span class="mq-you">Ты<span class="sr">: это твой тип.</span></span>' : ''}
       <span class="tcard-txt">
         <span class="tcard-code">${t.code}</span>
         <span class="tcard-alias">${esc(t.alias)}</span>
         <span class="tcard-role">${esc(t.role)}</span>
       </span>
     </a>`;
+  };
 
   ui.typesGrid = () => `
     <div class="tgrid">
@@ -121,14 +133,6 @@
     return TITLES[r.kind];
   };
 
-  // Сцена пары из знаков: слева всегда тот, от кого идёт действие (ревизор, заказчик)
-  ui.pairScene = (a, b, { cls = '', labels, theme } = {}) => {
-    const r = M().relation(a, b);
-    let left = a, right = b, lab = labels || [a.code, b.code];
-    if (r.id === 'benefactor' || r.id === 'supervisor') { left = b; right = a; lab = [lab[1], lab[0]]; }
-    return S.art.scene(r.kind, left, right, { cls, labels: lab, theme, label: `${a.code} и ${b.code}: ${ui.relTitle(r, a, b)}` });
-  };
-
   // Эмоции-символы над парой — как в анимации: сердечки, молния, снежинка, капля пота… (img/emotes)
   ui.emoteSrc = key => `img/emotes/${key}.webp`;
   ui.EMOTE = {
@@ -167,9 +171,9 @@
     const fx = (ACT[r.kind] || []).map((key, i) => `<img class="fx fx-${i + 1}" src="${ui.emoteSrc(key)}" alt="" width="100" height="100" decoding="async" draggable="false">`).join('');
     return `<div class="duo act-${r.kind} ${cls}" data-anim role="img" aria-label="${esc(`${a.code} и ${b.code}: ${ui.relTitle(r, a, b)}`)}">${duoFig(left, lab[0], 'a', { sizes, eager })}${duoFig(right, lab[1], 'b', { sizes, eager })}<span class="duo-fx" aria-hidden="true">${fx}</span></div>`;
   };
-  // Пара, где твой тип ещё неизвестен: слева «?», справа персонаж из ссылки
+  // Пара, где твой тип ещё неизвестен: слева тот же силуэт «тайного типа», что и на главной, справа персонаж из ссылки
   ui.duoMystery = t => `<div class="duo duo-mystery" role="img" aria-label="${esc(`${t.code} и ты: отношения пока неизвестны`)}">
-      <figure class="duo-a duo-q"><span class="duo-glow" aria-hidden="true"></span><span class="duo-ask" aria-hidden="true">?</span>
+      <figure class="duo-a duo-q"><span class="duo-glow" aria-hidden="true"></span><span class="duo-body">${ui.mysteryChar({ sizes: ui.CHAR.duo })}<span class="duo-ask" aria-hidden="true">?</span></span>
         <figcaption><b>Ты</b><span>тип пока неизвестен</span></figcaption></figure>
       ${duoFig(t, t.code, 'b')}</div>`;
 
@@ -216,10 +220,13 @@
     return () => {};
   };
 
+  // «об ИЛЭ», но «о ЛИИ»: перед кодом на гласную — «об»
+  ui.about = code => (/^[ИЭ]/.test(code) ? 'об' : 'о') + NB + code;
+
   // ---------- насколько чётко вышел тип ----------
   // Вместо «22 % — вероятность типа» (произведение четырёх полюсов почти всегда выходит небольшим и читается
   // как «тест не уверен»): сколько из четырёх шкал выражены чётко. Порог тот же, что у шкал: от 60 % — «Ближе».
-  const CLEAR = ['Ни одна шкала не${NB}выражена чётко', 'Одна шкала из${NB}четырёх выражена чётко', 'Две шкалы из${NB}четырёх выражены чётко', 'Три шкалы из${NB}четырёх выражены чётко', 'Все четыре шкалы выражены чётко'];
+  const CLEAR = [`Ни одна шкала не${NB}выражена чётко`, `Одна шкала из${NB}четырёх выражена чётко`, `Две шкалы из${NB}четырёх выражены чётко`, `Три шкалы из${NB}четырёх выражены чётко`, 'Все четыре шкалы выражены чётко'];
   ui.clarity = res => {
     const on = S.core.scoring.AXES.map(ax => Math.max(res.axes[ax], 100 - res.axes[ax]) >= 60);
     const n = on.filter(Boolean).length;
@@ -377,7 +384,12 @@
     tip.className = 'tip';
     tip.setAttribute('role', 'tooltip');
     document.body.appendChild(tip);
+    // shown — у чего подсказка сейчас; hushed — у чего её закрыли по Esc: не возвращается, пока не уйдёшь с элемента
+    let shown = null, hushed = null;
+    const hide = () => { tip.classList.remove('on'); shown = null; };
     const showTip = (el, x, y) => {
+      if (el === hushed) return;
+      shown = el;
       const [val, lab] = el.dataset.tip.split('|');
       tip.textContent = '';
       const b = document.createElement('b');
@@ -401,12 +413,15 @@
     };
     const out = e => {
       const el = e.target.closest && e.target.closest('[data-tip]');
-      if (el && (!e.relatedTarget || !el.contains(e.relatedTarget))) tip.classList.remove('on');
+      if (el && (!e.relatedTarget || !el.contains(e.relatedTarget))) { hide(); hushed = null; }
     };
+    // Esc убирает подсказку, не сдвигая ни мышь, ни фокус: она может закрывать соседние ячейки
+    const onEsc = e => { if (e.key === 'Escape' && shown) { hushed = shown; hide(); } };
+    document.addEventListener('keydown', onEsc);
     scope.addEventListener('pointermove', over);
     scope.addEventListener('focusin', over);
     scope.addEventListener('pointerout', out);
     scope.addEventListener('focusout', out);
-    return () => tip.remove();
+    return () => { document.removeEventListener('keydown', onEsc); tip.remove(); };
   };
 })(window);

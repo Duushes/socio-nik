@@ -19,6 +19,7 @@
         <div class="sheet-grab" aria-hidden="true"></div>
         <button class="sheet-close" type="button" data-close aria-label="Закрыть">${CLOSE_ICON}</button>
         <div class="sheet-body"></div>
+        <p class="sr sheet-say" aria-live="polite"></p>
       </div>`;
     document.body.appendChild(dlg);
     const panel = dlg.querySelector('.sheet-panel'), body = dlg.querySelector('.sheet-body');
@@ -39,7 +40,10 @@
         dlg.close();
         dlg.remove();
         document.documentElement.classList.remove('sheet-open');
+        // Вернуть фокус туда, откуда открыли. Ушли по ссылке из шторки — того места уже нет: фокус на новую страницу
+        const main = document.getElementById('app');
         if (from && document.body.contains(from)) from.focus({ preventScroll: true });
+        else if (main) main.focus({ preventScroll: true });
       }, reducedMotion() ? 0 : 340);
     };
     dlg.addEventListener('cancel', e => { e.preventDefault(); close(); });
@@ -69,13 +73,24 @@
     panel.addEventListener('pointerup', end);
     panel.addEventListener('pointercancel', end);
 
+    // Новое содержимое на место старого. Кнопка «следующая / предыдущая» исчезает вместе со старым — фокус
+    // возвращаем на такую же кнопку, а новый заголовок произносим: иначе с клавиатуры и скринридером теряешься
+    const say = dlg.querySelector('.sheet-say');
+    const put = html => {
+      const inside = body.contains(document.activeElement);
+      const at = Array.from(body.querySelectorAll('.fn-nav button')).indexOf(document.activeElement);
+      body.innerHTML = html;
+      if (inside) (body.querySelectorAll('.fn-nav button')[at] || panel).focus({ preventScroll: true });
+      const h = body.querySelector('h2');
+      if (h) say.textContent = h.textContent;
+    };
     // смена содержимого по очереди: старое гаснет, новое въезжает — без наложения
     const swap = (html, dir = 1) => {
-      if (reducedMotion()) { body.innerHTML = html; return; }
+      if (reducedMotion()) { put(html); panel.scrollTop = 0; return; }
       body.classList.add(dir > 0 ? 'sw-out-l' : 'sw-out-r');
       setTimeout(() => {
         body.classList.remove('sw-out-l', 'sw-out-r');
-        body.innerHTML = html;
+        put(html);
         panel.scrollTop = 0;
         body.classList.add(dir > 0 ? 'sw-in-r' : 'sw-in-l');
         setTimeout(() => body.classList.remove('sw-in-r', 'sw-in-l'), 380);
@@ -85,7 +100,7 @@
   };
 
   // ---------- шторка функции модели А ----------
-  const BLOCKS = { 1: 'Эго', 2: 'Эго', 3: 'Суперэго', 4: 'Суперэго', 5: 'Суперид', 6: 'Суперид', 7: 'Ид', 8: 'Ид' };
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
   // С каким типом связана позиция: у него этот аспект — базовая функция (для творческой — тоже творческая)
   const RELATED = {
@@ -109,9 +124,9 @@
         <header class="fn-head sheet-drag">
           <div class="fn-art"><span class="fn-float">${S.art.aspectImg(id, t.quadra, 'fn-img', { eager: true, sizes: '96px' })}</span></div>
           <div class="fn-titles">
-            <p class="fn-kicker">${t.code} · ${BLOCKS[n]} · функция ${n} из 8</p>
-            <h2 class="fn-title">${F[n - 1].name}</h2>
-            <p class="fn-aspect">${S.art.symbol(id)}<b>${a.short}</b> ${esc(a.name)}</p>
+            <p class="fn-kicker">${t.code} · ${n} из 8</p>
+            <h2 class="fn-title">${F[n - 1].plain}</h2>
+            <p class="fn-aspect">${S.art.symbol(id)}<b>${esc(cap(ui.PLAIN[id]))}</b></p>
           </div>
         </header>
         <section class="fn-sec fn-main">
@@ -119,16 +134,16 @@
           <p>${esc(own ? own.text : C.positions[n] + ' ' + C.aspectsLong[id])}</p>
           ${own ? `<p class="fn-tip"><b>Совет.</b> ${esc(own.tip)}</p>` : ''}
         </section>
-        <section class="fn-sec"><h3>Что это за функция</h3><p>${esc(C.positions[n])}</p></section>
-        <section class="fn-sec"><h3>Что это за аспект</h3><p>${esc(C.aspectsLong[id])}</p></section>
+        <section class="fn-sec"><h3>${F[n - 1].name} функция: что это</h3><p>${esc(C.positions[n])}</p></section>
+        <section class="fn-sec"><h3>${esc(a.name)} (${a.short}): про что это</h3><p>${esc(C.aspectsLong[id])}</p></section>
         <a class="fn-rel" href="#/relations/${t.id}/${rt.id}" style="--rq:var(--q-${rt.quadra})">
           <span class="fn-rel-em">${S.art.emblem(rt, { cls: 'em-mini', label: false })}</span>
           <span>${esc(relText(`${rt.code} «${rt.alias}»`))}</span>
         </a>
         <nav class="fn-nav" aria-label="Другие функции ${t.code}">
-          <button type="button" data-fn-go="${prev}" aria-label="Предыдущая: ${F[prev - 1].name}">‹ ${F[prev - 1].name}</button>
+          <button type="button" data-fn-go="${prev}" aria-label="Предыдущая: ${F[prev - 1].plain}">‹ ${F[prev - 1].plain}</button>
           <span class="fn-dots" aria-hidden="true">${[1, 2, 3, 4, 5, 6, 7, 8].map(k => `<i class="${k === n ? 'on' : ''}"></i>`).join('')}</span>
-          <button type="button" data-fn-go="${next}" aria-label="Следующая: ${F[next - 1].name}">${F[next - 1].name} ›</button>
+          <button type="button" data-fn-go="${next}" aria-label="Следующая: ${F[next - 1].plain}">${F[next - 1].plain} ›</button>
         </nav>
       </article>`;
   }
@@ -202,7 +217,7 @@
   ui.openFunction = (t, n, from) => {
     let cur = n;
     const sheet = ui.openSheet({
-      label: `${t.code}: ${S.data.functions[n - 1].name.toLowerCase()} функция`,
+      label: `${t.code}: ${S.data.functions[n - 1].plain.toLowerCase()}`,
       from,
       render: () => fnHTML(t, cur),
       onKey: e => {
@@ -212,7 +227,7 @@
     });
     function go(k, dir) {
       cur = k;
-      sheet.dlg.setAttribute('aria-label', `${t.code}: ${S.data.functions[k - 1].name.toLowerCase()} функция`);
+      sheet.dlg.setAttribute('aria-label', `${t.code}: ${S.data.functions[k - 1].plain.toLowerCase()}`);
       sheet.swap(fnHTML(t, k), dir);
     }
     sheet.dlg.addEventListener('click', e => {

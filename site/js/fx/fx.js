@@ -1,5 +1,5 @@
-/* Socio-Nik · эффекты: появление при прокрутке, счёт чисел и рост полос, пауза петель вне экрана,
-   магнит, лента по прокрутке, проявление текста по буквам, стопка карточек, подгонка заголовка по ширине,
+/* Socio-Nik · эффекты: появление при прокрутке, счёт чисел и рост полос, пауза и отдых петель,
+   магнит, лента по прокрутке, стопка карточек, подгонка заголовка по ширине,
    конфетти и переходы между экранами. Всё уважает prefers-reduced-motion. */
 (function (root) {
   const S = root.Socio = root.Socio || {};
@@ -57,13 +57,55 @@
     return () => io.disconnect();
   }
 
-  // ---------- пауза петель вне экрана ----------
+  // ---------- петли: вне экрана — пауза (.is-off); на экране играют несколько секунд и замирают ----------
+  // Движение без конца сразу на многих блоках — шум и расход батареи. Петля внутри [data-anim] играет REST мс,
+  // доигрывает цикл и замирает в исходной позе. Оживает, когда блок возвращается на экран, под курсором и по касанию.
+  // [data-anim="keep"] не замирает: это единственный зовущий элемент экрана (коробка).
+  const REST = 8000, SLOW = 8000;
   function pauseOffscreen(scope) {
-    const els = scope.querySelectorAll('[data-anim]');
+    const els = Array.from(scope.querySelectorAll('[data-anim]'));
     if (!els.length || !('IntersectionObserver' in root)) return () => {};
-    const io = new IntersectionObserver(entries => entries.forEach(e => e.target.classList.toggle('is-off', !e.isIntersecting)));
-    els.forEach(el => io.observe(el));
-    return () => io.disconnect();
+    const rests = el => el.dataset.anim !== 'keep' && !reducedMotion();
+    const timers = new Map();
+    const tire = el => {
+      el.classList.add('is-tired');
+      // медленная петля (круг за минуту) конца цикла не дождётся — её останавливаем на месте: этого не видно
+      if (el.getAnimations) el.getAnimations({ subtree: true }).forEach(a => {
+        const t = a.effect && a.effect.getComputedTiming();
+        if (t && t.iterations === Infinity && t.duration > SLOW && a.effect.target) a.effect.target.classList.add('is-held');
+      });
+    };
+    const wake = el => {
+      clearTimeout(timers.get(el));
+      [el, ...el.querySelectorAll('.is-held, .is-settled')].forEach(x => x.classList.remove('is-tired', 'is-held', 'is-settled'));
+      if (rests(el)) timers.set(el, setTimeout(tire, REST, el));
+    };
+    // Конец цикла у уставшей петли. Персонажи и значки в начале цикла стоят в исходной позе — просто пауза.
+    // Символ пары (.fx) в начале цикла обычно невидим, поэтому его плавно возвращаем на своё место без движения.
+    const onIter = e => {
+      const t = e.target;
+      if (!e.currentTarget.classList.contains('is-tired') || t.classList.contains('is-held') || t.classList.contains('is-settled')) return;
+      if (!t.classList.contains('fx')) { t.classList.add('is-held'); return; }
+      const cs = getComputedStyle(t), from = { opacity: cs.opacity, transform: cs.transform };
+      t.classList.add('is-settled');
+      try { t.animate([from, {}], { duration: 500, easing: 'ease-out' }); } catch (err) { /* без плавности, вид тот же */ }
+    };
+    const onWake = e => wake(e.currentTarget);
+    const io = new IntersectionObserver(entries => entries.forEach(e => {
+      e.target.classList.toggle('is-off', !e.isIntersecting);
+      if (e.isIntersecting) wake(e.target); else clearTimeout(timers.get(e.target));
+    }));
+    els.forEach(el => {
+      io.observe(el);
+      if (!rests(el)) return;
+      el.addEventListener('animationiteration', onIter);
+      el.addEventListener('pointerenter', onWake);
+    });
+    return () => {
+      io.disconnect();
+      timers.forEach(t => clearTimeout(t));
+      els.forEach(el => { el.removeEventListener('animationiteration', onIter); el.removeEventListener('pointerenter', onWake); });
+    };
   }
 
   // ---------- магнит: [data-magnet] — зона (её размер не меняется), сдвигается первый ребёнок ----------
@@ -105,39 +147,41 @@
   // привязанные ряды отставали и прыгали; ряды листаются пальцем (components.css).
   function marquee(scope) {
     const sec = scope.querySelector('[data-marquee]');
-    if (!sec || reducedMotion() || compactScreen()) return () => {};
+    if (!sec || compactScreen()) return () => {};
     const rows = Array.from(sec.querySelectorAll('.mq-track'));
-    return onScrollFrame(sec, () => {
+    const moving = !reducedMotion();
+    let held = null;
+    const sync = () => {
+      if (!moving) return;
       const offset = (scrollY - (sec.getBoundingClientRect().top + scrollY) + innerHeight) * 0.3;
       rows.forEach((row, i) => {
+        if (row === held) return;
         const x = i % 2 ? -(offset - 200) : offset - 200;
         row.style.transform = `translate3d(${x.toFixed(1)}px, 0, 0)`;
       });
-    });
-  }
-
-  // ---------- проявление текста по буквам: 0,2 → 1 между 'start 0.8' и 'end 0.2' ----------
-  // Скринридер читает скрытую копию, буквы ему не видны; слова не рвутся
-  function splitText(el) {
-    if (el.dataset.split) return;
-    el.dataset.split = '1';
-    const text = el.textContent.replace(/\s+/g, ' ').trim();
-    let i = 0;
-    const words = text.split(' ').map(w => `<span class="at-w">${Array.from(w).map(ch => `<span class="at-c" style="--i:${i++}">${S.dom.esc(ch)}</span>`).join('')}</span>`);
-    el.innerHTML = `<span class="sr">${S.dom.esc(text)}</span><span aria-hidden="true">${words.join(' ')}</span>`;
-    el.style.setProperty('--n', i);
-  }
-  function animText(scope) {
-    const els = Array.from(scope.querySelectorAll('[data-anim-text]'));
-    if (!els.length) return () => {};
-    if (compactScreen()) { els.forEach(el => el.style.setProperty('--p', 1)); return () => {}; }
-    els.forEach(splitText);
-    if (reducedMotion()) { els.forEach(el => el.style.setProperty('--p', 1)); return () => {}; }
-    const offs = els.map(el => onScrollFrame(el, () => {
-      const r = el.getBoundingClientRect(), vh = innerHeight;
-      el.style.setProperty('--p', clamp01((0.8 * vh - r.top) / (0.6 * vh + r.height)).toFixed(4));
-    }));
-    return () => offs.forEach(f => f());
+    };
+    // Ряд шире окна, а своей прокрутки у него нет: плитка, на которую пришли с клавиатуры, могла стоять за краем.
+    // Подвигаем ряд, чтобы она была видна; пока фокус в ряду, прокрутка страницы его не двигает.
+    // Сдвиг — через left: в щадящем режиме transform у ряда выключен. Только для клавиатуры — под мышью ряд не дёргается.
+    const byKeys = el => { try { return el.matches(':focus-visible'); } catch (e) { return document.documentElement.classList.contains('kbd'); } };
+    const free = () => { if (!held) return; held.style.left = ''; held = null; sync(); };
+    const onFocus = e => {
+      const tile = e.target.closest && e.target.closest('.mq-tile');
+      if (!tile || !byKeys(tile)) return;
+      const row = tile.closest('.mq-track');
+      if (held && held !== row) free();
+      held = row;
+      const r = tile.getBoundingClientRect(), pad = 24;
+      if (r.left >= pad && r.right <= innerWidth - pad) return;
+      // где плитка стояла бы без сдвига (сдвиг может быть ещё в пути) → сколько нужно, чтобы она встала по центру
+      const natural = r.left - (parseFloat(getComputedStyle(row).left) || 0);
+      row.style.left = ((innerWidth - r.width) / 2 - natural).toFixed(1) + 'px';
+    };
+    const onBlur = e => { const to = e.relatedTarget; if (!to || !sec.contains(to) || !to.closest('.mq-tile')) free(); };
+    sec.addEventListener('focusin', onFocus);
+    sec.addEventListener('focusout', onBlur);
+    const off = moving ? onScrollFrame(sec, sync) : () => {};
+    return () => { off(); sec.removeEventListener('focusin', onFocus); sec.removeEventListener('focusout', onBlur); };
   }
 
   // ---------- стопка: карточки прилипают и уменьшаются до 1 − (n − 1 − i) × 0,03 ----------
@@ -228,10 +272,10 @@
 
   // Подключить всё к только что отрисованному экрану; вернуть уборку
   function mountAll(scope) {
-    const offs = [fitAll(scope), reveal(scope), pauseOffscreen(scope), magnet(scope), marquee(scope), animText(scope), stack(scope)];
+    const offs = [fitAll(scope), reveal(scope), pauseOffscreen(scope), magnet(scope), marquee(scope), stack(scope)];
     scope.querySelectorAll('svg.em-live').forEach(svg => offs.push(S.art.animateOrbit(svg)));
     return () => offs.forEach(off => off && off());
   }
 
-  S.fx = { reveal, countUp, show, pauseOffscreen, magnet, marquee, animText, stack, fit, fitAll, confetti, transition, mountAll, fineMouse };
+  S.fx = { reveal, countUp, show, pauseOffscreen, magnet, marquee, stack, fit, fitAll, confetti, transition, mountAll, fineMouse };
 })(window);

@@ -27,7 +27,8 @@
     result() {
       if (this.demo) return this.demo;
       const r = S.store.get('result', null);
-      return r && validAxes(r.axes) ? r.axes : null;
+      // «ровный» результат (все ответы «поровну») типом не считаем: тест такой больше не сохраняет, старые — не показываем
+      return r && validAxes(r.axes) && !S.core.scoring.flat(r.axes) ? r.axes : null;
     },
     saveResult(axes) {
       this.demo = null;
@@ -38,7 +39,9 @@
     myType() {
       const a = this.result();
       return a ? S.core.scoring.result(a).top.id : null;
-    }
+    },
+    // Явное «пройти заново» — сразу к первому вопросу, без экрана «тест уже пройден»
+    restartTest() { S.store.set('test', { answers: {}, index: 0 }); }
   };
 
   // Ответы, которые ведут к типу: «точно» в 2 из 3 вопросов, «скорее» в остальных
@@ -81,19 +84,89 @@
         return { name, params, anchor };
       }
     }
+    // ссылка на результат, которая не читается (обрезалась в мессенджере, опечатка) — отдельный экран с выходом
+    if (/^\/r(\/|$)/.test(path)) return { name: 'badlink', params: [], anchor: null };
     return { name: 'notfound', params: [], anchor: null };
   }
 
   let cleanup = null, lastPath = null;
   const app = () => document.getElementById('app');
 
+  // ---------- прокрутка: «Назад» возвращает туда, где ты был ----------
+  // Каждой записи истории даём номер (history.state.sid) и помним, где на ней остановились. Запись с номером —
+  // значит, сюда вернулись кнопкой «Назад»/«Вперёд» или перезагрузкой: восстанавливаем место. Новая запись — с начала.
+  // Если history недоступна (редкий встроенный браузер), всё работает как раньше: каждый переход — с начала страницы.
+  const SCROLL_KEY = 'socio.scroll';
+  let scrolls = {}, curSid = null, sidSeq = 0, stopRestore = null;
+  try { scrolls = JSON.parse(root.sessionStorage.getItem(SCROLL_KEY)) || {}; } catch (e) { scrolls = {}; }
+  try { history.scrollRestoration = 'manual'; } catch (e) { /* нет — не страшно */ }
+  const keepScrolls = () => {
+    if (curSid) scrolls[curSid] = Math.round(scrollY);
+    const keys = Object.keys(scrolls);
+    if (keys.length > 60) keys.slice(0, keys.length - 60).forEach(k => delete scrolls[k]);
+    try { root.sessionStorage.setItem(SCROLL_KEY, JSON.stringify(scrolls)); } catch (e) { /* только в памяти */ }
+  };
+  // Номер текущей записи истории; known — запись уже была открыта раньше
+  function entry() {
+    try {
+      const st = history.state;
+      if (st && st.sid) return { sid: st.sid, known: true };
+      const sid = Date.now().toString(36) + '-' + (++sidSeq);
+      history.replaceState({ sid }, '');
+      return { sid, known: false };
+    } catch (e) {
+      return { sid: null, known: false };
+    }
+  }
+  // Страница может дорастать (тексты пары, картинки) — доводим прокрутку несколько раз, пока человек сам не начал листать
+  function restoreScroll(y) {
+    if (stopRestore) stopRestore();
+    const EV = ['wheel', 'touchstart', 'keydown', 'pointerdown'];
+    let tries = 0, t = 0;
+    const stop = () => { clearTimeout(t); EV.forEach(n => removeEventListener(n, stop, true)); stopRestore = null; };
+    stopRestore = stop;
+    EV.forEach(n => addEventListener(n, stop, { capture: true, passive: true }));
+    const step = () => {
+      scrollTo(0, y);
+      if (Math.abs(scrollY - y) > 2 && tries++ < 16) t = setTimeout(step, 70); else stop();
+    };
+    step();
+  }
+
+  // «Тест» в шапке после теста ведёт к результату: иначе кажется, что результат пропал
+  function syncNav(name) {
+    const has = Boolean(S.state.result());
+    document.querySelectorAll('.nav-links a, .menu a').forEach(a => {
+      if (a.dataset.nav === 'test') {
+        a.textContent = has ? 'Мой тип' : 'Тест';
+        a.setAttribute('href', has ? '#/result' : '#/test');
+      }
+      const on = a.dataset.nav === NAV[name] && !(has && name === 'test' && a.dataset.nav === 'test');
+      a.classList.toggle('on', on);
+      if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+  }
+
   function render({ instant = false, keepScroll = false } = {}) {
     const r = parse(), view = S.views[r.name];
     const path = location.hash.split('#').slice(0, 2).join('#');
-    const samePage = path === lastPath && r.anchor;
+    const samePath = path === lastPath;
     lastPath = path;
-    if (samePage) { scrollToAnchor(r.anchor, true); return; }
+    // где остановились на странице, с которой уходим
     const y = scrollY;
+    if (stopRestore) stopRestore();
+    keepScrolls();
+    const en = entry();
+    // перерисовка на месте (S.app.render) — не возврат по истории: место не восстанавливаем
+    const sameEntry = Boolean(en.sid) && en.sid === curSid;
+    curSid = en.sid;
+    const back = en.known && !sameEntry && !keepScroll && scrolls[en.sid] != null ? scrolls[en.sid] : null;
+    // та же страница: якорь — плавно к нему; «Назад» от якоря — на прежнее место, без перерисовки
+    if (samePath && !keepScroll && !instant && (r.anchor || back != null)) {
+      if (back != null) scrollTo({ top: back, behavior: S.dom.reducedMotion() ? 'auto' : 'smooth' });
+      else scrollToAnchor(r.anchor, true);
+      return;
+    }
     const update = () => {
       if (cleanup) { try { cleanup(); } catch (e) { /* уже убрано */ } cleanup = null; }
       const el = app();
@@ -103,19 +176,19 @@
       if (keepScroll) {
         scrollTo(0, y);
         el.querySelectorAll('.reveal').forEach(S.fx.show);
+      } else if (back != null) {
+        // вернулись — страница уже знакома, показываем её сразу целиком
+        el.querySelectorAll('.reveal').forEach(S.fx.show);
       } else if (!r.anchor) {
         scrollTo(0, 0);
       }
       const c1 = view.mount ? view.mount(el, ...r.params) : null;
       const c2 = S.fx.mountAll(el);
       cleanup = () => { if (c1) c1(); if (c2) c2(); };
-      document.querySelectorAll('.nav-links a, .menu a').forEach(a => {
-        const on = a.dataset.nav === NAV[r.name];
-        a.classList.toggle('on', on);
-        if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
-      });
+      syncNav(r.name);
       closeMenu();
-      if (r.anchor) scrollToAnchor(r.anchor, false);
+      if (back != null) restoreScroll(back);
+      else if (r.anchor) scrollToAnchor(r.anchor, false);
       if (!instant && !keepScroll) el.focus({ preventScroll: true });
     };
     if (instant) update(); else S.fx.transition(update);
@@ -130,6 +203,8 @@
   function setMenu(open) {
     const de = document.documentElement, b = document.querySelector('[data-menu]');
     de.classList.toggle('menu-open', open);
+    // Открытое меню закрывает страницу целиком. То, что под ним, выключаем: Tab не уходит в невидимое
+    document.querySelectorAll('.skip, #app, .footer').forEach(el => { el.inert = open; });
     if (b) {
       b.setAttribute('aria-expanded', String(open));
       b.setAttribute('aria-label', open ? 'Закрыть меню' : 'Меню');
@@ -157,6 +232,11 @@
     document.documentElement.classList.add('js');
 
     document.querySelector('[data-menu]').addEventListener('click', () => setMenu(!document.documentElement.classList.contains('menu-open')));
+    // Пункт раздела, который уже открыт, адрес не меняет — меню закрываем сами и возвращаем фокус на кнопку
+    document.getElementById('menu').addEventListener('click', e => {
+      const a = e.target.closest('a');
+      if (a && a.getAttribute('href') === (location.hash || '#/')) { closeMenu(); document.querySelector('[data-menu]').focus({ preventScroll: true }); }
+    });
     // «К содержимому» — переход к main, а не маршрут: иначе роутер принял бы #app за адрес и показал «Тут пусто»
     const skip = document.querySelector('.skip');
     if (skip) skip.addEventListener('click', e => { e.preventDefault(); app().focus(); app().scrollIntoView({ block: 'start' }); });
@@ -167,6 +247,7 @@
     addEventListener('keydown', e => { if (e.key === 'Tab' || e.key.startsWith('Arrow') || /^[1-5]$/.test(e.key)) document.documentElement.classList.add('kbd'); }, true);
     addEventListener('pointerdown', () => document.documentElement.classList.remove('kbd'), true);
     addEventListener('hashchange', () => render());
+    addEventListener('pagehide', keepScrolls);
     addEventListener('scroll', () => document.body.classList.toggle('scrolled', scrollY > 8), { passive: true });
     render({ instant: true });
   }

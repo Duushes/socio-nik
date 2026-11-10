@@ -56,7 +56,7 @@
           </div>
           <div class="box-pick" hidden>${ui.typeSelect('boxtype', target, 'Тип')}</div>` : ''}
         <div class="box-play">
-          <div class="box-stage" data-anim>
+          <div class="box-stage" data-anim="keep">
             <div class="bx-glow" aria-hidden="true"></div>
             <div class="bx-moons" aria-hidden="true">${MOONS.map((k, i) => `<img class="bx-moon" data-i="${i}" src="${ui.emoteSrc(k)}" alt="" width="100" height="100" decoding="async" draggable="false">`).join('')}</div>
             <button class="bx" type="button" aria-label="Открыть коробку со случайным фактом">
@@ -74,15 +74,16 @@
             <div class="bx-flip">
               <button class="bx-back" type="button" tabindex="-1" aria-hidden="true">
                 <span class="bxb-mark"><img src="img/logo/alpha.webp" alt="" width="48" height="48"><img src="img/logo/beta.webp" alt="" width="48" height="48"><img src="img/logo/gamma.webp" alt="" width="48" height="48"><img src="img/logo/delta.webp" alt="" width="48" height="48"></span>
-                <img class="bxb-q" src="${ui.emoteSrc('question')}" alt="" width="160" height="160" decoding="async" draggable="false">
+                <img class="bxb-q" data-anim src="${ui.emoteSrc('question')}" alt="" width="160" height="160" decoding="async" draggable="false">
                 <span class="bxb-t">Здесь появится факт</span>
                 <span class="bxb-s">Нажми на коробку или на эту карту</span>
               </button>
-              <article class="bx-card" aria-live="polite" aria-hidden="true"></article>
+              <article class="bx-card" aria-hidden="true" inert></article>
             </div>
           </div>
         </div>
         <p class="box-progress">${progress()}</p>
+        <p class="sr" data-box-say aria-live="polite"></p>
       </div>`;
   };
 
@@ -174,7 +175,8 @@
     const prog = box.querySelector('.box-progress'), hint = box.querySelector('.bx-hint'), pop = box.querySelector('.bx-pop');
     const timers = [];
     const later = (fn, ms) => timers.push(setTimeout(fn, reducedMotion() ? 0 : ms));
-    let busy = false, current = null;
+    const say = box.querySelector('[data-box-say]');
+    let busy = false, current = null, refocus = false;
 
     const mode = () => box.dataset.mode;
     const typeFor = () => (mode() === 'mine' ? S.state.myType() : box.dataset.type);
@@ -207,13 +209,20 @@
         slot.classList.add('flipped');
         card.setAttribute('aria-hidden', 'false');
         backFace.setAttribute('aria-hidden', 'true');
+        // Сторона карты, которая сейчас не видна, выключена целиком: по ней не пройти Tab и её не читает скринридер
+        card.inert = false;
+        backFace.inert = true;
+        if (say) say.textContent = `${t ? `${t.code} «${t.alias}». ` : ''}${fact.text}`;
         const colors = t ? [S.theme.quadraColor(t.quadra), '#ffffff', '#ffd27a']
           : S.data.quadras.map(q => S.theme.quadraColor(q.id));
         const r = stage.getBoundingClientRect();
         S.fx.confetti(colors, { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height * 0.42) / innerHeight, n: 34, power: 0.45 });
         prog.innerHTML = progress();
+        // Фокус — на «Ещё факт»: тем, кто идёт с клавиатуры, и тем, кто только что нажал «Ещё факт»
+        // (кнопка исчезает вместе со старой картой — без этого фокус пропадал)
         const more = card.querySelector('[data-more]');
-        if (more && document.documentElement.classList.contains('kbd')) more.focus({ preventScroll: true });
+        if (more && (refocus || document.documentElement.classList.contains('kbd'))) more.focus({ preventScroll: true });
+        refocus = false;
         // на телефоне карточка под коробкой — подводим к ней
         if (innerWidth < 900) {
           const cr = slot.getBoundingClientRect();
@@ -225,16 +234,22 @@
 
     // карта ложится рубашкой вверх, коробка закрывается — без исчезновений и скачков
     function close(then) {
+      // фокус не остаётся на карте, которая ложится рубашкой вверх, — переносим его на коробку
+      if (card.contains(document.activeElement)) btn.focus({ preventScroll: true });
       slot.classList.remove('flipped');
       card.setAttribute('aria-hidden', 'true');
+      card.inert = true;
+      backFace.inert = false;
+      if (say) say.textContent = '';
       stage.classList.remove('is-open', 'is-lid');
       box.classList.remove('is-open');
       later(() => { if (then) then(); }, 480);
     }
 
     btn.addEventListener('click', open);
-    backFace.addEventListener('click', open);
-    card.addEventListener('click', e => { if (e.target.closest('[data-more]')) close(open); });
+    // рубашка — подсказка для мыши и пальца; фокус с неё уходит на саму коробку: рубашка сейчас перевернётся
+    backFace.addEventListener('click', () => { btn.focus({ preventScroll: true }); open(); });
+    card.addEventListener('click', e => { if (e.target.closest('[data-more]')) { refocus = true; close(open); } });
     const offShare = ui.mountShareActions(card, {
       text: () => factText(current),
       url: () => factUrl(current),

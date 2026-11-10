@@ -40,7 +40,7 @@
         </h1>
         <div class="hero-char h-in" style="--d:.6s;--y:30px">
           <div class="hero-magnet" data-magnet><div class="hero-mag"><div class="hero-look">
-            <div class="hero-fig">${t ? ui.character(t, { sizes: ui.CHAR.hero, eager: true }) : `${ui.mysteryChar({ sizes: ui.CHAR.hero, eager: true })}<span class="hero-mark" aria-hidden="true">?</span>`}</div>
+            <div class="hero-fig">${t ? ui.character(t, { sizes: ui.CHAR.hero, eager: true }) : `${ui.mysteryChar({ sizes: ui.CHAR.hero, eager: true })}<span class="hero-mark" aria-hidden="true" data-anim>?</span>`}</div>
           </div></div></div>
           <p class="hero-bubble" aria-hidden="true" data-hero-bubble>${t ? 'Покажи друзьям, кто ты!' : `Найди меня за${NB}4${NB}минуты!`}</p>
           <span class="hero-sparks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
@@ -57,7 +57,7 @@
           </div>
           <div class="hero-right">
             ${t ? `<nav class="hero-steps h-in" style="--d:.45s;--y:20px" aria-label="Что дальше">
-              <a href="#/types/${t.id}">Про мой тип</a><a href="#/#rel">Мои отношения</a><a href="#/test" data-restart-test>Пройти заново</a>
+              <a href="#/types/${t.id}">Про мой тип</a><a href="#/#rel">Мои отношения</a>
             </nav>` : ''}
             <div class="hero-actions h-in" style="--d:.5s;--y:20px">
               ${t ? '<a class="btn hero-cta" href="#/#share" data-cheer>Поделиться результатом</a>' : '<a class="btn hero-cta" href="#/test" data-cheer>Узнать свой тип</a>'}
@@ -119,9 +119,6 @@
     if (el.classList.contains('intro')) later(() => { introDone = true; el.classList.remove('intro'); }, 1400);
     else introDone = true;
 
-    const onClick = e => { if (e.target.closest('[data-restart-test]')) S.store.del('test'); };
-    el.addEventListener('click', onClick);
-
     // Наведение на главную кнопку: персонаж радуется (тайный тип — подпрыгивает и качает «?»)
     let cheerT = 0;
     const cheerOn = () => { clearTimeout(cheerT); el.classList.add('cheer'); };
@@ -162,15 +159,15 @@
       </section>`;
   }
 
-  // ---------- «Соционика»: четыре стихии по углам и текст, который проявляется по буквам ----------
+  // ---------- «Соционика»: четыре стихии по углам и короткий текст ----------
   const CORNERS = [['Se', 'beta', 'tl', -1, -1], ['Ni', 'gamma', 'tr', 1, -1], ['Ti', 'alpha', 'bl', -1, 1], ['Fe', 'delta', 'br', 1, 1]];
   function socionics() {
     return `
       <section class="sec soc-sec">
         ${CORNERS.map(([a, q, pos, sx, sy], i) => `<span class="soc-g soc-${pos} reveal" data-anim style="--fx:${sx * 90}px;--fy:${sy * 30}px;--d:${(i * 0.08).toFixed(2)}s" aria-hidden="true"><span class="soc-float">${S.art.aspectImg(a, q, 'soc-img', { sizes: '(max-width: 600px) 96px, (min-width: 1563px) 250px, 16vw' })}</span></span>`).join('')}
         <div class="wrap center soc-in">
-          <h2 class="h2 soc-h" data-anim-text>Соционика</h2>
-          <p class="soc-text" data-anim-text>Соционика описывает 16${NB}типов: как человек замечает мир, принимает решения и${NB}с${NB}кем ему легко. Это не${NB}диагноз и${NB}не${NB}гороскоп, а${NB}язык, на${NB}котором проще понимать себя и${NB}близких. Двадцать вопросов — и${NB}узнаешь свой тип.</p>
+          <h2 class="h2 soc-h reveal"><span class="sv">Соционика</span></h2>
+          <p class="soc-text reveal">Соционика описывает 16${NB}типов: как человек замечает мир, принимает решения и${NB}с${NB}кем ему легко. Это не${NB}диагноз и${NB}не${NB}гороскоп, а${NB}язык, на${NB}котором проще понимать себя и${NB}близких. Двадцать вопросов — и${NB}узнаешь свой тип.</p>
           <p class="reveal"><a class="btn" href="#/test">Пройти тест</a></p>
         </div>
       </section>`;
@@ -179,7 +176,7 @@
   // ---------- «Что внутри» ----------
   const INSIDE = [
     ['Твой тип', 'Код из трёх букв и вероятность по всем 16 типам', '#/test'],
-    ['Модель А', 'Восемь функций: чем живёшь, что даётся легко, где нужна поддержка', '#/types'],
+    ['Как устроен тип', 'Восемь сторон характера: чем живёшь, что даётся легко, где нужна поддержка', '#/types'],
     ['Квадра', 'Компания, в которой проще всего быть собой', '#/quadras'],
     ['Отношения', '14 видов: с кем легко, с кем искрит и как договориться', '#/relations'],
     ['Mystery box', 'Случайные факты о типах', '#/box']

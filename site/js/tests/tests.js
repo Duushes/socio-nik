@@ -172,6 +172,17 @@
     ok(r.dist.every(x => x.pct === 6 || x.pct === 7), JSON.stringify(r.dist.map(x => x.pct)));
   });
 
+  test('«ровный» результат: все «поровну» — да; хотя бы один сдвинутый ответ — нет; ни один тип из 16 — нет', () => {
+    const zeros = {};
+    S.data.questions.forEach(q => { zeros[q.id] = 0; });
+    ok(SC().flat(SC().score(zeros, S.data.questions).axes), 'все «поровну»');
+    S.data.questions.forEach(q => {
+      [-1, 1].forEach(v => ok(!SC().flat(SC().score(Object.assign({}, zeros, { [q.id]: v }), S.data.questions).axes), q.id + ': ' + v));
+    });
+    S.data.types.forEach(t => ok(!SC().flat(SC().score(answersFor(t, 1), S.data.questions).axes), t.code));
+    ok(SC().flat({ EI: 55, NS: 45, TF: 50, RP: 59 }) && !SC().flat({ EI: 60, NS: 50, TF: 50, RP: 50 }) && !SC().flat({ EI: 50, NS: 50, TF: 40, RP: 50 }), 'порог 60 / 40');
+  });
+
   test('5 000 случайных анкет: сумма по типам и по квадрам ровно 100, без отрицательных', () => {
     let seed = 42;
     const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
@@ -210,7 +221,7 @@
   });
 
   test('битые и чужие коды результата отклоняются', () => {
-    ['', '1-72-64-58', '1-72-64-58-19-1', '2-50-50-50-50', '1-101-0-0-0', '1--1-0-0-0', 'abc',
+    ['', '1-72-64-58', '1-72-64-58-19-1', '2-50-50-50-50', '1-101-0-0-0', '1-100-50-50-50', '1-98-50-50-50', '1-2-50-50-50', '1-50-50-50-0', '1--1-0-0-0', 'abc',
       '1-50-50-50-50<script>', ' 1-50-50-50-50', '1-50-50-50-50 ', null, undefined, 42]
       .forEach(x => eq(P().decode(x), null, JSON.stringify(x)));
   });

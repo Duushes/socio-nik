@@ -1,5 +1,5 @@
 /* Socio-Nik · отношения типа с остальными 15 — три строки: «Легко», «Ровно», «Непросто», по пять типов в каждой
-   (поддерживающие, рабочие и напряжённые отношения). Одна переменная — одна строка: читается с первого взгляда,
+   (легко, ровно и непросто — один словарь тона на весь сайт). Одна переменная — одна строка: читается с первого взгляда,
    без орбит, перспективы и лучей. Нажатие на тип выбирает пару; рядом (на телефоне — ниже) панель: суть, как это
    устроено в модели А простыми словами и как ладить. Всё в нейтральных тонах сайта, ярко только выбранная пара. */
 (function (root) {
@@ -30,9 +30,9 @@
   ui.PLAIN = PLAIN;
   ui.FN = FN;
   const TONE_TEXT = {
-    support: 'легко и тепло: друг друга понимаете с полуслова',
-    work: 'ровно и по делу: вместе удобно работать, но близость не гарантирована',
-    tense: 'с напряжением: помогают дистанция и правила'
+    support: 'друг друга понимаете с полуслова',
+    work: 'вместе удобно работать, но близость не гарантирована',
+    tense: 'помогают дистанция и правила'
   };
   const TONES = ['support', 'work', 'tense'];
   // Подпись строки: слово и пояснение простыми словами
@@ -76,7 +76,7 @@
     return TONES.map(tone => `
       <div class="rm-row t-${tone}">
         <p class="rm-lab"><span class="rd-dot" aria-hidden="true"></span><b>${ROW[tone][0]}</b><span class="rm-hint">${ROW[tone][1]}</span></p>
-        <ul class="rm-list" aria-label="${esc(`${ROW[tone][0]}: ${ui.toneName(tone)} отношения`)}">${nodes.filter(n => n.tone === tone).map(node).join('')}</ul>
+        <ul class="rm-list" aria-label="${esc(ROW[tone][0])}">${nodes.filter(n => n.tone === tone).map(node).join('')}</ul>
       </div>`).join('');
   };
   const stageLabel = t => `Отношения ${t.code} «${t.alias}» с${NB}остальными 15${NB}типами`;
@@ -103,6 +103,7 @@
         </header>
         <p class="rd-tone"><span class="rd-dot" aria-hidden="true"></span><span>${esc(cap(ui.toneName(r.tone)))}<span class="rd-tone-x"> — ${TONE_TEXT[r.tone]}</span></span></p>
         <p class="rd-line">${esc(txt.line || '')}</p>
+        ${txt.tip ? `<p class="rd-tip"><b>Как ладить.</b> ${esc(txt.tip)}</p>` : ''}
         <div class="rd-tabs" role="tablist" aria-label="Разбор пары">
           ${tabs.map(([name], i) => `<button type="button" role="tab" id="${uid}-t${i}" aria-controls="${uid}-p${i}" aria-selected="${i === tab}" tabindex="${i === tab ? 0 : -1}" data-tab="${i}">${name}</button>`).join('')}
         </div>
@@ -110,7 +111,7 @@
           ${tabs.map(([, html], i) => `<div class="rd-pane" role="tabpanel" id="${uid}-p${i}" aria-labelledby="${uid}-t${i}"${i === tab ? '' : ' hidden'}>${html}</div>`).join('')}
         </div>
         <footer class="rd-foot">
-          <a class="link" href="#/relations/${t.id}/${b.id}">Советы для пары</a>
+          <a class="link" href="#/relations/${t.id}/${b.id}#tips">Советы для пары</a>
           ${refocus === 'button'
             ? `<button type="button" class="rd-refocus" data-refocus="${b.id}" aria-label="Показать отношения ${b.code}">${ui.ICON.cycle}<span class="rd-ref-w">Отношения </span>${b.code}</button>`
             : `<a class="rd-refocus" href="#/types/${b.id}#relations" aria-label="Отношения ${b.code} со всеми типами">${ui.ICON.cycle}<span class="rd-ref-w">Отношения </span>${b.code}</a>`}

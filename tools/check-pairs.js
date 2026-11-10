@@ -4,13 +4,12 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const { SITE } = require('./load');
+const { SITE, LAZY } = require('./load');
 
 const html = fs.readFileSync(path.join(SITE, 'index.html'), 'utf8');
 const scripts = [...html.matchAll(/<script src="([^"?]+)(?:\?[^"]*)?"><\/script>/g)].map(m => m[1])
   .filter(src => /^(config|js\/lib|js\/data|js\/core|js\/content)/.test(src));
-// тексты пары грузятся по требованию (ui.pairTexts) — в index.html их нет
-const LAZY = ['pair', 'pair-zones', 'pair-partner', 'pair-about'].map(f => `js/content/${f}.js`);
+// тексты пары и модели А грузятся по требованию (ui.pairTexts) — в index.html их нет
 const ctx = vm.createContext({ console });
 for (const src of scripts.concat(LAZY)) vm.runInContext(fs.readFileSync(path.join(SITE, src), 'utf8'), ctx, { filename: src });
 const S = ctx.Socio, PR = S.core.pair, P = S.content.pair, MA = S.content.modelA;

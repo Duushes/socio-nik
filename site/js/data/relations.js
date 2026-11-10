@@ -6,9 +6,9 @@
   S.data = S.data || {};
 
   S.data.tones = {
-    support: 'поддерживающие',
-    work: 'рабочие',
-    tense: 'напряжённые'
+    support: 'легко',
+    work: 'ровно',
+    tense: 'непросто'
   };
 
   S.data.relations = [

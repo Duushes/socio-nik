@@ -8,6 +8,11 @@
   const NB = '\u00A0';
 
   // 14 видов в порядке тона; пример — пара с ИЛЭ (для асимметричных — ИЛЭ в роли ревизора / заказчика)
+  const TONE_HINT = {
+    support: `понимаете друг друга с${NB}полуслова`,
+    work: `вместе удобно, особенно в${NB}делах`,
+    tense: `помогают дистанция и${NB}правила`
+  };
   const KINDS = [
     ['dual', 'dual'], ['activation', 'activation'], ['mirror', 'mirror'], ['semidual', 'semidual'], ['mirage', 'mirage'],
     ['identity', 'identity'], ['kindred', 'kindred'], ['business', 'business'], ['quasi', 'quasi'], ['request', 'beneficiary'],
@@ -15,20 +20,24 @@
   ];
 
   function matrix() {
-    const ts = S.data.types;
+    const ts = S.data.types, mine = S.state.myType();
+    // свой тип помечен в строке и в столбце: по кодам себя ищут дольше, чем по подписи «Ты»
+    const you = t => (t.id === mine ? '<span class="mx-you">Ты<span class="sr">: </span></span>' : '');
+    const me = t => (t.id === mine ? ' class="mx-me"' : '');
     return `
       <div class="matrix-wrap reveal">
         <table class="matrix">
-          <caption class="sr">Отношения всех пар типов: строка — ты, столбец — партнёр</caption>
-          <thead><tr><th scope="col"><span class="sr">Ты \\ партнёр</span></th>${ts.map(t => `<th scope="col">${t.code}</th>`).join('')}</tr></thead>
-          <tbody>${ts.map(a => `<tr><th scope="row">${a.code}</th>${ts.map((b, j) => {
+          <caption class="sr">Отношения всех пар типов: строка — ты, столбец — партнёр. С клавиатуры по ячейкам ходят стрелками</caption>
+          <thead><tr><th scope="col"><span class="sr">Ты \\ партнёр</span></th>${ts.map(t => `<th scope="col"${me(t)}>${you(t)}${t.code}</th>`).join('')}</tr></thead>
+          <tbody>${ts.map(a => `<tr${me(a)}><th scope="row"${me(a)}>${you(a)}${a.code}</th>${ts.map((b, j) => {
             const r = M().relation(a, b);
             const name = r.role ? `${r.name} · ${r.role}` : r.name;
             return `<td><a class="mx t-${r.tone}${a === b ? ' self' : ''}" data-col="${j}" href="#/relations/${a.id}/${b.id}" data-tip="${esc(name)}|${a.code} → ${b.code}" aria-label="${a.code} и ${b.code}: ${esc(name)}"></a></td>`;
           }).join('')}</tr>`).join('')}</tbody>
         </table>
       </div>
-      <div class="legend reveal">${['support', 'work', 'tense'].map(tone => ui.toneChip(tone)).join('')}</div>`;
+      <div class="legend reveal">${['support', 'work', 'tense'].map(tone => ui.toneChip(tone)).join('')}</div>
+      <p class="mx-keys" aria-hidden="true">Стрелки — по ячейкам · Enter — открыть пару · Tab — дальше</p>`;
   }
 
   V.relations = {
@@ -43,7 +52,7 @@
             <p class="eyebrow reveal">Отношения</p>
             <h1 class="h2 reveal"><span class="sv">Отношения</span></h1>
             <p class="lead reveal">Соционика различает 14${NB}видов отношений. Они описывают, насколько легко двум людям понимать и${NB}дополнять друг друга, — а${NB}не${NB}то, кто кому подходит навсегда.</p>
-            <div class="reveal gap-top">${ui.calc(a, b)}</div>
+            <div class="reveal gap-top"><h2 class="sr">Проверь пару</h2>${ui.calc(a, b)}</div>
           </div>
         </section>
 
@@ -60,29 +69,36 @@
         <section class="sec sec-white">
           <div class="wrap">
             <h2 class="h2 reveal">14${NB}видов</h2>
-            <p class="lead sec-sub reveal">Сцены показаны на${NB}примере ИЛЭ «Дон Кихот»: знак слева — он, справа — партнёр.</p>
-            <ol class="numlist kinds">
-              ${KINDS.map(([kind, pos], i) => {
-                const r = M().relationById(pos), partner = M().partner(ile, pos), txt = ui.relText(kind);
-                return `<li class="kind reveal" data-anim>
-                  <span class="nl-num" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span>
-                  <div class="kind-scene">${ui.pairScene(ile, partner, { theme: 'light' })}</div>
-                  <div class="kind-copy">
-                    <h3 class="nl-title">${ui.kindTitle(kind)}</h3>
-                    ${ui.toneChip(r.tone)}
-                    <p class="nl-text">${esc(txt.line || '')}</p>
-                    <details><summary>Подробнее</summary><p>${esc(txt.about || '')}</p><p class="tip-line"><b>Как ладить.</b> ${esc(txt.tip || '')}</p></details>
-                  </div>
-                </li>`;
-              }).join('')}
-            </ol>
+            <p class="lead sec-sub reveal">Три группы: где легко, где ровно и${NB}где непросто. Нажми на${NB}вид${NB}— откроется описание и${NB}совет, как ладить.</p>
+            ${['support', 'work', 'tense'].map(tone => `
+            <div class="kinds-group reveal">
+              <h3 class="kinds-h">${ui.toneChip(tone)}<span>${TONE_HINT[tone]}</span></h3>
+              <ul class="kinds">
+                ${KINDS.filter(([, pos]) => M().relationById(pos).tone === tone).map(([kind, pos]) => {
+                  const partner = M().partner(ile, pos), txt = ui.relText(kind);
+                  return `<li class="kind"><details>
+                    <summary>
+                      <img class="kind-em" src="${ui.emoteSrc(ui.EMOTE[kind])}" alt="" width="48" height="48" loading="lazy" decoding="async">
+                      <span class="kind-t"><b>${ui.kindTitle(kind)}</b><span>${esc(txt.line || '')}</span></span>
+                      ${CHEV}
+                    </summary>
+                    <div class="kind-more">
+                      <p>${esc(txt.about || '')}</p>
+                      <p class="tip-line"><b>Как ладить.</b> ${esc(txt.tip || '')}</p>
+                      <p><a class="link" href="#/relations/ile/${partner.id}">Пример: ИЛЭ и${NB}${partner.code}</a></p>
+                    </div>
+                  </details></li>`;
+                }).join('')}
+              </ul>
+            </div>`).join('')}
           </div>
         </section>
 
         <section class="sec">
           <div class="wrap">
             <h2 class="h2 reveal"><span class="sv">Все пары</span></h2>
-            <p class="lead sec-sub reveal">Строка — ты, столбец — партнёр. Чем светлее клетка, тем легче отношения. Нажми на${NB}клетку, чтобы открыть разбор пары.</p>
+            <p class="lead sec-sub reveal only-wide">Строка — ты, столбец — партнёр. Чем светлее клетка, тем легче отношения. Нажми на${NB}клетку, чтобы открыть разбор пары.</p>
+            <p class="lead sec-sub reveal only-narrow">Выбери тип — покажем все 16${NB}пар с${NB}ним, от${NB}лёгких к${NB}непростым. Нажми на${NB}строку, чтобы открыть разбор пары.</p>
             <div class="only-wide">${matrix()}</div>
             <div class="only-narrow reveal">
               ${ui.typeSelect('mlist', a, 'Твой тип')}
@@ -111,6 +127,29 @@
         table.addEventListener('pointerover', hl);
         table.addEventListener('focusin', hl);
         table.addEventListener('pointerleave', clear);
+        // Таблица — одна остановка Tab, внутри ходят стрелками: иначе до того, что под ней, 256 нажатий.
+        // Остановка — там, где были в последний раз; сначала — в строке своего типа
+        const cells = Array.from(table.querySelectorAll('a.mx')), N = S.data.types.length;
+        let at = Math.max(0, S.data.types.findIndex(t => t.id === S.state.myType())) * N;
+        cells.forEach((c, i) => { c.tabIndex = i === at ? 0 : -1; });
+        table.addEventListener('focusin', e => {
+          const i = cells.indexOf(e.target.closest('.mx'));
+          if (i < 0 || i === at) return;
+          cells[at].tabIndex = -1;
+          at = i;
+          cells[at].tabIndex = 0;
+        });
+        table.addEventListener('keydown', e => {
+          const i = cells.indexOf(e.target.closest('.mx'));
+          if (i < 0 || e.altKey || e.ctrlKey || e.metaKey) return;
+          const row = Math.floor(i / N), col = i % N;
+          const to = { ArrowRight: [row, col + 1], ArrowLeft: [row, col - 1], ArrowDown: [row + 1, col], ArrowUp: [row - 1, col],
+            Home: [row, 0], End: [row, N - 1], PageUp: [0, col], PageDown: [N - 1, col] }[e.key];
+          if (!to) return;
+          e.preventDefault();
+          const [r, c] = to;
+          if (r >= 0 && r < N && c >= 0 && c < N) cells[r * N + c].focus();
+        });
       }
       return () => offs.forEach(f => f && f());
     }
@@ -209,7 +248,12 @@
   const STAGES = [['start', 'Знакомство'], ['months', 'Через полгода'], ['years', 'Через годы']];
   const CONTEXTS = [['love', 'В паре', 'heart'], ['friends', 'В дружбе', 'bubbles'], ['work', 'В работе', 'handshake']];
 
+  // Второстепенный блок «Об отношениях»: на компьютере раскрыт, на телефоне свёрнут — иначе страница на 17 экранов
+  const isWide = () => !root.matchMedia || !root.matchMedia('(max-width: 767px)').matches;
+  const fold = (title, body, wide) => `<details class="pr-fold reveal"${wide ? ' open' : ''}><summary><h3 class="pr-h3">${title}</h3>${CHEV}</summary>${body}</details>`;
+
   function pairBody(a, b) {
+    const wide = isWide();
     const P = S.content.pair, rep = PR().report(a, b, P, S.content.modelA), r = rep.relation, rel = rep.rel;
     const txt = ui.relText(r.kind), role = txt.roles && txt.roles[r.id], done = tried(a.id, b.id);
     const more = (P.about && P.about[r.id]) || null;
@@ -219,33 +263,30 @@
     return `
       <section class="sec sec-white pr-about" id="about">
         <div class="wrap narrow">
-          <p class="eyebrow reveal">Об отношениях</p>
+          <h2 class="eyebrow reveal">Об отношениях</h2>
           <p class="pr-essence reveal">${esc(txt.about || '')}</p>
           ${role ? `<div class="pr-role reveal"><p class="pr-k">С${NB}позиции ${a.code}</p><p>${esc(role)}</p></div>` : ''}
 
-          <h3 class="pr-h3 reveal">Как это устроено</h3>
-          <p class="pr-h3-sub reveal">Две сильные стороны каждого и куда они попадают у второго — отсюда и характер пары.</p>
-          <div class="reveal">${howHTML(a, b, P)}</div>
+          <div class="pr-folds">
+          ${fold('Как это устроено', `<p class="pr-h3-sub">Две сильные стороны каждого и куда они попадают у второго — отсюда и характер пары.</p>
+            ${howHTML(a, b, P)}`, wide)}
 
-          <h3 class="pr-h3 reveal">Что вы даёте друг другу</h3>
-          <div class="reveal">${givesHTML(rep, a, b, P)}</div>
+          ${fold('Что вы даёте друг другу', givesHTML(rep, a, b, P), wide)}
 
           ${more ? `
-          <h3 class="pr-h3 reveal">Как развиваются отношения</h3>
-          <ol class="pr-stages">${STAGES.map(([k, name], i) => `<li class="reveal" style="--i:${i}"><p class="pr-k">${name}</p><p>${esc(more.stages[k])}</p></li>`).join('')}</ol>
+          ${fold('Как развиваются отношения', `<ol class="pr-stages">${STAGES.map(([k, name]) => `<li><p class="pr-k">${name}</p><p>${esc(more.stages[k])}</p></li>`).join('')}</ol>`, wide)}
 
-          <h3 class="pr-h3 reveal">В паре, дружбе и работе</h3>
-          <div class="pr-ctx">${CONTEXTS.map(([k, name, em], i) => `<div class="pr-ctx-card reveal" style="--i:${i}">
+          ${fold('В паре, дружбе и работе', `<div class="pr-ctx">${CONTEXTS.map(([k, name, em]) => `<div class="pr-ctx-card">
               <img src="${ui.emoteSrc(em)}" alt="" width="56" height="56" loading="lazy" decoding="async">
-              <p class="pr-k">${name}</p><p>${esc(more.contexts[k])}</p></div>`).join('')}</div>
+              <p class="pr-k">${name}</p><p>${esc(more.contexts[k])}</p></div>`).join('')}</div>`, wide)}
 
-          <div class="pr-pm">
-            <div class="pr-pm-col pr-plus reveal"><h3 class="pr-h4">Сильные стороны</h3><ul>${more.plus.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
-            <div class="pr-pm-col pr-minus reveal" style="--i:1"><h3 class="pr-h4">Где спотыкаетесь</h3><ul>${more.minus.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
-          </div>` : ''}
+          ${fold('Сильные стороны и трудности', `<div class="pr-pm">
+            <div class="pr-pm-col pr-plus"><h4 class="pr-h4">Сильные стороны</h4><ul>${more.plus.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+            <div class="pr-pm-col pr-minus"><h4 class="pr-h4">Где спотыкаетесь</h4><ul>${more.minus.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+          </div>`, wide)}` : ''}
 
-          <h3 class="pr-h3 reveal">Обычная неделя</h3>
-          ${rel.story.map((p, i) => `<p class="body pr-story reveal" style="--i:${i}">${esc(p)}</p>`).join('')}
+          ${fold('Обычная неделя', rel.story.map(p => `<p class="body pr-story">${esc(p)}</p>`).join(''), wide)}
+          </div>
         </div>
       </section>
       <section class="sec pr-spheres" id="spheres">
@@ -265,9 +306,16 @@
         <div class="wrap narrow">
           <h2 class="h2 h2-md reveal"><span class="sv">Советы для пары</span></h2>
           <p class="lead sec-sub reveal">${more ? `Восемь шагов на${NB}ближайшие недели — с${NB}примерами из${NB}жизни.` : `Как говорить и${NB}что делать, когда трудно.`}</p>
-          ${more ? `<ol class="pr-tips">${more.tips.map((x, i) => `<li class="pr-tip reveal" style="--i:${i % 2}">
+          ${more ? (() => {
+            const tip = (x, i) => `<li class="pr-tip reveal" style="--i:${i % 2}">
               <span class="pr-tip-n" aria-hidden="true">${i + 1}</span>
-              <div><h3>${esc(x.t)}</h3><p>${esc(x.d)}</p></div></li>`).join('')}</ol>` : ''}
+              <div><h3>${esc(x.t)}</h3><p>${esc(x.d)}</p></div></li>`;
+            const all = more.tips.map(tip);
+            return wide || all.length <= 3
+              ? `<ol class="pr-tips">${all.join('')}</ol>`
+              : `<ol class="pr-tips">${all.slice(0, 3).join('')}</ol>
+                 <details class="pr-tips-more"><summary><span>Показать ещё ${all.length - 3}</span>${CHEV}</summary><ol class="pr-tips" start="4">${all.slice(3).join('')}</ol></details>`;
+          })() : ''}
           <h3 class="pr-h3 reveal">Фразы, которые сближают</h3>
           <div class="pr-scripts">${rel.scripts.map((x, i) => `
             <figure class="pr-script reveal" style="--i:${i}">
@@ -302,7 +350,7 @@
 
   // Пока тексты грузятся — белая секция со строками-заглушками на месте будущей «Недели»
   const skeleton = () => `<section class="sec sec-white pr-about" aria-busy="true"><div class="wrap narrow">
-      <p class="eyebrow">Об отношениях</p>
+      <h2 class="eyebrow">Об отношениях</h2>
       <div class="pr-skel" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div></section>`;
   // Если тексты не загрузились — короткое описание вида отношений, как было раньше
   const fallback = (a, b) => {
@@ -357,6 +405,7 @@
             <div class="pair-duo">${ui.duo(a, b, { eager: true })}</div>
             <p>${ui.toneChip(r.tone)}</p>
             <p class="lead">${esc(txt.line || '')}</p>
+            <div class="pr-send-top">${ui.sendButton(a.id === b.id ? 'Отправить страницу' : `Отправить ${b.code}`)}</div>
             <nav class="pr-side" aria-label="Чья сторона">
               <a href="${here}" aria-current="page">Сторона ${a.code}</a><a href="#/relations/${b.id}/${a.id}">Сторона ${b.code}</a>
             </nav>
@@ -381,7 +430,10 @@
     mount(root, aId, bId) {
       const a = M().type(aId), b = M().type(bId), holder = root.querySelector('[data-pair-body]');
       let alive = true, offShare = null, offFx = null;
-      const wire = () => { offShare = ui.mountShareActions(holder, { text: () => sendText(b, a), url: () => pairUrl(b, a) }); };
+      const send = { text: () => sendText(b, a), url: () => pairUrl(b, a) };
+      // кнопка «Отправить» в первом экране работает сразу, не дожидаясь текстов
+      const offTop = ui.mountShareActions(root.querySelector('.pr-send-top'), send);
+      const wire = () => { offShare = ui.mountShareActions(holder, send); };
       if (holder.querySelector('#spheres')) { S.dom.typo(holder); wire(); }
       else {
         ui.pairTexts().then(() => {
@@ -407,7 +459,7 @@
         else nextQuestion(t.closest('[data-deck]'));
       };
       holder.addEventListener('click', onClick);
-      return () => { alive = false; holder.removeEventListener('click', onClick); if (offShare) offShare(); if (offFx) offFx(); };
+      return () => { alive = false; holder.removeEventListener('click', onClick); offTop(); if (offShare) offShare(); if (offFx) offFx(); };
     }
   };
 })(window);

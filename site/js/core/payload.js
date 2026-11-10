@@ -18,7 +18,8 @@
     const sc = core.scoring;
     if (Number(m[1]) !== sc.VERSION) return null;
     const values = m.slice(2).map(Number);
-    if (values.some(v => v > 100)) return null;
+    // подсчёт не выдаёт меньше 3 и больше 97 % — «100 %» в ссылке значит, что её правили руками
+    if (values.some(v => v < 3 || v > 97)) return null;
     const axes = {};
     sc.AXES.forEach((ax, i) => { axes[ax] = values[i]; });
     return axes;

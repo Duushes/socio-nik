@@ -18,4 +18,8 @@ function load(htmlFile = 'tests.html') {
   return ctx.Socio;
 }
 
-module.exports = { load, SITE };
+// Тексты, которые сайт подгружает сам, когда они нужны (ui.pairTexts, ui.modelATexts), — в index.html их нет
+const LAZY = ['pair', 'pair-zones', 'pair-partner', 'pair-about', 'modelA-alpha', 'modelA-beta', 'modelA-gamma', 'modelA-delta']
+  .map(f => `js/content/${f}.js`);
+
+module.exports = { load, SITE, LAZY };

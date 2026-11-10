@@ -80,5 +80,9 @@
 
   const score = (answers, questions) => result(axisPercents(axisSums(answers, questions), axisMax(questions)));
 
-  core.scoring = { VERSION, AXES, FIRST, SECOND, K, axisSums, axisMax, axisPercents, distribution, result, score };
+  // Ни одна шкала не сдвинута (все ближе 60 %): типы почти равновероятны, называть один из них нечестно.
+  // После теста это ровно один случай — сумма по каждой оси 0, все 16 типов по 6–7 %.
+  const flat = axes => AXES.every(ax => Math.abs(axes[ax] - 50) < 10);
+
+  core.scoring = { VERSION, AXES, FIRST, SECOND, K, axisSums, axisMax, axisPercents, distribution, result, score, flat };
 })(typeof window !== 'undefined' ? window : globalThis);

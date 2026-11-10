@@ -7,7 +7,9 @@
   const { esc } = S.dom;
   const NB = '\u00A0';
 
-  const aspects = (list, cls = '') => `<ul class="aspects ${cls}">${list.map(a => `<li>${S.art.symbol(a)}<b>${S.data.aspects[a].short}</b><span>${esc(S.data.aspects[a].name)}</span></li>`).join('')}</ul>`;
+  // сначала — что это по-человечески, термин и код — второй строкой, для любопытных
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  const aspects = (list, cls = '') => `<ul class="aspects ${cls}">${list.map(a => `<li>${S.art.symbol(a)}<b>${esc(cap(ui.PLAIN[a]))}</b><span>${esc(S.data.aspects[a].name)} · ${S.data.aspects[a].short}</span></li>`).join('')}</ul>`;
 
   V.quadras = {
     title: () => 'Квадры',
@@ -16,11 +18,10 @@
         <div class="wrap">
           <p class="eyebrow reveal">Квадры</p>
           <h1 class="h2 reveal"><span class="sv">Квадры</span></h1>
-          <p class="lead reveal">Квадра — четыре типа, которые ценят одни и${NB}те${NB}же аспекты информации. В${NB}своей квадре человеку проще всего расслабиться: здесь понятны шутки, темы и${NB}темп.</p>
+          <p class="lead reveal">Квадра — четыре типа с${NB}общими ценностями: им${NB}важно одно и${NB}то${NB}же и${NB}одно и${NB}то${NB}же кажется лишним. В${NB}своей квадре проще всего расслабиться: здесь понятны шутки, темы и${NB}темп.</p>
           <nav class="qnav reveal" aria-label="Квадры">${S.data.quadras.map(q => `<a class="chip" href="#/quadras#${q.id}" style="${ui.qStyle(q.id)}"><i class="qdot" aria-hidden="true"></i>${q.name}</a>`).join('')}</nav>
         </div>
       </section>
-      <section class="qs-sec qs-page">${ui.quadraStack()}</section>
       ${S.data.quadras.map((q, i) => {
         const c = (S.content.quadras || {})[q.id] || {};
         const white = i % 2 === 0, theme = white ? 'light' : 'dark';

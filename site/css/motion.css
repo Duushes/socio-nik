@@ -1,5 +1,6 @@
-/* Socio-Nik · движение. Анимируем только transform / opacity / clip-path; всё гасится prefers-reduced-motion,
-   петли вне экрана ставятся на паузу (.is-off). */
+/* Socio-Nik · движение. Анимируем только transform / opacity / clip-path; всё гасится prefers-reduced-motion.
+   Петли внутри [data-anim]: вне экрана — пауза (.is-off); на экране играют несколько секунд, доигрывают цикл
+   и замирают (.is-held / .is-settled, см. fx.js); оживают под курсором, по касанию и при возврате на экран. */
 
 /* ---------- FadeIn: один раз, 0,7 с, cubic-bezier(.25,.1,.25,1); сдвиг --fx / --fy, задержка --d + шаг --i ---------- */
 .js .reveal { opacity: 0; translate: var(--fx, 0) var(--fy, 30px); transition: opacity 0.7s var(--ease), translate 0.7s var(--ease); transition-delay: calc(var(--d, 0s) + var(--i, 0) * 80ms); }
@@ -17,15 +18,17 @@
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
 @keyframes shadow-breath { 0%, 100% { transform: scaleX(1); opacity: 1; } 50% { transform: scaleX(0.86); opacity: 0.7; } }
 @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-14px) rotate(3deg); } }
-@keyframes breathe { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.06); opacity: 0.85; } }
 @keyframes pop-in { from { opacity: 0; transform: translateY(12px) scale(0.97); } }
 @keyframes ava-pop { from { opacity: 0; transform: scale(0.4) rotate(-14deg); } }
 @keyframes fade-in { from { opacity: 0; } }
-@keyframes wobble { 0%, 100% { transform: rotate(-6deg) translateY(0); } 50% { transform: rotate(8deg) translateY(-10px); } }
 
 /* ---------- герой: появление один раз ---------- */
 .hero.intro .h-in { animation: h-in 0.7s var(--ease) both; animation-delay: var(--d, 0s); }
 @keyframes h-in { from { opacity: 0; translate: 0 var(--y, 20px); } }
+/* Заголовок — самый крупный элемент первого экрана: он виден с первого кадра и только въезжает, без прозрачности.
+   Иначе браузер считает главный контент показанным лишь после интро (LCP +1,4 с) */
+.hero.intro .hero-title.h-in { animation-name: h-rise; }
+@keyframes h-rise { from { translate: 0 var(--y, 20px); } }
 .soc-float { animation: float 9s ease-in-out infinite; }
 .soc-tr .soc-float { animation-delay: -2.2s; }
 .soc-bl .soc-float { animation-delay: -4.5s; }
@@ -58,7 +61,7 @@
 .dot.pop { animation: dot-pop 0.45s var(--spring); }
 .dot.pop span { animation: ring 0.7s var(--out); }
 @keyframes dot-pop { 40% { transform: scale(1.2); } }
-@keyframes ring { from { box-shadow: 0 0 0 0 rgba(182, 0, 168, 0.55); } to { box-shadow: 0 0 0 18px transparent; } }
+@keyframes ring { from { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.55); } to { box-shadow: 0 0 0 18px transparent; } }
 .counting { animation: fade-in 0.3s both; }
 
 /* ---------- mystery box ---------- */
@@ -77,104 +80,11 @@
 
 @keyframes fc-sheen { 0%, 100% { background-position: 100% 0; } 50% { background-position: 0% 0; } }
 
-/* ---------- сцены отношений (сдвиги — в единицах знака, масштаб 0.56) ---------- */
-.scene .sf, .scene .sx { transform-box: fill-box; transform-origin: center; }
-
-.sc-dual .sa { animation: dual-a 4.2s var(--ease) infinite; }
-.sc-dual .sb { animation: dual-b 4.2s var(--ease) infinite; }
-.sc-dual .sx-ring { animation: dual-ring 4.2s var(--ease) infinite; }
-@keyframes dual-a { 0%, 12%, 88%, 100% { transform: translateX(0); } 38%, 66% { transform: translateX(62px); } }
-@keyframes dual-b { 0%, 12%, 88%, 100% { transform: translateX(0); } 38%, 66% { transform: translateX(-62px); } }
-@keyframes dual-ring { 0%, 30%, 80%, 100% { opacity: 0; transform: scale(0.82); } 44%, 64% { opacity: 1; transform: scale(1); } }
-
-.sc-activation .sx-spin { transform-box: view-box; transform-origin: 160px 86px; animation: spin 5.5s linear infinite; }
-.sc-activation .sa, .sc-activation .sb { animation: spin 5.5s linear infinite reverse; }
-
-.sc-mirror .sa, .sc-mirror .sb { animation: mirror-in 4s var(--ease) infinite; }
-.sc-mirror .sx-line { animation: line-glow 4s var(--ease) infinite; }
-@keyframes mirror-in { 0%, 100% { transform: translateX(0); } 45%, 60% { transform: translateX(34px); } }
-@keyframes line-glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
-
-.sc-semidual .sa { animation: semi-a 4s var(--ease) infinite; }
-.sc-semidual .sb { animation: semi-b 4s var(--ease) infinite; }
-.sc-semidual .sx-spark { animation: spark 4s var(--ease) infinite; }
-@keyframes semi-a { 0%, 100% { transform: translateX(0); } 40%, 62% { transform: translateX(40px); } }
-@keyframes semi-b { 0%, 100% { transform: translateX(0); } 40%, 62% { transform: translateX(-40px); } }
-@keyframes spark { 0%, 38%, 70%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); } 48% { opacity: 1; transform: scale(1.2) rotate(45deg); } 58% { opacity: 0.6; transform: scale(0.9) rotate(90deg); } }
-
-.sc-mirage .sb { animation: mirage 3.6s ease-in-out infinite; }
-.sc-mirage .sa { animation: drift-to 3.6s ease-in-out infinite; }
-.sc-mirage .sx-wave { animation: wave 3.6s ease-in-out infinite; }
-.sc-mirage .w1 { animation-delay: -1.2s; }
-.sc-mirage .w2 { animation-delay: -2.4s; }
-@keyframes mirage { 0%, 100% { opacity: 0.95; transform: translateY(0) scale(1); } 50% { opacity: 0.35; transform: translateY(-8px) scale(0.96); } }
-@keyframes drift-to { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(22px); } }
-@keyframes wave { 0%, 100% { opacity: 0.2; transform: translateX(-6px); } 50% { opacity: 0.9; transform: translateX(6px); } }
-
-.sc-identity .sa, .sc-identity .sb { animation: bob 3s ease-in-out infinite; }
-
-.sc-kindred .sa, .sc-kindred .sb { animation: bob 4s ease-in-out infinite; }
-.sc-kindred .sb { animation-delay: -2s; }
-.sc-kindred .sx-sat-a { transform-box: view-box; transform-origin: 100px 86px; animation: spin 3.2s linear infinite; }
-.sc-kindred .sx-sat-b { transform-box: view-box; transform-origin: 220px 86px; animation: spin 4.6s linear infinite reverse; }
-
-.sc-business .sa, .sc-business .sb { animation: walk 3.2s ease-in-out infinite; }
-.sc-business .sx-track { animation: track 1.6s linear infinite; }
-@keyframes walk { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(14px, -6px); } 50% { transform: translate(28px, 0); } 75% { transform: translate(14px, -6px); } }
-@keyframes track { to { stroke-dashoffset: -40; } }
-
-.sc-quasi .sa { animation: turn 4.4s var(--ease) infinite; }
-.sc-quasi .sb { animation: turn 4.4s var(--ease) infinite; animation-delay: -2.2s; }
-@keyframes turn { 0%, 30%, 100% { transform: scaleX(1); } 40%, 60% { transform: scaleX(-1); } 70% { transform: scaleX(1); } }
-
-.sc-request .sx-gift { animation: gift 3.6s linear infinite; }
-.sc-request .sb { animation: receive 3.6s var(--ease) infinite; }
-@keyframes gift {
-  0% { opacity: 0; transform: translate(0, 0) scale(0.6); }
-  8% { opacity: 1; transform: translate(0, 0) scale(1); }
-  20% { transform: translate(24px, -19px); }
-  32% { transform: translate(48px, -25px); }
-  44% { transform: translate(72px, -19px); }
-  56% { opacity: 1; transform: translate(96px, 0) scale(1); }
-  64%, 100% { opacity: 0; transform: translate(96px, 0) scale(0.2); }
-}
-@keyframes receive { 0%, 50%, 80%, 100% { transform: scale(1); } 62% { transform: scale(1.14); } }
-
-.sc-extinguish .sa { animation: ext-a 4.2s var(--ease) infinite; }
-.sc-extinguish .sb { animation: ext-b 4.2s var(--ease) infinite; }
-@keyframes ext-a { 0%, 100% { transform: translateX(0); opacity: 1; } 45%, 60% { transform: translateX(44px) scale(0.9); opacity: 0.3; } }
-@keyframes ext-b { 0%, 100% { transform: translateX(0); opacity: 1; } 45%, 60% { transform: translateX(-44px) scale(0.9); opacity: 0.3; } }
-
-.sc-superego .sa { animation: nod-a 4s var(--ease) infinite; }
-.sc-superego .sb { animation: nod-b 4s var(--ease) infinite; }
-@keyframes nod-a { 0%, 10%, 40%, 100% { transform: rotate(0deg); } 20%, 30% { transform: rotate(-12deg) translateY(4px); } }
-@keyframes nod-b { 0%, 50%, 80%, 100% { transform: rotate(0deg); } 60%, 70% { transform: rotate(12deg) translateY(4px); } }
-
-.sc-supervision .sx-beam { animation: beam 3.4s ease-in-out infinite; }
-.sc-supervision .sb { animation: under-beam 3.4s ease-in-out infinite; }
-.sc-supervision .sa { animation: bob 3.4s ease-in-out infinite; }
-@keyframes beam { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
-@keyframes under-beam { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.88) translateY(6px); } }
-
-.sc-conflict .sa { animation: clash-a 3.6s var(--ease) infinite; }
-.sc-conflict .sb { animation: clash-b 3.6s var(--ease) infinite; }
-.sc-conflict .sx-hit { animation: hit 3.6s ease-out infinite; }
-@keyframes clash-a { 0%, 100% { transform: translateX(0); } 34% { transform: translateX(58px); } 46% { transform: translateX(-16px) rotate(-8deg); } 70% { transform: translateX(0); } }
-@keyframes clash-b { 0%, 100% { transform: translateX(0); } 34% { transform: translateX(-58px); } 46% { transform: translateX(16px) rotate(8deg); } 70% { transform: translateX(0); } }
-@keyframes hit { 0%, 30%, 55%, 100% { opacity: 0; transform: scale(0.5); } 36% { opacity: 1; transform: scale(1.25); } }
-
 /* ---------- страница результата по ссылке ---------- */
-/* «живая» точка: расходится кольцо — transform и opacity, без перерисовки box-shadow на каждом кадре */
+/* «живая» точка: кольцо расходится три раза и затихает — transform и opacity, без перерисовки box-shadow на каждом кадре */
 .sh-badge i { position: relative; }
-.sh-badge i::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--q); animation: sh-ping 2.2s var(--out) infinite; }
+.sh-badge i::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--q); animation: sh-ping 2.2s var(--out) 3; }
 @keyframes sh-ping { from { opacity: 0.55; transform: scale(1); } to { opacity: 0; transform: scale(3.4); } }
-.sc-mystery .sa { animation: bob 4s ease-in-out infinite; }
-.sc-mystery .sb { animation: mystery 2.8s ease-in-out infinite; }
-.sc-mystery .sc-q { transform-box: fill-box; transform-origin: center; animation: q-pulse 2.8s ease-in-out infinite; }
-.sc-mystery .sx-arc { animation: arc-flow 1.6s linear infinite; }
-@keyframes mystery { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.09); } }
-@keyframes q-pulse { 0%, 100% { opacity: 0.5; transform: scale(0.92); } 50% { opacity: 1; transform: scale(1.08); } }
-@keyframes arc-flow { to { stroke-dashoffset: -18; } }
 
 /* ---------- пара персонажей разыгрывает отношение (.duo.act-<вид>) ----------
    Поза каждого — --p0, крайняя точка движения — --p1 (и --p2 у трёхфазных); слева тот, от кого идёт действие.
@@ -295,8 +205,11 @@
 .relmap.in .rm-node, .relmap.in-again .rm-node { animation: rm-pop 0.45s var(--out) backwards; animation-delay: calc(0.08s + var(--k) * 22ms); }
 @keyframes rm-pop { from { opacity: 0; translate: 0 8px; } }
 
-/* ---------- пауза вне экрана и щадящий режим ---------- */
+/* ---------- пауза вне экрана, отдых петель и щадящий режим ---------- */
 .is-off, .is-off * { animation-play-state: paused !important; }
+/* отдых: петля замерла в начале цикла; символ пары возвращается на своё место без движения */
+.is-held, .is-held::before, .is-held::after { animation-play-state: paused !important; }
+.is-settled { animation: none !important; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -308,4 +221,7 @@
   }
   .js .reveal { opacity: 1; translate: none; }
   .stack-card, .mq-track, .hero-mag, .hero-look { transform: none !important; }
+  /* тест: вопрос сменился на том же месте — новый проявляется без движения, чтобы смену было видно */
+  .q.q-fade { animation: q-fade 0.22s linear both; animation-duration: 0.22s !important; }
 }
+@keyframes q-fade { from { opacity: 0; } }
