@@ -20,8 +20,8 @@
 <meta property="og:locale" content="ru_RU">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://duushes.github.io/socio-nik/og.jpg?v=2">
-<link rel="icon" type="image/png" href="img/logo/mark-64.png">
-<link rel="apple-touch-icon" href="img/logo/mark-180.png">
+<link rel="icon" type="image/png" href="img/logo/mark-64.png?v=2">
+<link rel="apple-touch-icon" href="img/logo/mark-180.png?v=2">
 <script>
   /* До первой отрисовки: кто в герое главной. После теста — твой тип; до теста — тайный тип (силуэт с «?»).
      Для главной сразу ставим предзагрузку картинки героя, чтобы она была на первом кадре. */
@@ -50,10 +50,12 @@
   })();
 </script>
 <!-- ?v= — версия сборки: после выкладки браузер не смешает старые и новые файлы. Менять при каждом релизе. -->
-<link rel="stylesheet" href="css/tokens.css?v=20261110-1">
-<link rel="stylesheet" href="css/base.css?v=20261110-1">
-<link rel="stylesheet" href="css/components.css?v=20261110-1">
-<link rel="stylesheet" href="css/motion.css?v=20261110-1">
+<link rel="stylesheet" href="css/tokens.css?v=20261110-2">
+<link rel="stylesheet" href="css/base.css?v=20261110-2">
+<link rel="stylesheet" href="css/components.css?v=20261110-2">
+<link rel="stylesheet" href="css/motion.css?v=20261110-2">
+<!-- упрощённая версия: плоские марки и знаки вместо 3D (ветка prostaya) -->
+<link rel="stylesheet" href="css/flat.css?v=20261110-2">
 </head>
 <body>
 <a class="skip" href="#app">К содержимому</a>
@@ -61,7 +63,7 @@
 <header class="nav">
   <div class="wrap nav-in">
     <a class="brand" href="#/" aria-label="Socio-Nik — на главную">
-      <span class="brand-mark" aria-hidden="true"><img class="bm bm-1" src="img/logo/alpha.webp" alt="" width="48" height="48"><img class="bm bm-2" src="img/logo/beta.webp" alt="" width="48" height="48"><img class="bm bm-3" src="img/logo/gamma.webp" alt="" width="48" height="48"><img class="bm bm-4" src="img/logo/delta.webp" alt="" width="48" height="48"></span>
+      <span class="brand-mark dots4" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
       <span class="brand-word">Socio-Nik</span>
     </a>
     <nav class="nav-links" aria-label="Разделы">
@@ -95,49 +97,50 @@
     </nav>
     <p class="footer-note">Соционика — популярная типологическая модель, а не проверенный научный метод. Результат теста — повод понаблюдать за собой, а не диагноз. Ответы хранятся только на этом устройстве.</p>
     <p class="footer-mark" aria-hidden="true" data-fit="mark"><span class="fit-in"><span class="fit-line sv">Socio-Nik</span></span></p>
-    <p class="footer-fine"><span>Персонажи и знаки — оригинальные, нарисованы для Socio-Nik</span><span>Шрифт Montserrat · OFL</span></p>
+    <p class="footer-fine"><span>Персонажи — оригинальные, нарисованы для Socio-Nik</span><span>Шрифт Montserrat · OFL</span></p>
   </div>
 </footer>
 
-<script src="config.js?v=20261110-1"></script>
-<script src="js/lib/base.js?v=20261110-1"></script>
-<script src="js/data/aspects.js?v=20261110-1"></script>
-<script src="js/data/types.js?v=20261110-1"></script>
-<script src="js/data/quadras.js?v=20261110-1"></script>
-<script src="js/data/relations.js?v=20261110-1"></script>
-<script src="js/data/questions.js?v=20261110-1"></script>
-<script src="js/core/modelA.js?v=20261110-1"></script>
-<script src="js/core/scoring.js?v=20261110-1"></script>
-<script src="js/core/payload.js?v=20261110-1"></script>
-<script src="js/core/pair.js?v=20261110-1"></script>
-<script src="js/content/types-alpha.js?v=20261110-1"></script>
-<script src="js/content/types-beta.js?v=20261110-1"></script>
-<script src="js/content/types-gamma.js?v=20261110-1"></script>
-<script src="js/content/types-delta.js?v=20261110-1"></script>
-<script src="js/content/relations.js?v=20261110-1"></script>
-<script src="js/content/functions.js?v=20261110-1"></script>
-<script src="js/content/aspects.js?v=20261110-1"></script>
-<script src="js/content/celebs.js?v=20261110-1"></script>
-<script src="js/content/facts.js?v=20261110-1"></script>
-<script src="js/content/traits.js?v=20261110-1"></script>
-<script src="js/art/prims.js?v=20261110-1"></script>
-<script src="js/art/glyphs.js?v=20261110-1"></script>
-<script src="js/art/emblem.js?v=20261110-1"></script>
-<script src="js/fx/fx.js?v=20261110-1"></script>
-<script src="js/share/card.js?v=20261110-1"></script>
-<script src="js/share/social.js?v=20261110-1"></script>
-<script src="js/ui/components.js?v=20261110-1"></script>
-<script src="js/ui/box.js?v=20261110-1"></script>
-<script src="js/ui/sheet.js?v=20261110-1"></script>
-<script src="js/ui/relmap.js?v=20261110-1"></script>
-<script src="js/ui/sharekit.js?v=20261110-1"></script>
-<script src="js/views/home.js?v=20261110-1"></script>
-<script src="js/views/test.js?v=20261110-1"></script>
-<script src="js/views/result.js?v=20261110-1"></script>
-<script src="js/views/types.js?v=20261110-1"></script>
-<script src="js/views/quadras.js?v=20261110-1"></script>
-<script src="js/views/relations.js?v=20261110-1"></script>
-<script src="js/views/misc.js?v=20261110-1"></script>
-<script src="js/app.js?v=20261110-1"></script>
+<script src="config.js?v=20261110-2"></script>
+<script src="js/lib/base.js?v=20261110-2"></script>
+<script src="js/data/aspects.js?v=20261110-2"></script>
+<script src="js/data/types.js?v=20261110-2"></script>
+<script src="js/data/quadras.js?v=20261110-2"></script>
+<script src="js/data/relations.js?v=20261110-2"></script>
+<script src="js/data/questions.js?v=20261110-2"></script>
+<script src="js/core/modelA.js?v=20261110-2"></script>
+<script src="js/core/scoring.js?v=20261110-2"></script>
+<script src="js/core/payload.js?v=20261110-2"></script>
+<script src="js/core/pair.js?v=20261110-2"></script>
+<script src="js/content/types-alpha.js?v=20261110-2"></script>
+<script src="js/content/types-beta.js?v=20261110-2"></script>
+<script src="js/content/types-gamma.js?v=20261110-2"></script>
+<script src="js/content/types-delta.js?v=20261110-2"></script>
+<script src="js/content/relations.js?v=20261110-2"></script>
+<script src="js/content/functions.js?v=20261110-2"></script>
+<script src="js/content/aspects.js?v=20261110-2"></script>
+<script src="js/content/celebs.js?v=20261110-2"></script>
+<script src="js/content/facts.js?v=20261110-2"></script>
+<script src="js/content/traits.js?v=20261110-2"></script>
+<script src="js/art/prims.js?v=20261110-2"></script>
+<script src="js/art/glyphs.js?v=20261110-2"></script>
+<script src="js/art/emblem.js?v=20261110-2"></script>
+<script src="js/art/celeb-icons.js?v=20261110-2"></script>
+<script src="js/fx/fx.js?v=20261110-2"></script>
+<script src="js/share/card.js?v=20261110-2"></script>
+<script src="js/share/social.js?v=20261110-2"></script>
+<script src="js/ui/components.js?v=20261110-2"></script>
+<script src="js/ui/box.js?v=20261110-2"></script>
+<script src="js/ui/sheet.js?v=20261110-2"></script>
+<script src="js/ui/relmap.js?v=20261110-2"></script>
+<script src="js/ui/sharekit.js?v=20261110-2"></script>
+<script src="js/views/home.js?v=20261110-2"></script>
+<script src="js/views/test.js?v=20261110-2"></script>
+<script src="js/views/result.js?v=20261110-2"></script>
+<script src="js/views/types.js?v=20261110-2"></script>
+<script src="js/views/quadras.js?v=20261110-2"></script>
+<script src="js/views/relations.js?v=20261110-2"></script>
+<script src="js/views/misc.js?v=20261110-2"></script>
+<script src="js/app.js?v=20261110-2"></script>
 </body>
 </html>

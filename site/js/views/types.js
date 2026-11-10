@@ -31,7 +31,7 @@
       const a = A[m[n - 1]], f = F[n - 1], plain = ui.PLAIN[a.id];
       return `<button type="button" class="ma-cell reveal${n <= 2 ? ' ego' : ''}" style="--i:${n % 4}" data-fn="${n}" aria-haspopup="dialog" aria-label="${esc(`${f.plain}: ${plain}. ${f.name} функция, ${a.name}. Подробнее`)}">
         <span class="ma-n">${n}</span>
-        <span class="ma-glyph">${S.art.aspectImg(a.id, t.quadra, 'ma-img', { sizes: '64px' })}</span>
+        ${ui.aspectMark(a.id, { cls: 'ma-glyph' })}
         <span class="ma-fn">${f.plain}</span>
         <span class="ma-plain">${esc(cap(plain))}</span>
         <span class="ma-asp">${f.name} · ${a.short}</span>

@@ -1,7 +1,7 @@
-/* Socio-Nik · mystery box. Закрытая коробка-подарок парит, вокруг неё по наклонной орбите летают 3D-символы.
-   Нажатие: тряска → вспышка, крышка взлетает → из коробки выскакивает персонаж типа (у общих фактов — символы),
-   рядом — карточка-«коллекционка» с фактом и блоком «Поделиться». Шерится картинка в том же стиле (share/card.js).
-   Факты без повторов, пока колода не кончится; коллекция «Открыто N из M» копится навсегда. */
+/* Socio-Nik · mystery box. На своей странице (#/box) — коробка-подарок: нажатие → тряска, вспышка, крышка взлетает,
+   рядом переворачивается карточка-«коллекционка» с фактом и блоком «Поделиться».
+   Встроенная (compact: главная, результат, страница типа) — без подарка: одна карта рубашкой вверх, переворот на месте.
+   Шерится картинка (share/card.js). Факты без повторов, пока колода не кончится; коллекция «N из M» копится навсегда. */
 (function (root) {
   const S = root.Socio = root.Socio || {};
   const ui = S.ui = S.ui || {};
@@ -38,9 +38,6 @@
       <span class="bp-bar" aria-hidden="true"><i style="width:${Math.max(2, n / all * 100).toFixed(1)}%"></i></span>`;
   };
 
-  // символы, которые летают вокруг закрытой коробки
-  const MOONS = ['sparkles', 'question', 'heart', 'lightning', 'bulb', 'puzzle'];
-
   // opts: { modes: true — выбор режима; typeId — зафиксировать тип; compact — для встраивания }
   ui.box = ({ modes = false, typeId = null, compact = false } = {}) => {
     const mine = S.state.myType();
@@ -56,27 +53,25 @@
           </div>
           <div class="box-pick" hidden>${ui.typeSelect('boxtype', target, 'Тип')}</div>` : ''}
         <div class="box-play">
-          <div class="box-stage" data-anim="keep">
+          ${compact ? '' : `<div class="box-stage" data-anim="keep">
             <div class="bx-glow" aria-hidden="true"></div>
-            <div class="bx-moons" aria-hidden="true">${MOONS.map((k, i) => `<img class="bx-moon" data-i="${i}" src="${ui.emoteSrc(k)}" alt="" width="100" height="100" decoding="async" draggable="false">`).join('')}</div>
             <button class="bx" type="button" aria-label="Открыть коробку со случайным фактом">
               <span class="bx-shadow" aria-hidden="true"></span>
               <span class="bx-float" aria-hidden="true">
                 <img class="bx-img bx-closed" src="img/box/closed.webp" width="560" height="560" alt="" decoding="async" draggable="false">
                 <img class="bx-img bx-open" src="img/box/open.webp" width="560" height="560" alt="" decoding="async" draggable="false">
-                <span class="bx-pop"></span>
               </span>
               <span class="bx-flash" aria-hidden="true"></span>
             </button>
             <p class="bx-hint">Нажми на коробку</p>
-          </div>
+          </div>`}
           <div class="bx-slot">
             <div class="bx-flip">
-              <button class="bx-back" type="button" tabindex="-1" aria-hidden="true">
-                <span class="bxb-mark"><img src="img/logo/alpha.webp" alt="" width="48" height="48"><img src="img/logo/beta.webp" alt="" width="48" height="48"><img src="img/logo/gamma.webp" alt="" width="48" height="48"><img src="img/logo/delta.webp" alt="" width="48" height="48"></span>
-                <img class="bxb-q" data-anim src="${ui.emoteSrc('question')}" alt="" width="160" height="160" decoding="async" draggable="false">
-                <span class="bxb-t">Здесь появится факт</span>
-                <span class="bxb-s">Нажми на коробку или на эту карту</span>
+              <button class="bx-back" type="button"${compact ? ' aria-label="Открыть случайный факт"' : ' tabindex="-1" aria-hidden="true"'}>
+                ${ui.dots4('bxb-mark')}
+                <span class="bxb-q" aria-hidden="true">?</span>
+                <span class="bxb-t">${compact ? 'Открыть факт' : 'Здесь появится факт'}</span>
+                <span class="bxb-s">${compact ? 'Нажми на карту — перевернём её' : 'Нажми на коробку или на эту карту'}</span>
               </button>
               <article class="bx-card" aria-hidden="true" inert></article>
             </div>
@@ -97,11 +92,6 @@
     return base ? base.replace(/\/$/, '') + '/#/' + (f.type ? 'types/' + f.type : 'box') : '';
   };
 
-  // Кто выскочил из коробки: персонаж типа или, у общих фактов, вопрос с лампочкой
-  const popHTML = t => (t
-    ? `<span class="bx-who" style="${ui.qStyle(t.quadra)}">${ui.character(t, { sizes: '(min-width: 768px) 220px, 150px', alt: '', eager: true })}</span>`
-    : `<span class="bx-who bx-who-gen"><img src="${ui.emoteSrc('question')}" alt="" width="100" height="100"><img src="${ui.emoteSrc('bulb')}" alt="" width="100" height="100"></span>`);
-
   function cardHTML(f, reset) {
     const t = f.type ? M().type(f.type) : null;
     const all = S.facts.all(), no = all.findIndex(x => x.id === f.id) + 1;
@@ -114,10 +104,10 @@
           <span class="fc-cat">${esc(S.factCats[f.cat] || '')}</span>
         </header>
         <div class="fc-who">
-          ${t ? `<span class="fc-ava">${ui.character(t, { sizes: ui.CHAR.ava, alt: '' })}</span>
+          ${t ? `${ui.mark(t, { cls: 'fc-ava' })}
             <span class="fc-name"><b>${t.code} «${esc(t.alias)}»</b><small>${esc(t.role)} · квадра ${q.name}</small></span>
             <a class="link fc-type-link" href="#/types/${t.id}">Про ${t.code}</a>`
-            : `<span class="fc-ava fc-ava-gen"><img src="${ui.emoteSrc('sparkles')}" alt="" width="100" height="100"></span>
+            : `<span class="fc-ava fc-ava-gen">${ui.dots4()}</span>
             <span class="fc-name"><b>Соционика</b><small>Факт обо всех 16 типах</small></span>
             <a class="link fc-type-link" href="#/about">О соционике</a>`}
         </div>
@@ -131,48 +121,14 @@
       </div>`;
   }
 
-  // Символы летают по наклонной орбите: спереди — крупнее и над коробкой, сзади — меньше и за ней
-  function orbit(stage) {
-    const moons = Array.from(stage.querySelectorAll('.bx-moon'));
-    if (!moons.length) return () => {};
-    let raf = 0, last = 0, drawn = 0, a = 0, visible = true;
-    const place = () => {
-      const w = stage.clientWidth, R = Math.min(w * 0.42, 300), r = R * 0.36;
-      moons.forEach((m, i) => {
-        const t = a + i * (Math.PI * 2 / moons.length), d = Math.sin(t);
-        const s = 0.7 + 0.3 * (d + 1) / 2;
-        m.style.transform = `translate(${(Math.cos(t) * R).toFixed(1)}px, ${(d * r - 6).toFixed(1)}px) scale(${s.toFixed(3)})`;
-        const z = d > 0 ? '4' : '1';
-        if (m.style.zIndex !== z) m.style.zIndex = z;
-        m.style.opacity = (0.55 + 0.45 * (d + 1) / 2).toFixed(2);
-      });
-    };
-    place();
-    if (reducedMotion()) return () => {};
-    const tick = now => {
-      raf = 0;
-      if (!visible) return;
-      if (last) a += (now - last) * 0.00026;          // ~24 с на круг
-      last = now;
-      // круг — 24 с, так что 30 кадров в секунду глазу не отличить, а работы вдвое меньше
-      if (now - drawn >= 32) { drawn = now; place(); }
-      raf = requestAnimationFrame(tick);
-    };
-    const io = new IntersectionObserver(([e]) => {
-      visible = e.isIntersecting;
-      if (visible && !raf) { last = 0; raf = requestAnimationFrame(tick); }
-    });
-    io.observe(stage);
-    addEventListener('resize', place);
-    return () => { cancelAnimationFrame(raf); io.disconnect(); removeEventListener('resize', place); };
-  }
-
   ui.mountBox = scope => {
     const box = scope.querySelector('[data-box]');
     if (!box) return () => {};
+    // у встроенной колоды нет подарка: btn, stage и hint — null, открывает сама карта
     const btn = box.querySelector('.bx'), card = box.querySelector('.bx-card'), stage = box.querySelector('.box-stage');
     const slot = box.querySelector('.bx-slot'), backFace = box.querySelector('.bx-back');
-    const prog = box.querySelector('.box-progress'), hint = box.querySelector('.bx-hint'), pop = box.querySelector('.bx-pop');
+    const prog = box.querySelector('.box-progress'), hint = box.querySelector('.bx-hint');
+    const cls = (el, fn, ...names) => { if (el) el.classList[fn](...names); };
     const timers = [];
     const later = (fn, ms) => timers.push(setTimeout(fn, reducedMotion() ? 0 : ms));
     const say = box.querySelector('[data-box-say]');
@@ -190,65 +146,73 @@
       // картинку для шера готовим заранее: портрет и символы догрузятся, пока человек читает
       if (t) S.share.portrait(t.id);
       S.share.art();
-      hint.hidden = true;
+      if (hint) hint.hidden = true;
       box.classList.remove('is-open');
-      stage.classList.remove('is-open', 'is-lid');
-      pop.innerHTML = popHTML(t);
+      cls(stage, 'remove', 'is-open', 'is-lid');
       box.style.setProperty('--q', t ? `var(--q-${t.quadra})` : '');
-      btn.classList.remove('shake');
-      void btn.offsetWidth;
-      btn.classList.add('shake');
+      if (btn) {
+        btn.classList.remove('shake');
+        void btn.offsetWidth;
+        btn.classList.add('shake');
+      }
       later(() => {
-        stage.classList.add('is-lid');
+        cls(stage, 'add', 'is-lid');
         // лицо карты заполняем, пока она лежит рубашкой вверх, — потом переворачиваем на месте
         card.innerHTML = cardHTML(fact, reset);
-      }, 420);
+      }, btn ? 420 : 0);
       later(() => {
-        stage.classList.add('is-open');
+        cls(stage, 'add', 'is-open');
         box.classList.add('is-open');
         slot.classList.add('flipped');
         card.setAttribute('aria-hidden', 'false');
         backFace.setAttribute('aria-hidden', 'true');
+        // во встроенной колоде нажали на саму рубашку — она сейчас выключится, фокус переедет на «Ещё факт»
+        const fromBack = backFace.contains(document.activeElement);
         // Сторона карты, которая сейчас не видна, выключена целиком: по ней не пройти Tab и её не читает скринридер
         card.inert = false;
         backFace.inert = true;
+        backFace.tabIndex = -1;
         if (say) say.textContent = `${t ? `${t.code} «${t.alias}». ` : ''}${fact.text}`;
         const colors = t ? [S.theme.quadraColor(t.quadra), '#ffffff', '#ffd27a']
           : S.data.quadras.map(q => S.theme.quadraColor(q.id));
-        const r = stage.getBoundingClientRect();
+        const r = (stage || slot).getBoundingClientRect();
         S.fx.confetti(colors, { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height * 0.42) / innerHeight, n: 34, power: 0.45 });
         prog.innerHTML = progress();
         // Фокус — на «Ещё факт»: тем, кто идёт с клавиатуры, и тем, кто только что нажал «Ещё факт»
         // (кнопка исчезает вместе со старой картой — без этого фокус пропадал)
         const more = card.querySelector('[data-more]');
-        if (more && (refocus || document.documentElement.classList.contains('kbd'))) more.focus({ preventScroll: true });
+        if (more && (refocus || fromBack || document.documentElement.classList.contains('kbd'))) more.focus({ preventScroll: true });
         refocus = false;
         // на телефоне карточка под коробкой — подводим к ней
-        if (innerWidth < 900) {
+        if (stage && innerWidth < 900) {
           const cr = slot.getBoundingClientRect();
           if (cr.top > innerHeight * 0.5) scrollTo({ top: cr.top + scrollY - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 60) - 12, behavior: reducedMotion() ? 'auto' : 'smooth' });
         }
         busy = false;
-      }, 900);
+      }, btn ? 900 : 60);
     }
 
     // карта ложится рубашкой вверх, коробка закрывается — без исчезновений и скачков
     function close(then) {
-      // фокус не остаётся на карте, которая ложится рубашкой вверх, — переносим его на коробку
-      if (card.contains(document.activeElement)) btn.focus({ preventScroll: true });
+      const hadFocus = card.contains(document.activeElement);
       slot.classList.remove('flipped');
       card.setAttribute('aria-hidden', 'true');
       card.inert = true;
       backFace.inert = false;
+      // во встроенной колоде рубашка — единственная кнопка: снова доступна
+      if (!btn) { backFace.removeAttribute('aria-hidden'); backFace.tabIndex = 0; }
+      // фокус не остаётся на карте, которая ложится рубашкой вверх, — переносим его на коробку, а во встроенной колоде — на рубашку
+      if (hadFocus) (btn || backFace).focus({ preventScroll: true });
       if (say) say.textContent = '';
-      stage.classList.remove('is-open', 'is-lid');
+      cls(stage, 'remove', 'is-open', 'is-lid');
       box.classList.remove('is-open');
       later(() => { if (then) then(); }, 480);
     }
 
-    btn.addEventListener('click', open);
-    // рубашка — подсказка для мыши и пальца; фокус с неё уходит на саму коробку: рубашка сейчас перевернётся
-    backFace.addEventListener('click', () => { btn.focus({ preventScroll: true }); open(); });
+    if (btn) btn.addEventListener('click', open);
+    // У подарка рубашка — подсказка для мыши и пальца: фокус с неё уходит на саму коробку, рубашка сейчас перевернётся.
+    // Во встроенной колоде подарка нет: рубашка и есть кнопка
+    backFace.addEventListener('click', () => { if (btn) btn.focus({ preventScroll: true }); open(); });
     card.addEventListener('click', e => { if (e.target.closest('[data-more]')) { refocus = true; close(open); } });
     const offShare = ui.mountShareActions(card, {
       text: () => factText(current),
@@ -256,7 +220,6 @@
       image: () => S.share.factImage(current),
       name: () => `socio-nik-fact-${current.id}.png`
     });
-    const offOrbit = orbit(stage);
 
     // режимы
     const modes = box.querySelector('.box-modes'), pick = box.querySelector('.box-pick');
@@ -270,10 +233,10 @@
         if (pick) pick.hidden = m !== 'pick';
         if (m === 'pick') box.dataset.type = pick.querySelector('select').value;
         close();
-        hint.hidden = false;
+        if (hint) hint.hidden = false;
       });
-      if (pick) pick.querySelector('select').addEventListener('change', e => { box.dataset.type = e.target.value; close(); hint.hidden = false; });
+      if (pick) pick.querySelector('select').addEventListener('change', e => { box.dataset.type = e.target.value; close(); if (hint) hint.hidden = false; });
     }
-    return () => { timers.forEach(clearTimeout); offShare(); offOrbit(); };
+    return () => { timers.forEach(clearTimeout); offShare(); };
   };
 })(window);

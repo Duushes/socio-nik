@@ -1,10 +1,10 @@
-/* Socio-Nik · тест: 20 вопросов по одному. У каждого варианта — 3D-картинка и заголовок в 2–3 слова, чтобы отвечать,
+/* Socio-Nik · тест: 20 вопросов по одному. У каждого варианта — заголовок в 2–3 слова, чтобы отвечать,
    не вчитываясь; нажатие на карточку — «точно», оттенки — на шкале из 5. Автопереход, «Назад», клавиши 1–5,
-   прогресс сохраняется.
+   прогресс сохраняется. Картинок в тесте нет: только вопрос и два варианта.
    Как держим людей до конца (по исследованиям опросов): честное время «≈ N мин» по твоему же темпу вместо голых
    «вопрос 3 из 20»; прогресс-кольцо и 20 делений вместо полоски, которая ползёт медленно; редкие подбадривания
    на четверти, половине и трёх четвертях (постоянные сообщения работают хуже); «С возвращением» при продолжении.
-   В конце — сцена раскрытия: портреты мелькают и останавливаются на твоём типе. */
+   В конце — сцена раскрытия: коды типов мелькают и останавливаются на твоём; персонаж встречает уже на результате. */
 (function (root) {
   const S = root.Socio;
   const V = S.views = S.views || {};
@@ -16,11 +16,10 @@
   const LABELS = { '-2': 'Точно А', '-1': 'Скорее А', 0: 'Поровну', 1: 'Скорее Б', 2: 'Точно Б' };
   // подбадривания после 5-го, 10-го и 15-го ответа
   const MILESTONES = {
-    5: ['img/emotes/sparkles.webp', 'Отличный темп! Четверть позади'],
-    10: ['img/emotes/puzzle.webp', `Половина! Твой персонаж уже собирается`],
-    15: ['img/q/x-popper.webp', `Финишная прямая: осталось 5${NB}вопросов`]
+    5: 'Отличный темп! Четверть позади',
+    10: `Половина! Твой тип уже собирается`,
+    15: `Финишная прямая: осталось 5${NB}вопросов`
   };
-  const art = (q, side) => `img/q/${q.id}-${side}.webp`;
   const load = () => {
     const st = S.store.get('test', null);
     return st && st.answers && Number.isInteger(st.index) ? st : { answers: {}, index: 0 };
@@ -34,7 +33,7 @@
     return `
       <section class="test test-passed" style="${ui.qStyle(t.quadra)}">
         <div class="wrap test-wrap">
-          <div class="tp-char">${ui.character(t, { sizes: '240px', eager: true, alt: '' })}</div>
+          <div class="tp-char">${ui.mark(t, { cls: 'tm-lg' })}</div>
           <p class="eyebrow">Тест уже пройден</p>
           <h1 class="h2 h2-sm tp-title">Твой тип${NB}— ${t.code} «${esc(t.alias)}»</h1>
           <p class="lead tp-lead">Результат сохранён на${NB}этом устройстве. Если пройдёшь тест заново, новый результат заменит старый.</p>
@@ -47,7 +46,6 @@
     const a = side === 'a', v = a ? -2 : 2, head = a ? q.as : q.bs;
     const on = value != null && (a ? value < 0 : value > 0), off = value != null && (a ? value > 0 : value < 0);
     return `<button type="button" class="q-card q-${side}${on ? ' on' : ''}${off ? ' off' : ''}" data-v="${v}" aria-label="${esc(`${LABELS[v]}: ${head} — ${q[side]}`)}">
-        <span class="q-art"><img src="${art(q, side)}" alt="" width="240" height="240" decoding="async" draggable="false"></span>
         <span class="q-tag" aria-hidden="true">${a ? 'А' : 'Б'}</span>
         <span class="q-head">${esc(head)}</span>
         <span class="q-text">${esc(q[side])}</span>
@@ -90,7 +88,6 @@
               <div class="t-meter">
                 <span class="t-ring" aria-hidden="true">
                   <svg viewBox="0 0 48 48"><circle class="t-ring-bg" cx="24" cy="24" r="21"/><circle class="t-ring-fg" cx="24" cy="24" r="21" pathLength="100" style="--p:${(i / qs.length * 100).toFixed(1)}"/></svg>
-                  <img src="img/emotes/question.webp" alt="" width="100" height="100">
                 </span>
                 <span class="t-count"><b data-n>${i + 1}</b>${NB}из${NB}${qs.length}<span class="t-eta" data-eta> · ${eta(qs.length - i, [])}</span></span>
               </div>
@@ -103,7 +100,7 @@
             <p class="test-hint">Нажми на${NB}карточку${NB}— это «точно». Если не${NB}так однозначно, выбери оттенок на${NB}шкале.<span class="kbd-hint"> Клавиши 1–5 тоже работают.</span></p>
           </div>
           <div class="counting" hidden>
-            <div class="slot" style="--q:var(--paper)"><span class="slot-glow" aria-hidden="true"></span><img class="slot-img" alt="" width="520" height="650" decoding="async"></div>
+            <div class="slot" style="--q:var(--paper)"><span class="slot-glow" aria-hidden="true"></span><span class="slot-code" aria-hidden="true"></span></div>
             <p class="slot-cap caption" aria-live="polite">Считаем твой тип…</p>
           </div>
         </section>`;
@@ -123,23 +120,17 @@
       const nEl = root.querySelector('[data-n]'), etaEl = root.querySelector('[data-eta]'), toast = root.querySelector('.t-toast');
       const undo = root.querySelector('.t-undo');
       const timers = [], times = [], shown = new Set();
-      let locked = false, warmed = false, shownAt = performance.now(), toastT = 0, undoT = 0, dropped = null, halted = false;
+      let locked = false, shownAt = performance.now(), toastT = 0, undoT = 0, dropped = null, halted = false;
       // «Заново» — одно касание рядом со шкалой: ответы не пропадают сразу, их можно вернуть
       const hideUndo = () => { clearTimeout(undoT); dropped = null; undo.hidden = true; };
 
       const save = () => S.store.set('test', st);
-      // Портреты для сцены раскрытия подгружаем заранее, ближе к концу теста
-      const warm = () => {
-        if (warmed || st.index < 11) return;
-        warmed = true;
-        S.data.types.forEach(t => { const im = new Image(); im.src = ui.charSrc(t).src; });
-      };
-      // картинки следующего вопроса — заранее, чтобы он появился сразу целиком
-      const prefetch = i => { const q = qs[i]; if (q) ['a', 'b'].forEach(s => { const im = new Image(); im.src = art(q, s); }); };
+      // Портрет своего типа догрузится на результате; здесь заранее берём только его — он один и нужен сразу после теста
+      const warm = me => { const im = new Image(); im.src = ui.charSrc(me).src; };
 
-      const say = (src, text) => {
+      const say = text => {
         clearTimeout(toastT);
-        toast.innerHTML = `<img src="${src}" alt="" width="100" height="100">${esc(text)}`;
+        toast.textContent = text;
         toast.hidden = false;
         toast.classList.remove('in');
         void toast.offsetWidth;
@@ -165,8 +156,6 @@
       function paint(dir) {
         const i = st.index, q = qs[i];
         meter();
-        warm();
-        prefetch(i + 1);
         const old = stage.querySelector('.q');
         const tmp = document.createElement('div');
         tmp.innerHTML = question(q, i, qs.length, st.answers[q.id]);
@@ -210,7 +199,7 @@
         cur.classList.toggle('even', v === 0);
         if (navigator.vibrate && !S.fx.fineMouse()) { try { navigator.vibrate(8); } catch (e) { /* без вибрации */ } }
         const done = st.index + 1;
-        if (fresh && MILESTONES[done] && !shown.has(done)) { shown.add(done); say(...MILESTONES[done]); }
+        if (fresh && MILESTONES[done] && !shown.has(done)) { shown.add(done); say(MILESTONES[done]); }
         locked = true;
         timers.push(setTimeout(() => { locked = false; st.index < qs.length - 1 ? go(1) : finish(); }, S.dom.reducedMotion() ? 350 : 430));
       }
@@ -246,6 +235,7 @@
         ringFg.style.setProperty('--p', '100');
         Array.from(steps.children).forEach(s => { s.className = 'done'; });
         const me = S.core.modelA.type(S.core.scoring.result(res.axes).top.id);
+        warm(me);
         // результат встаёт в истории на место теста: «Назад» с результата не приводит к пустому первому вопросу
         reveal(me, () => {
           try { history.replaceState(null, ''); } catch (e) { /* без history */ }
@@ -253,10 +243,10 @@
         });
       }
 
-      // Слот: портреты мелькают всё медленнее и останавливаются на твоём типе (~2 с)
+      // Слот: коды типов мелькают всё медленнее и останавливаются на твоём (~2 с)
       function reveal(me, done) {
-        const ov = root.querySelector('.counting'), slot = ov.querySelector('.slot'), img = ov.querySelector('.slot-img'), cap = ov.querySelector('.slot-cap');
-        const put = t => { img.src = ui.charSrc(t).src; slot.style.setProperty('--q', `var(--q-${t.quadra})`); };
+        const ov = root.querySelector('.counting'), slot = ov.querySelector('.slot'), code = ov.querySelector('.slot-code'), cap = ov.querySelector('.slot-cap');
+        const put = t => { code.textContent = t.code; slot.style.setProperty('--q', `var(--q-${t.quadra})`); };
         ov.hidden = false;
         if (S.dom.reducedMotion()) { put(me); cap.textContent = `${me.code} · ${me.alias}`; timers.push(setTimeout(done, 700)); return; }
         const others = S.data.types.filter(t => t.id !== me.id).sort(() => Math.random() - 0.5);
@@ -322,10 +312,9 @@
       };
       root.addEventListener('click', onClick);
       document.addEventListener('keydown', onKey);
-      prefetch(st.index + 1);
       // вернулись к начатому тесту — скажем, откуда продолжаем
       const answered = Object.keys(st.answers).length;
-      if (st.index > 0 && answered) timers.push(setTimeout(() => say('img/q/x-book.webp', `С возвращением! Продолжаем с вопроса ${st.index + 1}`), 450));
+      if (st.index > 0 && answered) timers.push(setTimeout(() => say(`С возвращением! Продолжаем с вопроса ${st.index + 1}`), 450));
       const first = stage.querySelector('.dot[tabindex="0"]');
       if (first && document.documentElement.classList.contains('kbd')) first.focus({ preventScroll: true });
       return () => {

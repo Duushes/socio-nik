@@ -20,7 +20,7 @@
   const nextCards = res => `<div class="next-grid">${res.next.map((r, i) => {
     const tt = M().type(r.id);
     return `<a class="next-card reveal" style="${ui.qStyle(tt.quadra)};--i:${i}" href="#/types/${tt.id}">
-      <span class="next-art">${ui.character(tt, { sizes: ui.CHAR.ava, alt: '' })}</span>
+      ${ui.mark(tt, { cls: 'next-art' })}
       <span class="next-code">${tt.code}</span>
       <span class="next-name">${esc(tt.alias)} · ${esc(tt.role)}</span>
       <span class="next-pct num">${r.pct} %</span>
@@ -35,7 +35,7 @@
         <div class="wrap center">
           <p class="eyebrow reveal">Ты и тот, кто прислал ссылку</p>
           <h2 class="h2 h2-md reveal"><span class="sv">${me.code} и ${fr.code}</span></h2>
-          <div class="sh-pair reveal">${ui.duo(me, fr, { labels: ['Ты', fr.code] })}</div>
+          <div class="sh-pair reveal">${ui.pairMarks(me, fr, { labels: ['Ты', fr.code] })}</div>
           <h3 class="sh-rel reveal">${esc(ui.relTitle(r, me, fr))}</h3>
           <p class="reveal">${ui.toneChip(r.tone)}</p>
           <p class="lead reveal">${esc(txt.line || '')}</p>
@@ -92,13 +92,13 @@
             </div>
             <div class="res-links">
               <a class="link-card reveal" href="#/quadras#${q.id}" style="${ui.qStyle(q.id)}">
-                <span class="lc-art" data-anim>${S.art.quadraEmblem(q)}</span>
+                <span class="lc-art">${ui.quadraMark(q)}</span>
                 <span class="lc-kicker">Твоя квадра</span>
                 <span class="lc-title">${q.name}</span>
                 <span class="lc-text">${esc(qc.motto || '')}</span>
               </a>
               <a class="link-card reveal" href="#/relations/${t.id}/${dual.id}" style="${ui.qStyle(dual.quadra)};--i:1">
-                <span class="lc-art lc-char">${ui.character(dual, { sizes: ui.CHAR.ava, alt: '' })}</span>
+                <span class="lc-art">${ui.mark(dual, { cls: 'tm-xl' })}</span>
                 <span class="lc-kicker">Твой дуал</span>
                 <span class="lc-title">${dual.code} «${esc(dual.alias)}»</span>
                 <span class="lc-text">${esc(ui.relText('dual').line || '')}</span>
@@ -147,7 +147,7 @@
       </section>`;
   }
 
-  // Персонаж наезжает на нижнюю строку заголовка — на треть высоты букв
+  // Персонаж наезжает на нижнюю строку заголовка — на треть высоты букв (герои результата, типа и ссылки)
   const overlap = root => {
     const hero = root.querySelector('.res-hero, .type-hero, .sh-hero, .lost-hero');
     if (!hero) return () => {};
@@ -165,10 +165,8 @@
     render() {
       const axes = S.state.result();
       if (!axes) {
-        const t = S.data.types[Math.floor(Math.random() * 16)];
-        return `<section class="lost-hero" style="${ui.qStyle(t.quadra)}">
+        return `<section class="lost-hero">
           <h1 class="display lost-title" data-fit data-min="12" data-max="16" data-maxh="16"><span class="fit-in"><span class="fit-line"><span class="sv">Пока</span></span> <span class="fit-line"><span class="sv">пусто</span></span></span></h1>
-          <div class="lost-char">${ui.character(t, { sizes: ui.CHAR.hero, eager: true, alt: '' })}</div>
           <div class="lost-foot">
             <p class="lead">Результата пока нет. Пройди тест — это 20${NB}вопросов и${NB}около 4${NB}минут.</p>
             <p class="lost-actions"><a class="btn" href="#/test">Пройти тест</a></p>
@@ -232,7 +230,7 @@
           <p class="eyebrow reveal">${mine ? 'Вы вдвоём' : 'Твоя очередь'}</p>
           <h2 class="h2 h2-md reveal">${mine ? `${mine.code} и ${t.code}` : 'А какой тип у тебя?'}</h2>
           <p class="lead reveal">${mine ? esc(ui.relText(rel.kind).line || '') : 'Пройди тест — и сразу увидишь, как устроены ваши отношения: дуальные, зеркальные, деловые или ещё какие-то из четырнадцати видов.'}</p>
-          <div class="sh-pair reveal">${mine ? ui.duo(mine, t, { labels: ['Ты', t.code] }) : ui.duoMystery(t)}</div>
+          <div class="sh-pair reveal">${mine ? ui.pairMarks(mine, t, { labels: ['Ты', t.code] }) : ui.pairMarksAsk(t)}</div>
           ${mine ? `<h3 class="sh-rel reveal">${esc(ui.relTitle(rel, mine, t))}</h3><p class="reveal"><a class="btn" href="#/relations/${mine.id}/${t.id}">Про ваши отношения</a></p>`
                  : `<p class="reveal">${test('Пройти тест')}</p>`}
         </div>
