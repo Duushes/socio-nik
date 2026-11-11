@@ -28,6 +28,8 @@
   (function () {
     var d = document.documentElement, ids = 'ile sei ese lii eie lsi sle iei see ili lie esi lse eii iee sli'.split(' ');
     d.classList.add('js');
+    // Компьютер (широкий экран и мышь) — полные 3D-иллюстрации, иначе упрощённая версия (flat). Та же строка — ui.RICH_MQ
+    d.classList.toggle('flat', !(window.matchMedia && matchMedia('(min-width: 768px) and (hover: hover) and (pointer: fine)').matches));
     var mine = null, done = false;
     try { mine = JSON.parse(localStorage.getItem('socio.mine')); done = Boolean(localStorage.getItem('socio.result')); } catch (e) {}
     var pick = done && ids.indexOf(mine) >= 0 ? mine : 'mystery';
@@ -50,12 +52,12 @@
   })();
 </script>
 <!-- ?v= — версия сборки: после выкладки браузер не смешает старые и новые файлы. Менять при каждом релизе. -->
-<link rel="stylesheet" href="css/tokens.css?v=20261110-2">
-<link rel="stylesheet" href="css/base.css?v=20261110-2">
-<link rel="stylesheet" href="css/components.css?v=20261110-2">
-<link rel="stylesheet" href="css/motion.css?v=20261110-2">
-<!-- упрощённая версия: плоские марки и знаки вместо 3D (ветка prostaya) -->
-<link rel="stylesheet" href="css/flat.css?v=20261110-2">
+<link rel="stylesheet" href="css/tokens.css?v=20261110-3">
+<link rel="stylesheet" href="css/base.css?v=20261110-3">
+<link rel="stylesheet" href="css/components.css?v=20261110-3">
+<link rel="stylesheet" href="css/motion.css?v=20261110-3">
+<!-- упрощённая версия для телефона: плоские марки и знаки вместо 3D (html.flat) -->
+<link rel="stylesheet" href="css/flat.css?v=20261110-3">
 </head>
 <body>
 <a class="skip" href="#app">К содержимому</a>
@@ -97,50 +99,50 @@
     </nav>
     <p class="footer-note">Соционика — популярная типологическая модель, а не проверенный научный метод. Результат теста — повод понаблюдать за собой, а не диагноз. Ответы хранятся только на этом устройстве.</p>
     <p class="footer-mark" aria-hidden="true" data-fit="mark"><span class="fit-in"><span class="fit-line sv">Socio-Nik</span></span></p>
-    <p class="footer-fine"><span>Персонажи — оригинальные, нарисованы для Socio-Nik</span><span>Шрифт Montserrat · OFL</span></p>
+    <p class="footer-fine"><span>Персонажи<span class="rich-only"> и знаки</span> — оригинальные, нарисованы для Socio-Nik</span><span>Шрифт Montserrat · OFL</span></p>
   </div>
 </footer>
 
-<script src="config.js?v=20261110-2"></script>
-<script src="js/lib/base.js?v=20261110-2"></script>
-<script src="js/data/aspects.js?v=20261110-2"></script>
-<script src="js/data/types.js?v=20261110-2"></script>
-<script src="js/data/quadras.js?v=20261110-2"></script>
-<script src="js/data/relations.js?v=20261110-2"></script>
-<script src="js/data/questions.js?v=20261110-2"></script>
-<script src="js/core/modelA.js?v=20261110-2"></script>
-<script src="js/core/scoring.js?v=20261110-2"></script>
-<script src="js/core/payload.js?v=20261110-2"></script>
-<script src="js/core/pair.js?v=20261110-2"></script>
-<script src="js/content/types-alpha.js?v=20261110-2"></script>
-<script src="js/content/types-beta.js?v=20261110-2"></script>
-<script src="js/content/types-gamma.js?v=20261110-2"></script>
-<script src="js/content/types-delta.js?v=20261110-2"></script>
-<script src="js/content/relations.js?v=20261110-2"></script>
-<script src="js/content/functions.js?v=20261110-2"></script>
-<script src="js/content/aspects.js?v=20261110-2"></script>
-<script src="js/content/celebs.js?v=20261110-2"></script>
-<script src="js/content/facts.js?v=20261110-2"></script>
-<script src="js/content/traits.js?v=20261110-2"></script>
-<script src="js/art/prims.js?v=20261110-2"></script>
-<script src="js/art/glyphs.js?v=20261110-2"></script>
-<script src="js/art/emblem.js?v=20261110-2"></script>
-<script src="js/art/celeb-icons.js?v=20261110-2"></script>
-<script src="js/fx/fx.js?v=20261110-2"></script>
-<script src="js/share/card.js?v=20261110-2"></script>
-<script src="js/share/social.js?v=20261110-2"></script>
-<script src="js/ui/components.js?v=20261110-2"></script>
-<script src="js/ui/box.js?v=20261110-2"></script>
-<script src="js/ui/sheet.js?v=20261110-2"></script>
-<script src="js/ui/relmap.js?v=20261110-2"></script>
-<script src="js/ui/sharekit.js?v=20261110-2"></script>
-<script src="js/views/home.js?v=20261110-2"></script>
-<script src="js/views/test.js?v=20261110-2"></script>
-<script src="js/views/result.js?v=20261110-2"></script>
-<script src="js/views/types.js?v=20261110-2"></script>
-<script src="js/views/quadras.js?v=20261110-2"></script>
-<script src="js/views/relations.js?v=20261110-2"></script>
-<script src="js/views/misc.js?v=20261110-2"></script>
-<script src="js/app.js?v=20261110-2"></script>
+<script src="config.js?v=20261110-3"></script>
+<script src="js/lib/base.js?v=20261110-3"></script>
+<script src="js/data/aspects.js?v=20261110-3"></script>
+<script src="js/data/types.js?v=20261110-3"></script>
+<script src="js/data/quadras.js?v=20261110-3"></script>
+<script src="js/data/relations.js?v=20261110-3"></script>
+<script src="js/data/questions.js?v=20261110-3"></script>
+<script src="js/core/modelA.js?v=20261110-3"></script>
+<script src="js/core/scoring.js?v=20261110-3"></script>
+<script src="js/core/payload.js?v=20261110-3"></script>
+<script src="js/core/pair.js?v=20261110-3"></script>
+<script src="js/content/types-alpha.js?v=20261110-3"></script>
+<script src="js/content/types-beta.js?v=20261110-3"></script>
+<script src="js/content/types-gamma.js?v=20261110-3"></script>
+<script src="js/content/types-delta.js?v=20261110-3"></script>
+<script src="js/content/relations.js?v=20261110-3"></script>
+<script src="js/content/functions.js?v=20261110-3"></script>
+<script src="js/content/aspects.js?v=20261110-3"></script>
+<script src="js/content/celebs.js?v=20261110-3"></script>
+<script src="js/content/facts.js?v=20261110-3"></script>
+<script src="js/content/traits.js?v=20261110-3"></script>
+<script src="js/art/prims.js?v=20261110-3"></script>
+<script src="js/art/glyphs.js?v=20261110-3"></script>
+<script src="js/art/emblem.js?v=20261110-3"></script>
+<script src="js/art/celeb-icons.js?v=20261110-3"></script>
+<script src="js/fx/fx.js?v=20261110-3"></script>
+<script src="js/share/card.js?v=20261110-3"></script>
+<script src="js/share/social.js?v=20261110-3"></script>
+<script src="js/ui/components.js?v=20261110-3"></script>
+<script src="js/ui/box.js?v=20261110-3"></script>
+<script src="js/ui/sheet.js?v=20261110-3"></script>
+<script src="js/ui/relmap.js?v=20261110-3"></script>
+<script src="js/ui/sharekit.js?v=20261110-3"></script>
+<script src="js/views/home.js?v=20261110-3"></script>
+<script src="js/views/test.js?v=20261110-3"></script>
+<script src="js/views/result.js?v=20261110-3"></script>
+<script src="js/views/types.js?v=20261110-3"></script>
+<script src="js/views/quadras.js?v=20261110-3"></script>
+<script src="js/views/relations.js?v=20261110-3"></script>
+<script src="js/views/misc.js?v=20261110-3"></script>
+<script src="js/app.js?v=20261110-3"></script>
 </body>
 </html>

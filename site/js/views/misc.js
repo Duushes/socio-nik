@@ -57,10 +57,10 @@
         <section class="sec sec-white">
           <div class="wrap">
             ${part('03', 'Восемь аспектов информации', true)}
-            <p class="lead sec-sub reveal">Каждая стихия бывает «чёрной» (экстравертной) и${NB}«белой» (интровертной). Чёрные аспекты обозначают закрашенным знаком, белые — контуром. Те${NB}же знаки носят персонажи на${NB}одежде. Нажми на${NB}аспект — расскажем подробнее.</p>
+            <p class="lead sec-sub reveal">Каждая стихия бывает «чёрной» (экстравертной) и${NB}«белой» (интровертной). ${ui.rich() ? `На${NB}сайте чёрные аспекты — плотные знаки, белые — стеклянные.` : 'Чёрные аспекты обозначают закрашенным знаком, белые — контуром.'} Те${NB}же знаки носят персонажи на${NB}одежде. Нажми на${NB}аспект — расскажем подробнее.</p>
             <div class="aspect-grid">${Object.keys(A).map((id, i) => `
               <button type="button" class="aspect reveal" data-aspect="${id}" style="--i:${i % 4}" aria-haspopup="dialog">
-                ${ui.aspectMark(id, { cls: 'aspect-art' })}
+                ${ui.rich() ? `<span class="aspect-art">${S.art.aspectImg(id, 'violet', 'aspect-img', { sizes: '88px' })}</span>` : ui.aspectMark(id, { cls: 'aspect-art' })}
                 <span class="aspect-code">${S.art.symbol(id)} ${A[id].short}</span>
                 <span class="aspect-name">${esc(A[id].name)}</span>
                 <span class="aspect-hint">${esc(A[id].hint)}</span>
@@ -97,9 +97,12 @@
   V.notfound = {
     title: () => 'Страница не найдена',
     render() {
+      // на компьютере — случайный персонаж, на телефоне — только типографика
+      const t = ui.rich() ? S.data.types[Math.floor(Math.random() * 16)] : null;
       return `
-        <section class="lost-hero">
+        <section class="lost-hero"${t ? ` style="${ui.qStyle(t.quadra)}"` : ''}>
           <h1 class="display lost-title" data-fit data-min="12" data-max="16" data-maxh="16"><span class="fit-in"><span class="fit-line"><span class="sv">Тут</span></span> <span class="fit-line"><span class="sv">пусто</span></span></span></h1>
+          ${t ? `<div class="lost-char">${ui.character(t, { sizes: ui.CHAR.hero, eager: true, alt: '' })}</div>` : ''}
           <div class="lost-foot">
             <p class="lead">Такой страницы нет. Зато есть 16${NB}типов — и${NB}один из${NB}них твой.</p>
             <p class="lost-actions"><a class="btn" href="#/">На главную</a><a class="btn-ghost" href="#/test">Пройти тест</a></p>
@@ -113,10 +116,12 @@
   V.badlink = {
     title: () => 'Ссылка не открылась',
     render() {
-      const mine = S.state.myType();
+      const mine = S.state.myType(), rich = ui.rich();
+      const t = rich ? (mine ? S.core.modelA.type(mine) : S.data.types[Math.floor(Math.random() * 16)]) : null;
       return `
-        <section class="lost-hero">
+        <section class="lost-hero"${t ? ` style="${ui.qStyle(t.quadra)}"` : ''}>
           <h1 class="display lost-title" data-fit data-min="12" data-max="16" data-maxh="16"><span class="fit-in"><span class="fit-line"><span class="sv">Ссылка</span></span> <span class="fit-line"><span class="sv">сломалась</span></span></span></h1>
+          ${t ? `<div class="lost-char">${mine ? ui.character(t, { sizes: ui.CHAR.hero, eager: true, alt: '' }) : ui.mysteryChar({ sizes: ui.CHAR.hero, eager: true })}</div>` : ''}
           <div class="lost-foot">
             <p class="lead">Похоже, ссылка на${NB}результат обрезалась при${NB}пересылке. Попроси прислать её ещё раз${NB}— или узнай свой тип: это 20${NB}вопросов и${NB}около 4${NB}минут.</p>
             <p class="lost-actions">${mine

@@ -51,7 +51,13 @@ function checkFact(where, f) {
   if (f && str(f.text) && f.text.length < 40) err(where, 'факт короче 40 знаков');
 }
 
-// иконки знаменитостей — линейные SVG из art/celeb-icons.js; наличие ключа проверяется ниже, у каждого героя
+// ---------- иконки знаменитостей: 3D-картинка для компьютера (линейная SVG для телефона проверяется ниже) ----------
+if (full) {
+  const IMG = path.join(__dirname, '..', 'site', 'img', 'celebs');
+  Object.keys(C.celebs || {}).forEach(id => (C.celebs[id] || []).forEach(c => {
+    if (c.icon && !fs.existsSync(path.join(IMG, c.icon + '.webp'))) err(`celebs.${id}`, `нет картинки img/celebs/${c.icon}.webp`);
+  }));
+}
 
 // ---------- короткие черты для героя ----------
 if (full) {
@@ -163,11 +169,15 @@ if (full) {
   if (general.length < 18) err('полнота', `общих фактов ${general.length} < 18`);
   TYPES.forEach(id => { if (!modelA[id]) err('полнота', `нет текстов модели А для ${id}`); });
   TYPES.forEach(id => { if (!celebs[id]) err('полнота', `нет знаменитостей для ${id}`); });
-  // у каждого варианта ответа теста — короткий заголовок (картинок в тесте нет)
+  // у каждого варианта ответа теста — короткий заголовок и 3D-картинка img/q/<id>-a|b.webp (её показывают на компьютере)
   const qctx = vm.createContext({});
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'site', 'js', 'data', 'questions.js'), 'utf8'), qctx);
   (qctx.Socio.data.questions || []).forEach(q => ['as', 'bs'].forEach(k => {
     if (!str(q[k])) err('тест', `нет заголовка ${k} у вопроса ${q.id}`);
+  }));
+  const QIMG = path.join(__dirname, '..', 'site', 'img', 'q');
+  (qctx.Socio.data.questions || []).forEach(q => ['a', 'b'].forEach(side => {
+    if (!fs.existsSync(path.join(QIMG, `${q.id}-${side}.webp`))) err('тест', `нет картинки img/q/${q.id}-${side}.webp`);
   }));
   // превью ссылок для мессенджеров: og.jpg главной и у каждого типа — картинка og/<id>.jpg и страница r/<id>/ (tools/og.js)
   const SITE_DIR = path.join(__dirname, '..', 'site');

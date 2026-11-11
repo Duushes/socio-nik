@@ -64,10 +64,10 @@
     return out;
   }
 
-  // Тип в строке: марка с кодом и вид отношения (на телефоне вид — только у выбранного)
+  // Тип в строке: аватар (компьютер) или марка с кодом (телефон) и вид отношения (на телефоне вид — только у выбранного)
   const node = n => `<li><button type="button" class="rm-node t-${n.tone}" data-i="${n.i}" data-b="${n.b.id}" style="--k:${n.i};${ui.qStyle(n.b.quadra)}"
       aria-pressed="false" aria-label="${esc(`${n.b.code} «${n.b.alias}»: ${n.r.role ? `${n.r.name} · ${n.r.role}` : n.r.name}, ${ui.toneName(n.tone)}`)}">
-      ${ui.mark(n.b, { cls: 'rm-orb' })}
+      ${ui.rich() ? `<span class="rm-orb">${ui.character(n.b, { sizes: '(min-width: 768px) 80px, 56px', alt: '' })}</span>` : ui.mark(n.b, { cls: 'rm-orb' })}
       <span class="rm-tag" aria-hidden="true"><b>${n.b.code}</b><small>${TAG[n.r.id]}</small></span>
     </button></li>`;
 
@@ -95,7 +95,7 @@
     return `
       <article class="rd t-${r.tone}" style="${ui.qStyle(b.quadra)}">
         <header class="rd-head">
-          ${ui.mark(b, { cls: 'rd-ava' })}
+          ${ui.rich() ? `<span class="rd-ava">${ui.character(b, { sizes: ui.CHAR.ava, alt: '' })}</span>` : ui.mark(b, { cls: 'rd-ava' })}
           <div>
             <h3 class="rd-title">${esc(ui.relTitle(r, t, b))}</h3>
             <p class="rd-who">${b.code} «${esc(b.alias)}»<span class="rd-k-role"> · ${esc(b.role)}</span></p>

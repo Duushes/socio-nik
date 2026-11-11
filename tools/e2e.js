@@ -106,7 +106,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       document.querySelector('[data-restart]').click();
       await sleep(700);
       const q = () => document.querySelector('.q-stage .q:last-child');
-      const imgs = q().querySelectorAll('img').length;
+      const arts = Array.from(q().querySelectorAll('.q-art img')).map(i => i.complete && i.naturalWidth > 0 && /img\/q\/q01-[ab]\.webp/.test(i.getAttribute('src')));
       const heads = Array.from(q().querySelectorAll('.q-head')).map(h => h.textContent);
       q().querySelector('.q-card.q-a').click();
       await sleep(120);
@@ -114,14 +114,13 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       await sleep(700);
       for (let k = 0; k < 4; k++) { q().querySelector('.q-card.q-b').click(); await sleep(760); }
       const toast = document.querySelector('.t-toast');
-      return { imgs, heads, picked, n: document.querySelector('[data-n]').textContent, eta: document.querySelector('[data-eta]').textContent, toast: toast.hidden ? '' : toast.textContent,
+      return { arts, heads, picked, n: document.querySelector('[data-n]').textContent, eta: document.querySelector('[data-eta]').textContent, toast: toast.hidden ? '' : toast.textContent,
         ring: getComputedStyle(document.querySelector('.t-ring-fg')).getPropertyValue('--p').trim(), done: document.querySelectorAll('.t-steps .done').length,
-        logo: Array.from(document.querySelectorAll('.brand-mark.dots4 i')).map(i => getComputedStyle(i).backgroundColor).filter((c, k, a) => a.indexOf(c) === k).length,
-        logoImgs: document.querySelectorAll('.brand-mark img').length };
+        logo: new Set(Array.from(document.querySelectorAll('.brand-mark i')).map(i => getComputedStyle(i).backgroundImage).filter(u => /img\/logo\/(alpha|beta|gamma|delta)\.webp/.test(u))).size };
     });
-    check('тест простой: у вариантов заголовки без картинок, нажатие на карточку — «точно»', visual.imgs === 0 && visual.heads.length === 2 && visual.heads.every(h => h.length > 3) && visual.picked.a && visual.picked.b && visual.picked.dot === '-2', JSON.stringify(visual));
+    check('тест наглядный: у вариантов 3D-картинки и заголовки, нажатие на карточку — «точно»', visual.arts.length === 2 && visual.arts.every(Boolean) && visual.heads.every(h => h.length > 3) && visual.picked.a && visual.picked.b && visual.picked.dot === '-2', JSON.stringify(visual));
     check('тест держит до конца: кольцо и 20 делений, время по темпу, подбадривание на четверти', visual.n === '6' && /мин|минуты/.test(visual.eta) && /Четверть позади/.test(visual.toast) && visual.done === 5 && Number(visual.ring) === 25, JSON.stringify(visual));
-    check('логотип: четыре плоских круга в цветах квадр, без картинок', visual.logo === 4 && visual.logoImgs === 0, JSON.stringify({ logo: visual.logo, imgs: visual.logoImgs }));
+    check('логотип на компьютере: четыре 3D-шара в цветах квадр (фоном — на телефоне не скачиваются)', visual.logo === 4, JSON.stringify(visual.logo));
     await shot('d-test');
 
     // ---------- «Заново» с отменой; все ответы «поровну» ----------
@@ -234,13 +233,13 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
           knob: Math.round((k.left + k.width / 2 - t.left) / t.width * 100),
           vals: Array.from(c.querySelectorAll('.sc-pct b')).map(b => Number(b.dataset.count)),
           on: Array.from(c.querySelectorAll('.sc-pole')).map(p => p.classList.contains('on')),
-          imgs: c.querySelectorAll('img').length,
+          imgs: Array.from(c.querySelectorAll('.sc-pole img')).every(i => i.complete && i.naturalWidth > 0),
           verdict: c.querySelector('.sc-verdict').textContent.trim()
         };
       });
     });
-    check('четыре шкалы: бегунок у ближнего полюса, полюс подсвечен, без 3D-картинок',
-      scales.length === 4 && scales.every(x => Math.abs(x.knob - x.w) <= 2 && x.vals[0] + x.vals[1] === 100 && x.on[0] === (x.vals[0] >= 50) && x.on[1] === (x.vals[1] >= 50) && x.imgs === 0 && /ближе|поровну/i.test(x.verdict)),
+    check('четыре шкалы: бегунок у ближнего полюса, полюс подсвечен, 3D-картинки загрузились',
+      scales.length === 4 && scales.every(x => Math.abs(x.knob - x.w) <= 2 && x.vals[0] + x.vals[1] === 100 && x.on[0] === (x.vals[0] >= 50) && x.on[1] === (x.vals[1] >= 50) && x.imgs && /ближе|поровну/i.test(x.verdict)),
       JSON.stringify(scales));
     await shot('d-result-scales', '.scales', 90);
     check('на картинке — портрет персонажа типа (data:-URI, canvas чистый)', share.portrait && share.size > 50000, JSON.stringify({ portrait: share.portrait, size: share.size }));
@@ -316,9 +315,9 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       await sleep(1900);
       const t2 = (document.querySelector('.bx-text') || {}).textContent || '';
       return { t1: t1.slice(0, 50), t2: t2.slice(0, 50), count1, count2: document.querySelector('.box-progress b').textContent, open: document.querySelector('.box-stage').classList.contains('is-open'),
-        gift: document.querySelectorAll('.box-stage .bx-img').length, others: document.querySelectorAll('#app img:not(.bx-img)').length };
+        pop: Boolean(document.querySelector('.bx-pop .bx-who')), moons: document.querySelectorAll('.bx-moon').length };
     });
-    check('mystery box открывается: 3D — только подарок, без летающих символов и выскакивающего персонажа', box.open && box.t1.length > 20 && box.gift === 2 && box.others === 0, JSON.stringify(box));
+    check('mystery box открывается: из коробки выскакивает герой факта, вокруг летали 6 символов', box.open && box.t1.length > 20 && box.pop && box.moons === 6, JSON.stringify(box));
     check('«Ещё факт» — другой факт, счётчик растёт', box.t2 && box.t2 !== box.t1 && Number(box.count2) > Number(box.count1), JSON.stringify(box));
     await go('#/about', 400);
     await go('#/box', 1000);
@@ -327,14 +326,16 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       const at = () => ['.box-stage', '.bx', '.bx-slot', '.box-progress'].map(sel => { const r = document.querySelector(sel).getBoundingClientRect(); return [r.left, r.top + scrollY, r.width, r.height].map(Math.round).join(','); }).join(' | ');
       const before = at();
       document.querySelector('.bx').click();
-      await sleep(1550);
+      await sleep(250);
+      const popEarly = getComputedStyle(document.querySelector('.bx-pop')).opacity;
+      await sleep(1300);
       const opened = at(), flipped = document.querySelector('.bx-slot').classList.contains('flipped');
       document.querySelector('[data-more]').click();
       await sleep(2100);
-      return { before, opened, again: at(), flipped };
+      return { before, opened, again: at(), popEarly, flipped };
     });
-    check('mystery box не прыгает: коробка и карта на месте при открытии и «Ещё факт»',
-      still.flipped && still.before === still.opened && still.opened === still.again, JSON.stringify(still));
+    check('mystery box не прыгает: коробка и карта на месте при открытии и «Ещё факт», сквозь закрытую коробку никого не видно',
+      still.flipped && still.before === still.opened && still.opened === still.again && still.popEarly === '0', JSON.stringify(still));
     const fsoc = await b.eval(async () => {
       const card = document.querySelector('.bx-card');
       const nets = Array.from(card.querySelectorAll('[data-net]')).map(el => el.dataset.net);
@@ -352,21 +353,6 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     check('факт: крючок «Узнаёшь кого-то…», Telegram, WhatsApp, ВКонтакте и ссылка на тип; упоминаний Instagram нет', fsoc.nets.join() === 'telegram,whatsapp,vk' && fsoc.copy && /Узна|Удиви/.test(fsoc.hook) && !fsoc.meta && /%23%2Ftypes%2F[a-z]{3}|%23%2Fbox/.test(fsoc.tg), JSON.stringify(fsoc));
     check('факт: картинка для сторис собирается и отдаётся главной кнопкой', fsoc.png > 60000 && (fsoc.canFiles || /скачана/.test(fsoc.status)), JSON.stringify(fsoc));
     await shot('d-box-open', '.box-stage', 140);
-
-    // встроенная колода (главная после теста — единственное место, кроме #/box, где есть факты): без подарка и картинок, открывает сама карта
-    await go('#/', 1200);
-    const deck = await b.eval(async () => {
-      const box = document.querySelector('[data-box]');
-      box.scrollIntoView({ block: 'center' });
-      const before = { stage: Boolean(box.querySelector('.box-stage')), imgs: box.querySelectorAll('img').length, back: (box.querySelector('.bx-back') || {}).getAttribute ? box.querySelector('.bx-back').getAttribute('aria-label') : '' };
-      box.querySelector('.bx-back').click();
-      await new Promise(r => setTimeout(r, 1100));
-      const card = box.querySelector('.bx-card');
-      return { before, mine: Socio.core.modelA.type(Socio.state.myType()).code, flipped: box.querySelector('.bx-slot').classList.contains('flipped'), text: ((card.querySelector('.bx-text') || {}).textContent || '').length,
-        mark: (card.querySelector('.fc-ava b') || {}).textContent || '', cardImgs: card.querySelectorAll('img').length };
-    });
-    check('встроенная колода фактов: без подарка, открывается нажатием на карту, у факта — марка типа вместо портрета',
-      !deck.before.stage && deck.before.imgs === 0 && /факт/i.test(deck.before.back) && deck.flipped && deck.text > 20 && deck.mark === deck.mine && deck.cardImgs === 0, JSON.stringify(deck));
 
     // ---------- калькулятор ----------
     await go('#/relations', 1000);
@@ -392,7 +378,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       const sleep = ms => new Promise(r => setTimeout(r, ms));
       const groups = Array.from(document.querySelectorAll('.kinds-group'));
       const out = { groups: groups.map(g => g.querySelector('.tone').textContent.trim().toLowerCase() + ':' + g.querySelectorAll('.kind').length).join(','),
-        em: document.querySelectorAll('.kinds img').length, scenes: document.querySelectorAll('.kinds .pair-scene, .kinds svg.scene').length,
+        em: document.querySelectorAll('.kind .kind-em').length, scenes: document.querySelectorAll('.kinds .pair-scene, .kinds svg.scene').length,
         open: document.querySelectorAll('.kind details[open]').length, legend: Array.from(document.querySelectorAll('.matrix-legend .tone, .legend .tone')).map(x => x.textContent.trim().toLowerCase()).join(',') };
       const d = document.querySelector('.kind details');
       d.querySelector('summary').click();
@@ -401,8 +387,8 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       d.open = false;
       return out;
     });
-    check('«14 видов»: три группы по тону (легко, ровно, непросто), строки без картинок, описание раскрывается по нажатию',
-      /^легко:\d+,ровно:\d+,непросто:\d+$/.test(kinds.groups) && kinds.groups.match(/\d+/g).reduce((a, x) => a + Number(x), 0) === 14 && kinds.em === 0 && kinds.scenes === 0 && kinds.open === 0 && kinds.opens, JSON.stringify(kinds));
+    check('«14 видов»: три группы по тону (легко, ровно, непросто), у каждого вида символ, описание раскрывается по нажатию',
+      /^легко:\d+,ровно:\d+,непросто:\d+$/.test(kinds.groups) && kinds.groups.match(/\d+/g).reduce((a, x) => a + Number(x), 0) === 14 && kinds.em === 14 && kinds.scenes === 0 && kinds.open === 0 && kinds.opens, JSON.stringify(kinds));
     await shot('d-relations-kinds', '.kinds-group', 90);
     await shot('d-relations-matrix', '.matrix', 150);
 
@@ -416,7 +402,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       const withMine = {
         badge: Boolean(document.querySelector('.sh-badge')),
         cta: (document.querySelector('.sh-hero .cta .btn') || {}).getAttribute('href'),
-        scene: Boolean(document.querySelector('.sh-pair .pm')) && !document.querySelector('.pm-ask') && !document.querySelector('.sh-pair img')
+        scene: Boolean(document.querySelector('.sh-pair .duo')) && !document.querySelector('.duo-mystery')
       };
       localStorage.removeItem('socio.result');
       location.hash = '#/';
@@ -424,7 +410,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       location.hash = '#/r/' + code;
       await sleep(1000);
       const ctaR = document.querySelector('.sh-hero .cta .btn').getBoundingClientRect();
-      const fresh = { code: document.querySelector('.res-code').textContent, mystery: Boolean(document.querySelector('.sh-pair .pm-ask')), cta: document.querySelector('.sh-hero [data-friend]').textContent,
+      const fresh = { code: document.querySelector('.res-code').textContent, mystery: Boolean(document.querySelector('.duo-mystery .duo-q img.char[src*="mystery"]')), cta: document.querySelector('.sh-hero [data-friend]').textContent,
         ctaBottom: Math.round(ctaR.bottom), vh: innerHeight, pct: /%/.test(document.querySelector('.sh-hero .res-alias').textContent) };
       // свою ссылку открыли в другом браузере: результат можно забрать без теста
       document.querySelector('[data-own]').click();
@@ -448,7 +434,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     });
     check('ссылка на чужой результат: своя страница с плашкой и кнопкой к вашим отношениям', shared.withMine.badge && shared.withMine.cta === `#/relations/${shared.mine}/iee` && shared.withMine.scene, JSON.stringify(shared.withMine));
     check('страница по ссылке на компьютере: «Узнать свой тип» в первом экране, у типа нет процента', shared.fresh.ctaBottom <= shared.fresh.vh && !shared.fresh.pct, JSON.stringify(shared.fresh));
-    check('без своего результата: пара «? и тип из ссылки» и кнопка «Узнать свой тип»', shared.fresh.code === 'ИЭЭ' && shared.fresh.mystery && shared.fresh.cta === 'Узнать свой тип', JSON.stringify(shared.fresh));
+    check('без своего результата: пара «? и персонаж» и кнопка «Узнать свой тип»', shared.fresh.code === 'ИЭЭ' && shared.fresh.mystery && shared.fresh.cta === 'Узнать свой тип', JSON.stringify(shared.fresh));
     check('по своей ссылке в другом браузере: «Открыть как свой результат» переносит результат без теста', shared.fresh.own.view === 'result' && shared.fresh.own.code === 'ИЭЭ' && /iee/.test(shared.fresh.own.saved), JSON.stringify(shared.fresh.own));
     check('после теста по ссылке — блок «Ты и тот, кто прислал ссылку»', shared.you.view === 'result' && / и ИЭЭ$/.test(shared.you.title) && shared.you.rel.length > 5, JSON.stringify(shared.you));
     await shot('d-shared-you', '.sh-you', 60);
@@ -457,7 +443,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
 
     await go('#/relations', 1000);
 
-    // ---------- главная: герой и стопка; 3D — только в герое ----------
+    // ---------- главная: герой, лента, стопка ----------
     const savedResult = await b.eval(`localStorage.getItem('socio.result')`);
     await b.eval(`localStorage.removeItem('socio.result')`);
     await b.goto(BASE + '#/');
@@ -467,6 +453,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       const cta = hero.querySelector('.hero-actions .btn');
       const img = hero.querySelector('.hero-fig img');
       const sp = t => t.replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim();
+      const tiles = Array.from(document.querySelectorAll('.mq-copy:not([inert]) .mq-tile')).map(a => a.getAttribute('href'));
       const nav = document.querySelector('.nav'), nr = nav.getBoundingClientRect();
       return {
         cta: cta.getAttribute('href'), ctaText: cta.textContent.trim(), title: sp(hero.querySelector('.hero-title').textContent),
@@ -476,7 +463,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
         chips: Array.from(hero.querySelectorAll('.hero-traits li')).map(li => sp(li.textContent)).join(' · '),
         navShown: nr.top >= 0 && nr.bottom > 0 && getComputedStyle(nav).visibility !== 'hidden', heroMenu: Boolean(document.querySelector('.hero-menu')),
         navLinks: Array.from(document.querySelectorAll('.nav-links a')).map(a => a.getAttribute('href')).join(),
-        marquee: Boolean(document.querySelector('[data-marquee]')), outside: Array.from(document.querySelectorAll('#app img')).filter(i => !i.closest('section[data-hero]')).length,
+        tiles: tiles.length, uniq: new Set(tiles).size, inert: document.querySelectorAll('.mq-copy[inert]').length,
         cards: Array.from(document.querySelectorAll('.stack-card .qc-go')).map(a => a.getAttribute('href')).join(),
         types: new Set(Array.from(document.querySelectorAll('.stack-card .qc-type')).map(a => a.getAttribute('href'))).size
       };
@@ -486,14 +473,15 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       home.cta === '#/test' && home.ctaText === 'Узнать свой тип' && home.ask === '16 типов. Один — твой' && home.chips === 'Твоя суперсила · С кем тебе легко · Звёзды похожего типа' && /20.вопросов/.test(home.micro), JSON.stringify(home));
     check('шапка на главной та же, что везде: видна сразу, логотип и 6 разделов, своего меню у героя нет',
       home.navShown && !home.heroMenu && home.navLinks === '#/test,#/types,#/quadras,#/relations,#/box,#/about', JSON.stringify(home));
-    check('главная до теста: ленты с персонажами нет, 3D-картинки — только в герое', !home.marquee && home.outside === 0, JSON.stringify({ marquee: home.marquee, outside: home.outside }));
-    check('стопка: 4 карточки ведут на квадры, 16 плиток — на типы', home.cards === '#/quadras#alpha,#/quadras#beta,#/quadras#gamma,#/quadras#delta' && home.types === 16, JSON.stringify(home));
+    check('лента: 16 типов, у каждого одна живая копия, остальные inert', home.tiles === 16 && home.uniq === 16 && home.inert === 4, JSON.stringify(home));
+    check('стопка: 4 карточки ведут на квадры, 16 персонажей — на типы', home.cards === '#/quadras#alpha,#/quadras#beta,#/quadras#gamma,#/quadras#delta' && home.types === 16, JSON.stringify(home));
     const orbit = await b.eval(() => {
-      const em = document.querySelector('.stack-card .qm');
+      const em = document.querySelector('.stack-card .qorbit');
+      const items = em ? Array.from(em.querySelectorAll('.qo-item')) : [];
       const r = em ? em.getBoundingClientRect() : { width: 0, height: 0 };
-      return { syms: em ? em.querySelectorAll('svg.sym').length : 0, imgs: document.querySelectorAll('.stack-card img').length, w: Math.round(r.width), h: Math.round(r.height), label: em ? em.getAttribute('aria-label') : '' };
+      return { items: items.length, abs: items.length > 0 && items.every(i => getComputedStyle(i).position === 'absolute'), w: Math.round(r.width), h: Math.round(r.height) };
     });
-    check('знак квадры в стопке — плоский, 4 знака ценностей, квадратный, без картинок', orbit.syms === 4 && orbit.imgs === 0 && orbit.w > 100 && Math.abs(orbit.w - orbit.h) <= 2 && /ценности/.test(orbit.label), JSON.stringify(orbit));
+    check('эмблема квадры в стопке — квадратная орбита из 4 знаков', orbit.items === 4 && orbit.abs && orbit.w > 100 && Math.abs(orbit.w - orbit.h) <= 2, JSON.stringify(orbit));
     const mag = await b.eval(async () => {
       scrollTo(0, 0);
       const z = document.querySelector('.hero [data-magnet]');
@@ -515,13 +503,13 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     }
     check('до теста после перезагрузки — снова тайный тип, его картинка грузится заранее', heroes.every(h => h === 'mystery:true'), heroes.join(' → '));
     const tileNav = await b.eval(async () => {
-      const a = document.querySelector('.stack-card .qc-type');
+      const a = document.querySelector('.mq-copy:not([inert]) .mq-tile');
       const href = a.getAttribute('href');
       a.click();
       await new Promise(r => setTimeout(r, 900));
       return { href, hash: location.hash, view: document.body.dataset.view };
     });
-    check('плитка в стопке квадр открывает страницу типа', tileNav.hash === tileNav.href && tileNav.view === 'type', JSON.stringify(tileNav));
+    check('плитка ленты открывает страницу типа', tileNav.hash === tileNav.href && tileNav.view === 'type', JSON.stringify(tileNav));
     await b.eval(`localStorage.setItem('socio.result', ${JSON.stringify(savedResult)})`);
     await go('#/', 1200);
     const mineHero = await b.eval(`({ cta: document.querySelector('.hero-actions .btn').getAttribute('href'), ctaText: document.querySelector('.hero-actions .btn').textContent.trim(),
@@ -530,13 +518,13 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       hero: document.documentElement.dataset.hero, next: Boolean(document.querySelector('.hero-next')), bubble: (document.querySelector('[data-hero-bubble]') || {}).textContent || '',
       map: (document.querySelector('#rel [data-relmap]') || {}).dataset ? document.querySelector('#rel [data-relmap]').dataset.relmap : '',
       share: Boolean(document.querySelector('#share .share-phone canvas')), box: Boolean(document.querySelector('.home-box [data-box]')),
-      you: document.querySelectorAll('.qc-me').length, firstQuadra: (document.querySelector('.stack-card') || {}).getAttribute ? document.querySelector('.stack-card .qc-you') !== null : false,
+      you: document.querySelectorAll('.mq-you').length, firstQuadra: (document.querySelector('.stack-card') || {}).getAttribute ? document.querySelector('.stack-card .qc-you') !== null : false,
       mineStored: localStorage.getItem('socio.mine') })`);
     check('после теста: «Привет, <твой тип>», твой персонаж, «Поделиться результатом» и шаги «Про мой тип · Мои отношения · Пройти заново»',
       mineHero.title === `Привет, ${mineHero.short}` && mineHero.hero === mineHero.mine && !mineHero.next && mineHero.cta === '#/#share' && mineHero.ctaText === 'Поделиться результатом' &&
       mineHero.steps.join() === `#/types/${mineHero.mine},#/#rel` && mineHero.bubble.length > 5, JSON.stringify(mineHero));
-    check('после теста главная про тебя: карта отношений, картинка для шера, факты про тип, «ты» в стопке и своя квадра первой',
-      mineHero.map === mineHero.mine && mineHero.share && mineHero.box && mineHero.you === 1 && mineHero.firstQuadra && mineHero.mineStored === JSON.stringify(mineHero.mine), JSON.stringify(mineHero));
+    check('после теста главная про тебя: карта отношений, картинка для шера, факты про тип, «ты» в ленте и своя квадра первой',
+      mineHero.map === mineHero.mine && mineHero.share && mineHero.box && mineHero.you === 3 && mineHero.firstQuadra && mineHero.mineStored === JSON.stringify(mineHero.mine), JSON.stringify(mineHero));
     const p1 = await b.eval(async () => {
       const sleep = ms => new Promise(r => setTimeout(r, ms));
       // «К содержимому»: фокус на main, адрес и экран не меняются
@@ -549,9 +537,9 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       while (app.firstChild) keep.appendChild(app.firstChild);
       const empty = { h: Math.round(app.getBoundingClientRect().height), vh: innerHeight, footer: Math.round(document.querySelector('.footer').getBoundingClientRect().top + scrollY) };
       app.appendChild(keep);
-      // контраст: строка подвала, «Твоя квадра», подписи на плитках стопки квадр
+      // контраст: строка подвала, «Твоя квадра», подписи на плитках ленты
       const qc = document.querySelector('.qc-you'), cs = qc ? getComputedStyle(qc) : null;
-      const contrast = { fine: getComputedStyle(document.querySelector('.footer-fine')).color, qc: cs ? cs.color : '', qcPx: cs ? parseFloat(cs.fontSize) : 0, role: getComputedStyle(document.querySelector('.stack-card .qc-alias')).color };
+      const contrast = { fine: getComputedStyle(document.querySelector('.footer-fine')).color, qc: cs ? cs.color : '', qcPx: cs ? parseFloat(cs.fontSize) : 0, role: getComputedStyle(document.querySelector('.mq-role')).color };
       return { skip, empty, contrast };
     });
     check('«К содержимому» ставит фокус на содержимое и не открывает «Тут пусто»', p1.skip.after === p1.skip.before && p1.skip.view === 'home' && p1.skip.focus === 'app', JSON.stringify(p1.skip));
@@ -575,7 +563,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       const nodes = box.querySelectorAll('.rm-node').length;
       const rows = Array.from(box.querySelectorAll('.rm-row')).map(r => r.querySelector('.rm-lab b').textContent + ':' + r.querySelectorAll('.rm-node').length).join();
       const first = box.querySelector('.rd-title').textContent, rd0 = box.querySelector('.rd');
-      const quiet = { imgs: box.querySelectorAll('img').length, marks: box.querySelectorAll('.rm-orb.tm b').length, emoji: box.querySelectorAll('img[src*="emotes/"]').length, duo: Boolean(box.querySelector('.rd-duo, .duo')), orbits: box.querySelectorAll('.rm-stage svg, .rm-ring, .rm-beam').length,
+      const quiet = { emoji: box.querySelectorAll('img[src*="emotes/"]').length, duo: Boolean(box.querySelector('.rd-duo, .duo')), orbits: box.querySelectorAll('.rm-stage svg, .rm-ring, .rm-beam').length,
         panel: getComputedStyle(rd0).borderTopColor, kicker: Boolean(box.querySelector('.rd-kicker')), who: (box.querySelector('.rd-who') || {}).textContent || '' };
       const firstOn = box.querySelector('.rm-node.is-on');
       const dualRing = firstOn && firstOn.classList.contains('t-support');
@@ -598,10 +586,10 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     check('отношения типа: три строки «Легко / Ровно / Непросто» по 5 типов, сначала выбран дуал', rmap.nodes === 15 && rmap.rows === 'Легко:5,Ровно:5,Непросто:5' && rmap.first === 'Дуальные отношения' && rmap.dualRing, JSON.stringify(rmap));
     check('нажатие на тип открывает разбор пары, вкладка «Как ладить» сохраняется, стрелка вверх — в строку выше',
       rmap.after === 'Конфликтные отношения' && rmap.link === '#/relations/esi/ile#tips' && rmap.tabKept && Number(rmap.keyed) === Number(rmap.conflictI) - 5, JSON.stringify(rmap));
-    check('просто и тихо: марки с кодами вместо аватаров, без картинок, орбит, лучей и сцены пары; рамка панели нейтральная, без надзаголовка',
-      rmap.quiet.imgs === 0 && rmap.quiet.marks === 15 && rmap.quiet.emoji === 0 && !rmap.quiet.duo && rmap.quiet.orbits === 0 && rmap.quiet.panel === 'rgba(215, 226, 234, 0.15)' && !rmap.quiet.kicker && /«/.test(rmap.quiet.who), JSON.stringify(rmap.quiet));
+    check('просто и тихо: без орбит, лучей, 3D-символов и сцены пары; рамка панели нейтральная, без надзаголовка',
+      rmap.quiet.emoji === 0 && !rmap.quiet.duo && rmap.quiet.orbits === 0 && rmap.quiet.panel === 'rgba(215, 226, 234, 0.15)' && !rmap.quiet.kicker && /«/.test(rmap.quiet.who), JSON.stringify(rmap.quiet));
 
-    // ---------- «Отношения»: тип в центре меняется выбором и кнопкой «Карта …»; пара в калькуляторе — плоская ----------
+    // ---------- «Отношения»: тип в центре меняется выбором и кнопкой «Карта …»; пары в калькуляторе играют сцены ----------
     await go('#/relations', 1400);
     const refocus = await b.eval(async () => {
       const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -620,13 +608,13 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       for (const [x, y] of [['ile', 'sei'], ['ile', 'esi'], ['ile', 'eii'], ['ile', 'lse']]) {
         a.value = x; bb.value = y; bb.dispatchEvent(new Event('change'));
         await sleep(60);
-        const d = calc.querySelector('.pm');
-        acts.push((d.className.match(/t-[a-z]+/) || [''])[0] + ':' + d.querySelectorAll('.tm b').length + ':' + calc.querySelectorAll('.calc-out img').length);
+        const d = calc.querySelector('.duo');
+        acts.push((d.className.match(/act-[a-z]+/) || [''])[0] + ':' + d.querySelectorAll('.fx').length);
       }
       return { viaSelect, partner, center: box.dataset.relmap, selValue: sel.value, acts: acts.join(' ') };
     });
     check('«Отношения»: выбор типа перестраивает строки, кнопка «Отношения …» — показывает партнёра', refocus.viaSelect === 'lsi:15' && refocus.center === refocus.partner && refocus.selValue === refocus.partner, JSON.stringify(refocus));
-    check('калькулятор: пара плоско — две марки и линия цветом тона (дуал, конфликт, ревизия, заказ), без картинок', refocus.acts === 't-support:2:0 t-tense:2:0 t-tense:2:0 t-work:2:0', refocus.acts);
+    check('калькулятор: пары разыгрывают отношение — дуал, конфликт, ревизия, заказ', refocus.acts === 'act-dual:3 act-conflict:1 act-supervision:2 act-request:2', refocus.acts);
     const fitDesk = await b.eval(async () => {
       const box = document.querySelector('.relmap'), nav = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h'));
       scrollTo(0, box.getBoundingClientRect().top + scrollY - nav - 8);
@@ -679,7 +667,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
         real: cols[0] ? cols[0].querySelectorAll('.celeb .celeb-ava:not(.fic)').length : 0,
         fic: cols[1] ? cols[1].querySelectorAll('.celeb .celeb-ava.fic').length : 0,
         disc: /не диагноз/.test((box.querySelector('.celeb-disc') || {}).textContent || ''),
-        icons: new Set(Array.from(box.querySelectorAll('.celeb-ava svg.celeb-ic')).map(i => i.innerHTML)).size,
+        icons: new Set(Array.from(box.querySelectorAll('.celeb-ava img.celeb-ic')).filter(i => i.complete && i.naturalWidth > 0).map(i => i.getAttribute('src'))).size,
         visible: Array.from(box.querySelectorAll('.celeb-ava')).every(a => getComputedStyle(a).opacity === '1')
       };
       location.hash = '#/result';
@@ -699,7 +687,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       res.shared = (document.querySelector('.celeb-line') || {}).getAttribute ? document.querySelector('.celeb-line').getAttribute('href') : null;
       return res;
     });
-    check('страница типа: 3 человека и 3 персонажа с похожим типом, у каждого своя линейная иконка, и оговорка', cel.real === 3 && cel.fic === 3 && cel.icons === 6 && cel.disc && cel.visible, JSON.stringify(cel));
+    check('страница типа: 3 человека и 3 персонажа с похожим типом, у каждого своя иконка, и оговорка', cel.real === 3 && cel.fic === 3 && cel.icons === 6 && cel.disc && cel.visible, JSON.stringify(cel));
     check('результат: строчка «Похожий тип — у знаменитостей» ведёт к списку на странице типа',
       cel.line === `#/types/${cel.mine}#celebs` && /^Похожий тип — у знаменитостей .+ и ещё 3$/.test(cel.lineText) && cel.after && cel.after.top !== null && cel.after.top < 200, JSON.stringify(cel));
     check('страница по ссылке: та же строчка для чужого типа', cel.shared === '#/types/iee#celebs', String(cel.shared));
@@ -720,7 +708,7 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
         qs: document.querySelectorAll('.pr-q').length, badges: Array.from(document.querySelectorAll('.pr-badge')).map(x => x.textContent.trim()),
         side: Array.from(document.querySelectorAll('.pr-side a')).map(a => a.getAttribute('href')),
         send: Boolean(document.querySelector('[data-sk="send"]')), toc: document.querySelectorAll('.pr-toc a').length,
-        imgs: document.querySelectorAll('.pr-zone .am .sym').length, pics: Array.from(document.querySelectorAll('#app img')).filter(i => !i.closest('.pair-hero')).length,
+        imgs: Array.from(document.querySelectorAll('.pr-asp')).length,
         how: document.querySelectorAll('.pr-how-row').length, gives: document.querySelectorAll('.pr-gives > div').length,
         stages: document.querySelectorAll('.pr-stages li').length, ctx: document.querySelectorAll('.pr-ctx-card').length,
         pm: document.querySelectorAll('.pr-pm-col li').length, tips: document.querySelectorAll('.pr-tip').length,
@@ -749,8 +737,8 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
       return { folds: f.length, open: f.filter(x => x.open).length, more: Boolean(document.querySelector('.pr-tips-more')), top: Boolean(s), label: s ? s.textContent.replace(/\\s+/g, ' ').trim() : '' }; })()`);
     check('пара, компьютер: блоки «Об отношениях» раскрыты, все советы видны сразу, «Отправить» есть и наверху',
       prWide.folds >= 5 && prWide.open === prWide.folds && !prWide.more && prWide.top && /Отправить ЛИЭ/.test(prWide.label), JSON.stringify(prWide));
-    check('пара: неделя из жизни, 8 сфер с плоскими знаками и бейджами, 3 фразы, 6 вопросов, две стороны и отправка партнёру; 3D — только пара в герое',
-      pr.zones === 8 && pr.imgs === 8 && pr.pics === 0 && pr.story === 2 && pr.scripts === 3 && pr.qs === 6 && pr.badges.length === 8 && pr.badges.every(Boolean) &&
+    check('пара: неделя из жизни, 8 сфер со знаками и бейджами, 3 фразы, 6 вопросов, две стороны и отправка партнёру',
+      pr.zones === 8 && pr.imgs === 8 && pr.story === 2 && pr.scripts === 3 && pr.qs === 6 && pr.badges.length === 8 && pr.badges.every(Boolean) &&
       pr.side[1] === '#/relations/lie/esi' && pr.send && pr.toc === 4, JSON.stringify(pr));
     check('пара: оглавление ведёт к разделу, «попробовали» отмечается и считается, вопросы листаются',
       pr.tocTop >= -5 && pr.tocTop < 160 && pr.pressed === 'true' && /Попробовали 1 из 8/.test(pr.progress) && /^2 из 6$/.test(pr.qn) && pr.qVisible === 1, JSON.stringify(pr));
@@ -1234,6 +1222,86 @@ const ROUTES = ['#/', '#/test', '#/result', '#/types', '#/types/esi', '#/quadras
     });
     check('меню на телефоне: страница под ним выключена (inert), Esc закрывает и возвращает фокус на кнопку',
       menu.open.exp === 'true' && menu.open.inert === true && menu.open.label === 'Закрыть меню' && menu.exp === 'false' && menu.inert === false && menu.focus, JSON.stringify(menu));
+
+    // ---------- компьютер и телефон: на компьютере полные 3D-иллюстрации, на телефоне упрощённая версия (html.flat) ----------
+    const mqSame = (() => {
+      const head = (fs.readFileSync(path.join(SITE, 'index.html'), 'utf8').match(/matchMedia\('([^']+)'\)/) || [])[1];
+      const ui = (fs.readFileSync(path.join(SITE, 'js', 'ui', 'components.js'), 'utf8').match(/ui\.RICH_MQ = '([^']+)'/) || [])[1];
+      return { head, ui, same: Boolean(head) && head === ui };
+    })();
+    check('граница компьютер / телефон задана одной строкой в <head> и в ui.RICH_MQ', mqSame.same, JSON.stringify(mqSame));
+    // 3D-картинки вне первых экранов: персонаж в героях, пара в герое страницы пары и подарок на #/box — можно, остальное нет
+    const STRAY_3D = `Array.from(document.querySelectorAll('#app img')).filter(i => /img\\/(types|mystery|aspects|emotes|celebs|q|scale|logo|box)\\//.test(i.getAttribute('src') || '')
+      && !i.closest('section[data-hero], .res-hero, .type-hero, .sh-hero, .pair-hero, .lost-hero, .box-stage')).map(i => i.getAttribute('src').replace(/^.*img\\//, ''))`;
+    await b.viewport(390, 844, { mobile: true, scale: 2 });
+    await b.goto(BASE + '#/');
+    await b.sleep(800);
+    await b.eval(`(localStorage.clear(), Socio.debug.answerAll('esi'), 1)`);
+    await b.sleep(600);
+    const flatRoute = async (hash, expr) => {
+      await b.eval(`location.hash = ${JSON.stringify(hash)}`);
+      await b.reload();
+      await b.sleep(1400);
+      return b.eval(`(async () => { const sleep = ms => new Promise(r => setTimeout(r, ms));
+        for (let y = 0; y < document.documentElement.scrollHeight; y += innerHeight) { scrollTo(0, y); await sleep(60); }
+        scrollTo(0, 0);
+        const out = { flat: document.documentElement.classList.contains('flat'), stray: ${STRAY_3D} };
+        Object.assign(out, await (${expr})());
+        return out; })()`);
+    };
+    const ph = {};
+    ph.home = await flatRoute('#/', `async () => {
+      const box = document.querySelector('[data-box]'), back = box.querySelector('.bx-back');
+      const before = { gift: box.querySelectorAll('.bx').length, label: back.getAttribute('aria-label') || '', imgs: box.querySelectorAll('img').length };
+      back.click(); await new Promise(r => setTimeout(r, 1100));
+      const card = box.querySelector('.bx-card');
+      return { marquee: Boolean(document.querySelector('[data-marquee]')), marks: document.querySelectorAll('#rel .rm-orb.tm').length,
+        stackQm: document.querySelectorAll('.stack-card .qm').length, stackArt: document.querySelectorAll('.qc-art').length, corners: document.querySelectorAll('.soc-g').length,
+        logoBg: getComputedStyle(document.querySelector('.brand-mark i')).backgroundImage, logo: new Set(Array.from(document.querySelectorAll('.brand-mark i')).map(i => getComputedStyle(i).backgroundColor)).size,
+        share: document.querySelectorAll('[data-share] .share-fx').length,
+        deck: { ...before, flipped: box.querySelector('.bx-slot').classList.contains('flipped'), mark: (card.querySelector('.fc-ava b') || {}).textContent || '', cardImgs: card.querySelectorAll('img').length } }; }`);
+    ph.result = await flatRoute('#/result', `async () => ({ poleImgs: document.querySelectorAll('.sc-pole img, .sc-knob img').length, quadra: Boolean(document.querySelector('.lc-art .qm')),
+      dual: Boolean(document.querySelector('.lc-art .tm')), share: document.querySelectorAll('.share-fx').length, calc: Boolean(document.querySelector('.calc-duo .pm')) })`);
+    ph.types = await flatRoute('#/types', `async () => ({ sym: document.querySelectorAll('.tcard-sym').length, art: document.querySelectorAll('.tcard-art').length })`);
+    ph.type = await flatRoute('#/types/esi', `async () => ({ ma: document.querySelectorAll('[data-fn] .am').length, celebs: document.querySelectorAll('.celeb-ava svg.celeb-ic').length })`);
+    ph.quadras = await flatRoute('#/quadras', `async () => ({ qm: document.querySelectorAll('.quadra-art .qm').length, orbit: document.querySelectorAll('.qorbit').length })`);
+    ph.relations = await flatRoute('#/relations', `async () => ({ kindImgs: document.querySelectorAll('.kinds img').length, calc: Boolean(document.querySelector('.calc-duo .pm')), list: document.querySelectorAll('.mlist-out .rl-ava.tm').length })`);
+    ph.pair = await flatRoute('#/relations/esi/lie', `async () => ({ zones: document.querySelectorAll('.pr-zone .am').length, ctx: document.querySelectorAll('.pr-ctx-ic').length,
+      duo: document.querySelectorAll('.pair-hero .duo img.char').length, fx: document.querySelectorAll('.duo-fx').length })`);
+    ph.box = await flatRoute('#/box', `async () => ({ gift: document.querySelectorAll('.box-stage .bx-img').length, moons: document.querySelectorAll('.bx-moon').length, pop: document.querySelectorAll('.bx-pop').length })`);
+    ph.about = await flatRoute('#/about', `async () => ({ aspects: document.querySelectorAll('.aspect .am').length })`);
+    ph.notfound = await flatRoute('#/nope', `async () => ({ char: document.querySelectorAll('.lost-char').length })`);
+    ph.passed = await flatRoute('#/test', `async () => ({ mark: (document.querySelector('.tp-char .tm b') || {}).textContent || '' })`);
+    await b.eval(`(localStorage.clear(), 1)`);
+    ph.shared = await flatRoute('#/r/1-97-96-4-4', `async () => ({ ask: Boolean(document.querySelector('.sh-pair .pm-ask')), mystery: Boolean(document.querySelector('.duo-mystery')) })`);
+    ph.test = await flatRoute('#/test', `async () => ({ cards: document.querySelectorAll('.q-card').length, imgs: document.querySelectorAll('.q-stage img, .t-ring img').length, slot: document.querySelectorAll('.slot-code').length })`);
+    const strayAll = Object.entries(ph).filter(([, v]) => !v.flat || v.stray.length).map(([k, v]) => `${k}: ${v.flat ? v.stray.slice(0, 3).join(', ') : 'нет flat'}`);
+    check('телефон, все страницы: упрощённая версия — 3D только в героях, паре и подарке', strayAll.length === 0, strayAll.join(' | '));
+    check('телефон, главная: ленты и стихий по углам нет, «С кем легко» — марки, квадры — плоские знаки, логотип — плоские круги, у шера без символов',
+      !ph.home.marquee && ph.home.marks === 15 && ph.home.stackQm === 4 && ph.home.stackArt === 0 && ph.home.corners === 0 && ph.home.logoBg === 'none' && ph.home.logo === 4 && ph.home.share === 0, JSON.stringify(ph.home));
+    check('телефон, главная: факты — одна карта без подарка, открывается нажатием, у факта марка типа',
+      ph.home.deck.gift === 0 && /факт/i.test(ph.home.deck.label) && ph.home.deck.imgs === 0 && ph.home.deck.flipped && ph.home.deck.mark === 'ЭСИ' && ph.home.deck.cardImgs === 0, JSON.stringify(ph.home.deck));
+    check('телефон, результат: шкалы без картинок, квадра и дуал — плоские знаки, калькулятор — две марки',
+      ph.result.poleImgs === 0 && ph.result.quadra && ph.result.dual && ph.result.share === 0 && ph.result.calc, JSON.stringify(ph.result));
+    check('телефон: «Все типы» без бюстов, «Как устроен тип» и «О соционике» — плоские знаки, знаменитости — линейные иконки, квадры без орбит',
+      ph.types.sym === 16 && ph.types.art === 0 && ph.type.ma === 8 && ph.type.celebs === 6 && ph.about.aspects === 8 && ph.quadras.qm === 4 && ph.quadras.orbit === 0, JSON.stringify({ types: ph.types, type: ph.type, about: ph.about, quadras: ph.quadras }));
+    check('телефон, отношения и пара: «14 видов» без картинок, список и калькулятор — марки; в паре плоские знаки сфер, линейные иконки, персонажи в герое без символов',
+      ph.relations.kindImgs === 0 && ph.relations.calc && ph.relations.list === 16 && ph.pair.zones === 8 && ph.pair.ctx === 3 && ph.pair.duo === 2 && ph.pair.fx === 0, JSON.stringify({ rel: ph.relations, pair: ph.pair }));
+    check('телефон: #/box — подарок без летающих символов и персонажа; 404 без персонажа; «Тест уже пройден» — марка; чужая ссылка — кружок «?»; тест без картинок',
+      ph.box.gift === 2 && ph.box.moons === 0 && ph.box.pop === 0 && ph.notfound.char === 0 && ph.passed.mark === 'ЭСИ' && ph.shared.ask && !ph.shared.mystery && ph.test.cards === 2 && ph.test.imgs === 0 && ph.test.slot === 1,
+      JSON.stringify({ box: ph.box, nf: ph.notfound, passed: ph.passed, shared: ph.shared, test: ph.test }));
+    // окно растянули до компьютера и сузили обратно — страница перерисовывается сама, без перезагрузки
+    await b.eval(`(Socio.debug.answerAll('esi'), location.hash = '#/types', 1)`);
+    await b.sleep(900);
+    await b.viewport(1280, 900);
+    await b.sleep(900);
+    const wide = await b.eval(`({ flat: document.documentElement.classList.contains('flat'), art: document.querySelectorAll('.tcard-art img').length, sym: document.querySelectorAll('.tcard-sym').length, view: document.body.dataset.view })`);
+    await b.viewport(390, 844, { mobile: true, scale: 2 });
+    await b.sleep(900);
+    const narrow = await b.eval(`({ flat: document.documentElement.classList.contains('flat'), art: document.querySelectorAll('.tcard-art img').length, sym: document.querySelectorAll('.tcard-sym').length })`);
+    check('окно шире 768 px с мышью — 3D, уже — плоско; переход перерисовывает страницу на месте',
+      !wide.flat && wide.art === 16 && wide.sym === 0 && wide.view === 'types' && narrow.flat && narrow.art === 0 && narrow.sym === 16, JSON.stringify({ wide, narrow }));
+    await b.viewport(1280, 900);
 
     check('ошибок JS за весь прогон нет', b.errors.length === 0, b.errors.slice(0, 5).join(' | '));
   } catch (e) {

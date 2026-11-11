@@ -1,8 +1,9 @@
 /* Socio-Nik · главная. Новому человеку: герой «Привет, кто ты?» с тайным типом — силуэтом с «?» вместо лица
-   (твой тип пока скрыт, тест его откроет), «Соционика», белая «Что внутри», стопка квадр со всеми 16 типами.
+   (твой тип пока скрыт, тест его откроет), на компьютере лента 16 типов, «Соционика», белая «Что внутри», стопка квадр.
    После теста страница подстраивается под тип: «Привет, Драйзер», твой персонаж и три шага — про тип, твои
    отношения (три строки «легко / ровно / непросто» прямо тут), поделиться картинкой; дальше факты про твой тип
-   и квадры, начиная с твоей. 3D — только персонаж в герое, ниже всё плоское. Шапка — общая для всех страниц (index.html). */
+   (на компьютере ещё лента с отметкой «ты») и квадры, начиная с твоей. На телефоне 3D — только персонаж в герое,
+   ниже всё плоское и ленты нет. Шапка — общая для всех страниц (index.html). */
 (function (root) {
   const S = root.Socio;
   const V = S.views = S.views || {};
@@ -139,10 +140,32 @@
     };
   }
 
-  // ---------- «Соционика»: короткий текст и кнопка ----------
+  // ---------- лента 16 типов (компьютер) ----------
+  function marquee() {
+    const qs = S.data.quadras;
+    const rows = [[qs[0], qs[1]], [qs[2], qs[3]]].map(pair => pair.flatMap(q => ui.typesOf(q.id)));
+    const mine = S.state.myType();
+    const tile = (t, live) => `<a class="mq-tile${t.id === mine ? ' is-you' : ''}" href="#/types/${t.id}" style="${ui.qStyle(t.quadra)}"${live ? '' : ' tabindex="-1"'}>
+        ${t.id === mine ? '<span class="mq-you">Ты</span>' : ''}<span class="mq-text"><span class="mq-code">${t.code}</span><span class="mq-alias">${esc(t.alias)}</span><span class="mq-role">${esc(t.role)} · ${ui.quadra(t.quadra).name}</span></span>
+        ${ui.character(t, { sizes: ui.CHAR.tile, alt: '', cls: 'mq-img' })}
+      </a>`;
+    const copy = (row, live) => `<div class="mq-copy"${live ? '' : ' inert aria-hidden="true"'}>${row.map(t => tile(t, live)).join('')}</div>`;
+    return `
+      <section class="mq-sec" data-marquee aria-labelledby="mq-h">
+        <div class="wrap mq-head reveal">
+          <h2 class="caption" id="mq-h">16 типов · 4 квадры</h2>
+          <a class="link" href="#/types">Все типы</a>
+        </div>
+        ${rows.map(row => `<div class="mq-row"><div class="mq-track">${copy(row, false)}${copy(row, true)}${copy(row, false)}</div></div>`).join('')}
+      </section>`;
+  }
+
+  // ---------- «Соционика»: короткий текст и кнопка; на компьютере — четыре стихии по углам ----------
+  const CORNERS = [['Se', 'beta', 'tl', -1, -1], ['Ni', 'gamma', 'tr', 1, -1], ['Ti', 'alpha', 'bl', -1, 1], ['Fe', 'delta', 'br', 1, 1]];
   function socionics() {
     return `
       <section class="sec soc-sec">
+        ${ui.rich() ? CORNERS.map(([a, q, pos, sx, sy], i) => `<span class="soc-g soc-${pos} reveal" data-anim style="--fx:${sx * 90}px;--fy:${sy * 30}px;--d:${(i * 0.08).toFixed(2)}s" aria-hidden="true"><span class="soc-float">${S.art.aspectImg(a, q, 'soc-img', { sizes: '(max-width: 600px) 96px, (min-width: 1563px) 250px, 16vw' })}</span></span>`).join('') : ''}
         <div class="wrap center soc-in">
           <h2 class="h2 soc-h reveal"><span class="sv">Соционика</span></h2>
           <p class="soc-text reveal">Соционика описывает 16${NB}типов: как человек замечает мир, принимает решения и${NB}с${NB}кем ему легко. Это не${NB}диагноз и${NB}не${NB}гороскоп, а${NB}язык, на${NB}котором проще понимать себя и${NB}близких. Двадцать вопросов — и${NB}узнаешь свой тип.</p>
@@ -192,13 +215,14 @@
           </header>
           <div class="qc-grid">
             <div class="qc-left">
-              <div class="qc-em">${ui.quadraMark(q)}</div>
+              ${ui.rich() ? `<div class="qc-em" data-anim>${S.art.quadraEmblem(q)}</div>` : `<div class="qc-em">${ui.quadraMark(q)}</div>`}
               <div class="qc-vals"><p class="caption">Ценит</p>
                 <ul>${q.values.map(v => `<li>${S.art.symbol(v)}<span>${esc(S.data.aspects[v].name)}</span></li>`).join('')}</ul>
               </div>
             </div>
             <ul class="qc-types">${ui.typesOf(q.id).map(t => `
               <li><a class="qc-type${t.id === you ? ' is-you' : ''}" href="#/types/${t.id}">
+                ${ui.rich() ? `<span class="qc-art">${ui.character(t, { sizes: ui.CHAR.tile, alt: '' })}</span>` : ''}
                 <span class="qc-code">${t.code}</span><span class="qc-alias">${esc(t.alias)}</span>${t.id === you ? '<span class="qc-me">Ты</span>' : ''}
               </a></li>`).join('')}</ul>
           </div>
@@ -249,8 +273,8 @@
     render: () => {
       const mine = mineType();
       return mine
-        ? hero(heroType()) + yours(mine) + quadras(mine)
-        : hero(heroType()) + socionics() + inside() + quadras(null);
+        ? hero(heroType()) + yours(mine) + (ui.rich() ? marquee() : '') + quadras(mine)
+        : hero(heroType()) + (ui.rich() ? marquee() : '') + socionics() + inside() + quadras(null);
     },
     mount: root => {
       const offs = [mountHero(root)];

@@ -176,15 +176,18 @@
       </div>`;
   };
 
-  // ---------- результат: превью картинки в плоской рамке + кнопки ----------
+  // ---------- результат: превью в 3D-«телефоне» с символами (компьютер) или в плоской рамке (телефон) + кнопки ----------
   ui.resultShare = (axes, { id = 'share', title = 'Покажи друзьям, кто ты' } = {}) => {
     const res = S.core.scoring.result(axes), t = M().type(res.top.id);
+    const rich = ui.rich(), fx = ['sparkles', 'heart', 'puzzle'];
     return `
       <section class="sec share-sec" id="${id}" style="${ui.qStyle(t.quadra)}">
         <div class="wrap">
           <div class="share" data-share>
-            <div class="share-stage reveal">
+            <div class="share-stage reveal"${rich ? ' data-anim' : ''}>
+              ${rich ? '<span class="share-glow" aria-hidden="true"></span>' : ''}
               <div class="share-phone"><canvas class="share-canvas" width="1080" height="1920" role="img" aria-label="Картинка для сторис: ${esc(`${t.code} «${t.alias}», ${t.role.toLowerCase()}`)}"></canvas></div>
+              ${rich ? fx.map((k, i) => `<img class="share-fx share-fx-${i + 1}" src="${ui.emoteSrc(k)}" alt="" aria-hidden="true" width="100" height="100">`).join('') : ''}
             </div>
             <div class="share-side reveal" style="--i:1">
               <p class="eyebrow">Поделиться результатом</p>

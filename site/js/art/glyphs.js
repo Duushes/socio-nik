@@ -133,7 +133,13 @@
     return `<svg class="${cls}" viewBox="0 0 20 20" aria-hidden="true" focusable="false">${shape}</svg>`;
   };
 
-  // Объёмные векторные знаки выше нужны только canvas-картинкам для шера; на страницах — плоский art.symbol.
+  // Отрисованный знак для компьютера (рендер в стиле персонажей); на телефоне — плоский art.symbol (ui.aspectMark): img/aspects/<аспект>-<оттенок>.webp, оттенок — id квадры или violet.
+  // Векторные знаки выше остаются для canvas (картинки для шера): растровый файл с file:// «пачкает» canvas.
+  art.aspectSrc = (id, tint) => `img/aspects/${id}-${tint}.webp`;
+  // 320 и 640 px: браузер берёт ту, что не мылится при этой ширине и плотности экрана; sizes — сколько знак занимает на экране
+  art.aspectImg = (id, tint, cls = 'asp', { eager = false, sizes = '128px' } = {}) =>
+    `<img class="${cls}" src="${art.aspectSrc(id, tint)}" srcset="${art.aspectSrc(id, tint)} 320w, img/aspects/${id}-${tint}-640.webp 640w" sizes="${sizes}" width="320" height="320" alt=""${eager ? '' : ' loading="lazy"'} decoding="async" draggable="false">`;
+
   art.glyph = glyph;
   art.glyphOf = glyphOf;
   art.D = D;

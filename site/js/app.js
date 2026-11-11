@@ -249,6 +249,18 @@
     addEventListener('hashchange', () => render());
     addEventListener('pagehide', keepScrolls);
     addEventListener('scroll', () => document.body.classList.toggle('scrolled', scrollY > 8), { passive: true });
+    // Компьютер ↔ телефон: окно растянули или сузили через границу (или подключили мышь к планшету) — меняем класс flat
+    // и перерисовываем страницу на месте: 3D-иллюстрации и плоские марки рисуются разной разметкой (ui.rich)
+    if (root.matchMedia) {
+      const mq = root.matchMedia(S.ui.RICH_MQ), de = document.documentElement;
+      de.classList.toggle('flat', !mq.matches);
+      const onMode = () => {
+        if (de.classList.contains('flat') === !mq.matches) return;
+        de.classList.toggle('flat', !mq.matches);
+        render({ instant: true, keepScroll: true });
+      };
+      if (mq.addEventListener) mq.addEventListener('change', onMode); else if (mq.addListener) mq.addListener(onMode);
+    }
     render({ instant: true });
   }
 

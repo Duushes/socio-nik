@@ -1388,7 +1388,9 @@ html.sheet-open { overflow: hidden; }
 .t-undo button { min-height: 44px; padding: 0 18px; border: 0; border-radius: var(--r-pill); background: var(--paper); color: var(--ink); font: inherit; font-weight: 800; cursor: pointer; }
 @media (max-width: 639px) { .t-undo { position: fixed; top: auto; bottom: calc(18px + env(safe-area-inset-bottom)); } }
 .test-passed .test-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-.tp-char { margin-bottom: 14px; }
+.tp-char { width: min(240px, 46vw, 28vh); margin-bottom: 8px; }
+.tp-char img { display: block; width: 100%; height: auto; }
+.flat .tp-char { width: auto; margin-bottom: 14px; }
 .tp-char .tm { --pm: clamp(88px, 12vw, 112px); }
 .tp-title { margin: 6px 0 12px; }
 .tp-lead { max-width: 30em; margin: 0 auto 24px; }
@@ -1417,20 +1419,23 @@ html.sheet-open { overflow: hidden; }
   .rd-tip b { color: var(--paper); font-weight: 700; }
 }
 
-/* «14 видов»: три группы по тону; вид — строка с названием, описание раскрывается */
+/* «14 видов»: три группы по тону; вид — строка с символом (на телефоне — без), описание раскрывается */
 .kinds-group { margin-top: clamp(26px, 4vw, 44px); }
 .kinds-h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 0 0 12px; color: var(--muted); font-size: var(--fs-lg); font-weight: 500; line-height: 1.4; }
 .kinds { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 @media (min-width: 900px) { .kinds { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
 .kinds > li.kind { display: block; padding: 0; border: 1.5px solid var(--line); border-radius: var(--r-in); }
-.kind details summary { display: grid; grid-template-columns: minmax(0, 1fr) 22px; align-items: center; gap: 14px; margin: 0; padding: 14px 16px; list-style: none; font-size: inherit; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.kind details summary { display: grid; grid-template-columns: 48px minmax(0, 1fr) 22px; align-items: center; gap: 14px; margin: 0; padding: 14px 16px; list-style: none; font-size: inherit; font-weight: 400; letter-spacing: 0; text-transform: none; }
 .kind details summary::-webkit-details-marker { display: none; }
+.flat .kind details summary { grid-template-columns: minmax(0, 1fr) 22px; }
+.kind-em { width: 48px; height: 48px; object-fit: contain; }
 .kind-t { display: grid; gap: 4px; min-width: 0; }
 .kind-t b { font-size: clamp(1rem, 1.5vw, 1.2rem); font-weight: 800; line-height: 1.15; letter-spacing: -0.005em; text-transform: uppercase; }
 .kind-t span { color: var(--muted); font-size: var(--fs-lg); line-height: 1.45; }
 @media (max-width: 767px) { .kind-t span { font-size: var(--fs-md); } }
 .kind details[open] .pr-chev { rotate: 180deg; }
-.kind-more { padding: 0 16px 16px; }
+.kind-more { padding: 0 16px 16px 78px; }
+.flat .kind-more { padding: 0 16px 16px; }
 .kind details .kind-more p { margin: 0 0 10px; max-width: 40em; line-height: 1.55; }
 .kind details .kind-more p:last-child { margin-bottom: 0; }
 .kind-more .link { min-height: 44px; }

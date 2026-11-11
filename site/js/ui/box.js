@@ -1,6 +1,7 @@
-/* Socio-Nik · mystery box. На своей странице (#/box) — коробка-подарок: нажатие → тряска, вспышка, крышка взлетает,
-   рядом переворачивается карточка-«коллекционка» с фактом и блоком «Поделиться».
-   Встроенная (compact: главная, результат, страница типа) — без подарка: одна карта рубашкой вверх, переворот на месте.
+/* Socio-Nik · mystery box. Коробка-подарок: нажатие → тряска, вспышка, крышка взлетает, рядом переворачивается
+   карточка-«коллекционка» с фактом и блоком «Поделиться». На компьютере вокруг закрытой коробки летают 3D-символы,
+   а из открытой выскакивает персонаж типа. На телефоне подарок только на своей странице (#/box), без символов
+   и персонажа; встроенная коробка (compact, главная) там — одна карта рубашкой вверх, переворот на месте.
    Шерится картинка (share/card.js). Факты без повторов, пока колода не кончится; коллекция «N из M» копится навсегда. */
 (function (root) {
   const S = root.Socio = root.Socio || {};
@@ -38,11 +39,16 @@
       <span class="bp-bar" aria-hidden="true"><i style="width:${Math.max(2, n / all * 100).toFixed(1)}%"></i></span>`;
   };
 
+  // символы, которые летают вокруг закрытой коробки (компьютер)
+  const MOONS = ['sparkles', 'question', 'heart', 'lightning', 'bulb', 'puzzle'];
+
   // opts: { modes: true — выбор режима; typeId — зафиксировать тип; compact — для встраивания }
   ui.box = ({ modes = false, typeId = null, compact = false } = {}) => {
     const mine = S.state.myType();
     const mode = typeId ? 'type' : 'any';
     const target = typeId || mine || 'ile';
+    // подарок: на #/box всегда, во встроенной коробке — только на компьютере (на телефоне там одна карта)
+    const rich = ui.rich(), gift = !compact || rich;
     return `
       <div class="box${compact ? ' box-compact' : ''}" data-box data-mode="${mode}" data-type="${target}">
         ${modes ? `
@@ -53,13 +59,15 @@
           </div>
           <div class="box-pick" hidden>${ui.typeSelect('boxtype', target, 'Тип')}</div>` : ''}
         <div class="box-play">
-          ${compact ? '' : `<div class="box-stage" data-anim="keep">
+          ${!gift ? '' : `<div class="box-stage" data-anim="keep">
             <div class="bx-glow" aria-hidden="true"></div>
+            ${rich ? `<div class="bx-moons" aria-hidden="true">${MOONS.map((k, i) => `<img class="bx-moon" data-i="${i}" src="${ui.emoteSrc(k)}" alt="" width="100" height="100" decoding="async" draggable="false">`).join('')}</div>` : ''}
             <button class="bx" type="button" aria-label="Открыть коробку со случайным фактом">
               <span class="bx-shadow" aria-hidden="true"></span>
               <span class="bx-float" aria-hidden="true">
                 <img class="bx-img bx-closed" src="img/box/closed.webp" width="560" height="560" alt="" decoding="async" draggable="false">
                 <img class="bx-img bx-open" src="img/box/open.webp" width="560" height="560" alt="" decoding="async" draggable="false">
+                ${rich ? '<span class="bx-pop"></span>' : ''}
               </span>
               <span class="bx-flash" aria-hidden="true"></span>
             </button>
@@ -67,11 +75,15 @@
           </div>`}
           <div class="bx-slot">
             <div class="bx-flip">
-              <button class="bx-back" type="button"${compact ? ' aria-label="Открыть случайный факт"' : ' tabindex="-1" aria-hidden="true"'}>
+              ${rich ? `<button class="bx-back" type="button" tabindex="-1" aria-hidden="true">
+                <span class="bxb-mark"><img src="img/logo/alpha.webp" alt="" width="48" height="48"><img src="img/logo/beta.webp" alt="" width="48" height="48"><img src="img/logo/gamma.webp" alt="" width="48" height="48"><img src="img/logo/delta.webp" alt="" width="48" height="48"></span>
+                <img class="bxb-q" data-anim src="${ui.emoteSrc('question')}" alt="" width="160" height="160" decoding="async" draggable="false">
+                <span class="bxb-t">Здесь появится факт</span>
+                <span class="bxb-s">Нажми на коробку или на эту карту</span>` : `<button class="bx-back" type="button"${gift ? ' tabindex="-1" aria-hidden="true"' : ' aria-label="Открыть случайный факт"'}>
                 ${ui.dots4('bxb-mark')}
                 <span class="bxb-q" aria-hidden="true">?</span>
-                <span class="bxb-t">${compact ? 'Открыть факт' : 'Здесь появится факт'}</span>
-                <span class="bxb-s">${compact ? 'Нажми на карту — перевернём её' : 'Нажми на коробку или на эту карту'}</span>
+                <span class="bxb-t">${gift ? 'Здесь появится факт' : 'Открыть факт'}</span>
+                <span class="bxb-s">${gift ? 'Нажми на коробку или на эту карту' : 'Нажми на карту — перевернём её'}</span>`}
               </button>
               <article class="bx-card" aria-hidden="true" inert></article>
             </div>
@@ -92,6 +104,11 @@
     return base ? base.replace(/\/$/, '') + '/#/' + (f.type ? 'types/' + f.type : 'box') : '';
   };
 
+  // Кто выскочил из коробки (компьютер): персонаж типа или, у общих фактов, вопрос с лампочкой
+  const popHTML = t => (t
+    ? `<span class="bx-who" style="${ui.qStyle(t.quadra)}">${ui.character(t, { sizes: '(min-width: 768px) 220px, 150px', alt: '', eager: true })}</span>`
+    : `<span class="bx-who bx-who-gen"><img src="${ui.emoteSrc('question')}" alt="" width="100" height="100"><img src="${ui.emoteSrc('bulb')}" alt="" width="100" height="100"></span>`);
+
   function cardHTML(f, reset) {
     const t = f.type ? M().type(f.type) : null;
     const all = S.facts.all(), no = all.findIndex(x => x.id === f.id) + 1;
@@ -104,10 +121,10 @@
           <span class="fc-cat">${esc(S.factCats[f.cat] || '')}</span>
         </header>
         <div class="fc-who">
-          ${t ? `${ui.mark(t, { cls: 'fc-ava' })}
+          ${t ? `${ui.rich() ? `<span class="fc-ava">${ui.character(t, { sizes: ui.CHAR.ava, alt: '' })}</span>` : ui.mark(t, { cls: 'fc-ava' })}
             <span class="fc-name"><b>${t.code} «${esc(t.alias)}»</b><small>${esc(t.role)} · квадра ${q.name}</small></span>
             <a class="link fc-type-link" href="#/types/${t.id}">Про ${t.code}</a>`
-            : `<span class="fc-ava fc-ava-gen">${ui.dots4()}</span>
+            : `<span class="fc-ava fc-ava-gen">${ui.rich() ? `<img src="${ui.emoteSrc('sparkles')}" alt="" width="100" height="100">` : ui.dots4()}</span>
             <span class="fc-name"><b>Соционика</b><small>Факт обо всех 16 типах</small></span>
             <a class="link fc-type-link" href="#/about">О соционике</a>`}
         </div>
@@ -121,13 +138,49 @@
       </div>`;
   }
 
+  // Символы летают по наклонной орбите (компьютер): спереди — крупнее и над коробкой, сзади — меньше и за ней
+  function orbit(stage) {
+    const moons = Array.from(stage.querySelectorAll('.bx-moon'));
+    if (!moons.length) return () => {};
+    let raf = 0, last = 0, drawn = 0, a = 0, visible = true;
+    const place = () => {
+      const w = stage.clientWidth, R = Math.min(w * 0.42, 300), r = R * 0.36;
+      moons.forEach((m, i) => {
+        const t = a + i * (Math.PI * 2 / moons.length), d = Math.sin(t);
+        const s = 0.7 + 0.3 * (d + 1) / 2;
+        m.style.transform = `translate(${(Math.cos(t) * R).toFixed(1)}px, ${(d * r - 6).toFixed(1)}px) scale(${s.toFixed(3)})`;
+        const z = d > 0 ? '4' : '1';
+        if (m.style.zIndex !== z) m.style.zIndex = z;
+        m.style.opacity = (0.55 + 0.45 * (d + 1) / 2).toFixed(2);
+      });
+    };
+    place();
+    if (reducedMotion()) return () => {};
+    const tick = now => {
+      raf = 0;
+      if (!visible) return;
+      if (last) a += (now - last) * 0.00026;          // ~24 с на круг
+      last = now;
+      // круг — 24 с, так что 30 кадров в секунду глазу не отличить, а работы вдвое меньше
+      if (now - drawn >= 32) { drawn = now; place(); }
+      raf = requestAnimationFrame(tick);
+    };
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+      if (visible && !raf) { last = 0; raf = requestAnimationFrame(tick); }
+    });
+    io.observe(stage);
+    addEventListener('resize', place);
+    return () => { cancelAnimationFrame(raf); io.disconnect(); removeEventListener('resize', place); };
+  }
+
   ui.mountBox = scope => {
     const box = scope.querySelector('[data-box]');
     if (!box) return () => {};
-    // у встроенной колоды нет подарка: btn, stage и hint — null, открывает сама карта
+    // у встроенной колоды на телефоне нет подарка: btn, stage, hint и pop — null, открывает сама карта
     const btn = box.querySelector('.bx'), card = box.querySelector('.bx-card'), stage = box.querySelector('.box-stage');
     const slot = box.querySelector('.bx-slot'), backFace = box.querySelector('.bx-back');
-    const prog = box.querySelector('.box-progress'), hint = box.querySelector('.bx-hint');
+    const prog = box.querySelector('.box-progress'), hint = box.querySelector('.bx-hint'), pop = box.querySelector('.bx-pop');
     const cls = (el, fn, ...names) => { if (el) el.classList[fn](...names); };
     const timers = [];
     const later = (fn, ms) => timers.push(setTimeout(fn, reducedMotion() ? 0 : ms));
@@ -149,6 +202,7 @@
       if (hint) hint.hidden = true;
       box.classList.remove('is-open');
       cls(stage, 'remove', 'is-open', 'is-lid');
+      if (pop) pop.innerHTML = popHTML(t);
       box.style.setProperty('--q', t ? `var(--q-${t.quadra})` : '');
       if (btn) {
         btn.classList.remove('shake');
@@ -220,6 +274,7 @@
       image: () => S.share.factImage(current),
       name: () => `socio-nik-fact-${current.id}.png`
     });
+    const offOrbit = stage ? orbit(stage) : () => {};
 
     // режимы
     const modes = box.querySelector('.box-modes'), pick = box.querySelector('.box-pick');
@@ -237,6 +292,6 @@
       });
       if (pick) pick.querySelector('select').addEventListener('change', e => { box.dataset.type = e.target.value; close(); if (hint) hint.hidden = false; });
     }
-    return () => { timers.forEach(clearTimeout); offShare(); };
+    return () => { timers.forEach(clearTimeout); offShare(); offOrbit(); };
   };
 })(window);

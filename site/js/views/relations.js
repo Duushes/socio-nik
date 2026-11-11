@@ -1,4 +1,4 @@
-/* Socio-Nik · отношения (#/relations): калькулятор, 14 видов на примере пар с ИЛЭ, матрица 16×16; экран пары (#/relations/ile/sei) */
+/* Socio-Nik · отношения (#/relations): калькулятор, 14 видов тремя группами, матрица 16×16; экран пары (#/relations/ile/sei) */
 (function (root) {
   const S = root.Socio;
   const V = S.views = S.views || {};
@@ -78,6 +78,7 @@
                   const partner = M().partner(ile, pos), txt = ui.relText(kind);
                   return `<li class="kind"><details>
                     <summary>
+                      ${ui.rich() ? `<img class="kind-em" src="${ui.emoteSrc(ui.EMOTE[kind])}" alt="" width="48" height="48" loading="lazy" decoding="async">` : ''}
                       <span class="kind-t"><b>${ui.kindTitle(kind)}</b><span>${esc(txt.line || '')}</span></span>
                       ${CHEV}
                     </summary>
@@ -189,7 +190,7 @@
     const d = P.domains[z.aspect], on = done.has(z.aspect);
     return `<details class="pr-zone pr-${z.group} reveal" data-aspect="${z.aspect}" style="--i:${i % 2}">
       <summary>
-        ${ui.aspectMark(z.aspect, { cls: 'pr-zi' })}
+        ${ui.rich() ? `<span class="pr-zi">${S.art.aspectImg(z.aspect, 'violet', 'pr-asp', { sizes: '(max-width: 600px) 52px, 64px' })}</span>` : ui.aspectMark(z.aspect, { cls: 'pr-zi' })}
         <span class="pr-zt"><b>${esc(d.short)}</b><small>${esc(d.long)}</small></span>
         <span class="pr-badge" title="${esc(P.groups[z.group].title)}"><i aria-hidden="true"></i>${esc(badgeOf(z, b) || P.groups[z.group].short)}</span>
         ${CHEV}
@@ -213,7 +214,7 @@
   // «Как это устроено»: куда у второго попадают две сильные стороны (Эго) каждого. Названия типов вместо «ты» —
   // так блок проще читать, в том числе про чужую пару
   const cap = str => str.charAt(0).toUpperCase() + str.slice(1);
-  const who = t => `<span class="pr-who">${ui.mark(t, { cls: 'pr-ava' })}${t.code} «${esc(t.alias)}»</span>`;
+  const who = t => `<span class="pr-who">${ui.rich() ? `<span class="pr-ava" style="${ui.qStyle(t.quadra)}">${ui.character(t, { sizes: '32px', alt: '' })}</span>` : ui.mark(t, { cls: 'pr-ava' })}${t.code} «${esc(t.alias)}»</span>`;
   function howHTML(a, b, P) {
     const col = (from, to) => {
       const mt = M().modelA(to.ego);
@@ -245,7 +246,7 @@
   }
 
   const STAGES = [['start', 'Знакомство'], ['months', 'Через полгода'], ['years', 'Через годы']];
-  // Линейные иконки 24×24 в стиле значков шера: сердце, два облачка реплик, рукопожатие
+  // Телефон: линейные иконки 24×24 в стиле значков шера (сердце, два облачка реплик, рукопожатие); компьютер — 3D-символы
   const CTX_ICON = {
     heart: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20z"/>',
     bubbles: '<path d="M14.5 4.5h-9a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2H7v3l3.4-3h4.1a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2z"/><path d="M16.5 8.5h2a2 2 0 0 1 2 2v4.5a2 2 0 0 1-2 2H17v2.5l-2.8-2.5h-2.7"/>',
@@ -283,7 +284,7 @@
           ${fold('Как развиваются отношения', `<ol class="pr-stages">${STAGES.map(([k, name]) => `<li><p class="pr-k">${name}</p><p>${esc(more.stages[k])}</p></li>`).join('')}</ol>`, wide)}
 
           ${fold('В паре, дружбе и работе', `<div class="pr-ctx">${CONTEXTS.map(([k, name, em]) => `<div class="pr-ctx-card">
-              ${ctxIcon(em)}
+              ${ui.rich() ? `<img src="${ui.emoteSrc(em)}" alt="" width="56" height="56" loading="lazy" decoding="async">` : ctxIcon(em)}
               <p class="pr-k">${name}</p><p>${esc(more.contexts[k])}</p></div>`).join('')}</div>`, wide)}
 
           ${fold('Сильные стороны и трудности', `<div class="pr-pm">
@@ -423,7 +424,7 @@
           <div class="wrap">
             <div class="grid2">
               ${[a, b].map((t, i) => `<a class="link-card reveal" style="${ui.qStyle(t.quadra)};--i:${i}" href="#/types/${t.id}">
-                <span class="lc-art">${ui.mark(t, { cls: 'tm-xl' })}</span>
+                ${ui.rich() ? `<span class="lc-art lc-char">${ui.character(t, { sizes: ui.CHAR.ava, alt: '' })}</span>` : `<span class="lc-art">${ui.mark(t, { cls: 'tm-xl' })}</span>`}
                 <span class="lc-kicker">${ui.quadra(t.quadra).name} · ${esc(t.role)}</span>
                 <span class="lc-title">${t.code} «${esc(t.alias)}»</span>
                 <span class="lc-text">${esc(ui.content(t.id).tagline || '')}</span>

@@ -1,7 +1,9 @@
-/* Socio-Nik · упрощённая версия (ветка prostaya): плоские марки и знаки вместо 3D.
+/* Socio-Nik · упрощённая версия для телефона и планшета (html.flat): плоские марки и знаки вместо 3D.
    3D остаётся только там, где картинка — главный предмет экрана: персонаж в героях, пара в герое страницы пары,
    подарок на #/box. Всё остальное — коды типов в цвете квадры, соционические знаки ▲ □ ∟ ○ и линейные иконки.
-   Файл идёт после components.css и motion.css и переопределяет их там, где раньше стояли картинки. */
+   На компьютере класса flat нет — там полные 3D-иллюстрации (components.css, motion.css).
+   Новые классы (.tm, .am, .qm, .pm, .dots4 …) есть только в плоской разметке; правила для старых классов,
+   где раньше стояли картинки, — только под .flat, чтобы не трогать 3D-вёрстку. */
 
 /* ================= ЛОГОТИП: ЧЕТЫРЕ ПЛОСКИХ КРУГА ================= */
 .dots4 { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; gap: 12%; width: 34px; height: 34px; }
@@ -11,12 +13,26 @@
 .dots4 i:nth-child(4) { background: var(--q-gamma); }
 .brand-mark.dots4 { width: 26px; height: 26px; }
 .brand-mark.dots4::before { inset: -45%; }
+/* компьютер: те же четыре круга — 3D-шарами. Фоном, а не <img>: телефон эти картинки не скачивает */
+html:not(.flat) .brand-mark.dots4 { display: block; width: 34px; height: 34px; }
+html:not(.flat) .brand-mark.dots4::before { inset: -35%; }
+html:not(.flat) .brand-mark.dots4 i {
+  position: absolute; width: 58%; height: 58%; border-radius: 0;
+  background: url(../img/logo/alpha.webp) center / contain no-repeat; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.5));
+}
+html:not(.flat) .brand-mark.dots4 i:nth-child(1) { left: -4%; top: -4%; }
+html:not(.flat) .brand-mark.dots4 i:nth-child(2) { right: -4%; top: -4%; background-image: url(../img/logo/beta.webp); }
+html:not(.flat) .brand-mark.dots4 i:nth-child(3) { left: -4%; bottom: -4%; background-image: url(../img/logo/delta.webp); }
+html:not(.flat) .brand-mark.dots4 i:nth-child(4) { right: -4%; bottom: -4%; background-image: url(../img/logo/gamma.webp); }
 @media (hover: hover) and (pointer: fine) {
   .brand:hover .dots4 i { animation: bm-hop 0.55s var(--spring) both; }
   .brand:hover .dots4 i:nth-child(2) { animation-delay: 0.07s; }
   .brand:hover .dots4 i:nth-child(4) { animation-delay: 0.14s; }
   .brand:hover .dots4 i:nth-child(3) { animation-delay: 0.21s; }
 }
+
+/* то, что есть только на компьютере (например, «и знаки» в подвале: 3D-знаков на телефоне нет) */
+.flat .rich-only { display: none; }
 
 /* ================= МАРКА ТИПА ================= */
 /* кружок в цвете квадры с кодом; размер задаёт место (rm-orb, rd-ava, …), текст масштабируется от ширины */
@@ -34,17 +50,17 @@
 .tm-ask b { font-size: 46cqi; }
 /* старые места аватаров: только размеры, без масок и сдвигов картинки */
 .tm.next-art { width: 64px; height: auto; border-radius: 50%; }
-.next-card { grid-template-columns: 64px 1fr auto; }
-@media (max-width: 767px) { .tm.next-art { width: 56px; } .next-card { grid-template-columns: 56px 1fr auto; } }
+.flat .next-card { grid-template-columns: 64px 1fr auto; }
+@media (max-width: 767px) { .tm.next-art { width: 56px; } .flat .next-card { grid-template-columns: 56px 1fr auto; } }
 .tm.rd-ava, .tm.fc-ava { width: 48px; height: auto; }
 .tm.rl-ava { width: 44px; height: auto; }
 .tm.as-ava { width: 36px; height: auto; }
 .tm.pr-ava { width: 34px; height: auto; }
 .tm.fn-rel-em { width: 44px; height: auto; }
-.rel-group a { grid-template-columns: 44px 1fr; }
+.flat .rel-group a { grid-template-columns: 44px 1fr; }
 /* в строках «легко / ровно / непросто» код уже в марке — под ней только вид отношения */
-.rm-tag b { display: none; }
-.rm-node.is-on .rm-orb { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--q) 75%, transparent), 0 0 0 2px var(--paper); }
+.flat .rm-tag b { display: none; }
+.flat .rm-node.is-on .rm-orb { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--q) 75%, transparent), 0 0 0 2px var(--paper); }
 
 /* ================= ЗНАК АСПЕКТА ================= */
 .am {
@@ -56,10 +72,10 @@
 @media (max-width: 767px) { .am.ma-glyph { width: 46px; border-radius: 14px; } }
 .am.aspect-art { --q: #8b3fd1; width: 72px; height: auto; margin-bottom: 10px; border-radius: 22px; }
 .am.pr-zi { --q: var(--g); width: clamp(44px, 5vw, 56px); border-radius: 16px; }
-.fn-art { display: grid; place-items: center; }
+.flat .fn-art { display: grid; place-items: center; }
 .fn-art .am { width: 100%; border-radius: inherit; background: color-mix(in srgb, var(--q) 14%, transparent); }
 .fn-art .am .sym { width: 46%; height: 46%; }
-.as { --q: #8b3fd1; }
+.flat .as { --q: #8b3fd1; }
 @media (hover: hover) and (pointer: fine) { button.aspect:hover .am { transform: scale(1.06); } }
 .am { transition: transform 0.4s var(--spring); }
 
@@ -72,9 +88,9 @@
 }
 .qm .sym { width: 100%; height: 100%; }
 /* знак заполняет колонку карточки: 104 px, на телефоне 76 px (components.css) */
-.lc-art { display: grid; place-items: center; }
+.flat .lc-art { display: grid; place-items: center; }
 .lc-art > .qm, .lc-art > .tm { width: 100%; }
-.quadra-art { display: grid; place-items: center; }
+.flat .quadra-art { display: grid; place-items: center; }
 .qm-big { width: min(300px, 64vw); }
 
 /* ================= ПАРА ПЛОСКО ================= */
@@ -91,66 +107,66 @@
 .sh-pair .pm { --pm: clamp(88px, 11vw, 128px); }
 .pm-sm { --pm: 56px; max-width: 200px; margin-inline: 0; }
 .pm-sm figcaption { display: none; }
-.kind-scene { width: min(220px, 100%); }
 
 /* ================= КАРТОЧКИ ТИПОВ БЕЗ БЮСТОВ ================= */
-.tcard {
+.flat .tcard {
   justify-content: flex-end; min-height: clamp(150px, 15vw, 196px); padding: 18px;
   background: radial-gradient(110% 90% at 100% 0%, color-mix(in srgb, var(--q) 42%, transparent), transparent 70%), color-mix(in srgb, var(--q) 12%, #0e0f11);
   transition: transform 0.4s var(--out), box-shadow 0.3s;
 }
 .tcard-sym { position: absolute; top: 16px; right: 16px; display: block; width: clamp(26px, 2.6vw, 36px); aspect-ratio: 1; color: var(--q); }
 .tcard-sym .sym { display: block; width: 100%; height: 100%; }
-.tcard-txt { margin-top: 0; padding: 0; }
-.tcard-code { font-size: clamp(30px, 3.4vw, 46px); }
-@media (hover: hover) and (pointer: fine) { .tcard:hover { transform: translateY(-4px); box-shadow: 0 0 0 2px color-mix(in srgb, var(--q) 70%, transparent); } }
+.flat .tcard-txt { margin-top: 0; padding: 0; }
+.flat .tcard-code { font-size: clamp(30px, 3.4vw, 46px); }
+@media (hover: hover) and (pointer: fine) { .flat .tcard:hover { transform: translateY(-4px); box-shadow: 0 0 0 2px color-mix(in srgb, var(--q) 70%, transparent); } }
 
 /* стопка квадр: плитки с кодом и псевдонимом */
-.qc-type { position: relative; justify-content: center; min-height: 60px; padding: 12px 6px; }
-.qc-code { margin-top: 0; }
+.qc-type { position: relative; }
+.flat .qc-type { justify-content: center; min-height: 60px; padding: 12px 6px; }
+.flat .qc-code { margin-top: 0; }
 .qc-type.is-you { box-shadow: inset 0 0 0 2px var(--q); }
 .qc-me { position: absolute; top: -9px; right: 6px; padding: 2px 8px; border-radius: var(--r-pill); background: var(--q); color: #0c0c0c; font-size: var(--fs-xs); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
 @media (min-width: 768px) {
-  .qc-type { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 104px; padding: 18px 20px; text-align: center; }
-  .qc-code { font-size: clamp(22px, 2.4vw, 32px); }
-  .qc-em { width: clamp(140px, 15vw, 210px); }
+  .flat .qc-type { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 104px; padding: 18px 20px; text-align: center; }
+  .flat .qc-code { font-size: clamp(22px, 2.4vw, 32px); }
+  .flat .qc-em { width: clamp(140px, 15vw, 210px); }
 }
 
 /* ================= ШКАЛЫ ================= */
-.sc-knob { width: 22px; height: 22px; border-radius: 50%; background: var(--q); box-shadow: 0 0 0 3px #0e0f11, 0 0 16px color-mix(in srgb, var(--q) 70%, transparent); }
+.flat .sc-knob { width: 22px; height: 22px; border-radius: 50%; background: var(--q); box-shadow: 0 0 0 3px #0e0f11, 0 0 16px color-mix(in srgb, var(--q) 70%, transparent); }
 
 /* ================= ЗНАМЕНИТОСТИ: ЛИНЕЙНЫЕ ИКОНКИ ================= */
-.celeb-ava { color: var(--q); }
+.flat .celeb-ava { color: var(--q); }
 .celeb-ava svg.celeb-ic { width: 54%; height: 54%; filter: none; }
 .celeb-ava.sm svg.celeb-ic { width: 56%; height: 56%; }
 
 /* ================= ТЕСТ БЕЗ КАРТИНОК ================= */
-.q-card { justify-content: center; min-height: clamp(140px, 16vw, 190px); padding-top: clamp(46px, 5vw, 56px); }
-.t-toast { padding: 8px 18px; }
-.slot { width: min(260px, 60vw); aspect-ratio: 1; }
+.flat .q-card { justify-content: center; min-height: clamp(140px, 16vw, 190px); padding-top: clamp(46px, 5vw, 56px); }
+.flat .t-toast { padding: 8px 18px; }
+.flat .slot { width: min(260px, 60vw); aspect-ratio: 1; }
 .slot-code { position: absolute; inset: 0; display: grid; place-items: center; color: var(--q); font-size: clamp(64px, 18vw, 120px); font-weight: 900; letter-spacing: -0.02em; line-height: 1; }
 .slot.tick .slot-code { animation: slot-tick 0.14s var(--ease); }
 .slot.land .slot-code { animation: slot-land 0.6s var(--spring); }
 
 /* ================= ПОДЕЛИТЬСЯ: ПЛОСКАЯ РАМКА ================= */
-.share-stage { perspective: none; }
-.share-phone {
+.flat .share-stage { perspective: none; }
+.flat .share-phone {
   width: min(280px, 60vw); padding: 6px; border-radius: 30px; background: var(--card); transform: none;
   box-shadow: 0 0 0 1px var(--hair), 0 30px 60px -30px rgba(0, 0, 0, 0.8);
 }
-.share-phone::after { display: none; }
-.share-canvas { border-radius: 24px; }
-@media (hover: hover) and (pointer: fine) { .share-stage:hover .share-phone { transform: none; } }
+.flat .share-phone::after { display: none; }
+.flat .share-canvas { border-radius: 24px; }
+@media (hover: hover) and (pointer: fine) { .flat .share-stage:hover .share-phone { transform: none; } }
 
 /* ================= MYSTERY BOX ================= */
-/* встроенная колода — одна карта по центру; подарок только на #/box */
-.box-compact .box-play { grid-template-columns: minmax(0, 1fr); }
-.box-compact .bx-slot { margin-top: clamp(20px, 3vw, 32px); }
-.box-compact .bx-back { cursor: pointer; }
+/* встроенная колода на телефоне — одна карта по центру; подарок только на #/box */
+.flat .box-compact .box-play { grid-template-columns: minmax(0, 1fr); }
+.flat .box-compact .bx-slot { margin-top: clamp(20px, 3vw, 32px); }
+.flat .box-compact .bx-back { cursor: pointer; }
 /* закрытая карта во встроенной колоде — ниже, чем на #/box: там рядом подарок, тут она одна; открытая растёт по факту */
-@media (min-width: 900px) { .box-compact .bx-back { min-height: 440px; } }
+@media (min-width: 900px) { .flat .box-compact .bx-back { min-height: 440px; } }
 .bxb-mark.dots4 { width: 30px; height: 30px; }
-.bxb-q {
+.flat .bxb-q {
   width: auto; font-size: clamp(96px, 11vw, 150px); font-weight: 900; line-height: 1; filter: none;
   background: linear-gradient(180deg, #e9dcff, #8b3fd1); -webkit-background-clip: text; background-clip: text; color: transparent;
 }
@@ -160,5 +176,5 @@
 .pr-ctx-ic { grid-row: span 2; width: 36px; height: 36px; margin-top: 2px; color: #8b3fd1; }
 
 /* ================= 404 И «ПОКА ПУСТО» ================= */
-.lost-hero { min-height: min(100svh, 760px); }
-.lost-foot { margin-top: clamp(20px, 3vw, 36px); }
+.flat .lost-hero { min-height: min(100svh, 760px); }
+.flat .lost-foot { margin-top: clamp(20px, 3vw, 36px); }

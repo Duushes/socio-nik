@@ -122,7 +122,7 @@
     return `
       <article class="fn" style="${ui.qStyle(t.quadra)}">
         <header class="fn-head sheet-drag">
-          <div class="fn-art">${ui.aspectMark(id)}</div>
+          <div class="fn-art">${ui.rich() ? `<span class="fn-float">${S.art.aspectImg(id, t.quadra, 'fn-img', { eager: true, sizes: '96px' })}</span>` : ui.aspectMark(id)}</div>
           <div class="fn-titles">
             <p class="fn-kicker">${t.code} · ${n} из 8</p>
             <h2 class="fn-title">${F[n - 1].plain}</h2>
@@ -137,7 +137,7 @@
         <section class="fn-sec"><h3>${F[n - 1].name} функция: что это</h3><p>${esc(C.positions[n])}</p></section>
         <section class="fn-sec"><h3>${esc(a.name)} (${a.short}): про что это</h3><p>${esc(C.aspectsLong[id])}</p></section>
         <a class="fn-rel" href="#/relations/${t.id}/${rt.id}" style="--rq:var(--q-${rt.quadra})">
-          ${ui.mark(rt, { cls: 'fn-rel-em' })}
+          ${ui.rich() ? `<span class="fn-rel-em">${S.art.emblem(rt, { cls: 'em-mini', label: false })}</span>` : ui.mark(rt, { cls: 'fn-rel-em' })}
           <span>${esc(relText(`${rt.code} «${rt.alias}»`))}</span>
         </a>
         <nav class="fn-nav" aria-label="Другие функции ${t.code}">
@@ -157,12 +157,14 @@
     const base = S.data.types.filter(t => t.ego[0] === id), creative = S.data.types.filter(t => t.ego[1] === id);
     const quadras = S.data.quadras.filter(q => q.values.includes(id));
     const i = ASPECTS.indexOf(id), prev = ASPECTS[(i + 7) % 8], next = ASPECTS[(i + 1) % 8];
-    const typeLink = t => `<a class="as-type" href="#/types/${t.id}" style="${ui.qStyle(t.quadra)}">${ui.mark(t, { cls: 'as-ava' })}<span><span class="sr">${t.code} </span>${esc(t.alias)}</span></a>`;
+    const typeLink = t => `<a class="as-type" href="#/types/${t.id}" style="${ui.qStyle(t.quadra)}">${ui.rich()
+      ? `<span class="as-ava">${ui.character(t, { sizes: '48px', alt: '' })}</span><span><b>${t.code}</b> ${esc(t.alias)}</span>`
+      : `${ui.mark(t, { cls: 'as-ava' })}<span><span class="sr">${t.code} </span>${esc(t.alias)}</span>`}</a>`;
     const dense = a.vert === 'e';
     return `
       <article class="fn as" style="--q:var(--violet, #8b3fd1)">
         <header class="fn-head sheet-drag">
-          <div class="fn-art">${ui.aspectMark(id)}</div>
+          <div class="fn-art">${ui.rich() ? `<span class="fn-float">${S.art.aspectImg(id, 'violet', 'fn-img', { eager: true, sizes: '96px' })}</span>` : ui.aspectMark(id)}</div>
           <div class="fn-titles">
             <p class="fn-kicker">${el.name} · ${dense ? 'чёрный, экстравертный' : 'белый, интровертный'} аспект</p>
             <h2 class="fn-title">${esc(a.name)}</h2>
